@@ -110,8 +110,12 @@ class Installer(object):
             return
         context = self.get_template_context()
         for ftpl in config_files:
+            if "=" in ftpl:
+                ftpl, dstname = ftpl.split("=")
+            else:
+                dstname = ftpl
             src = self.get_file_path("{}.tpl".format(ftpl))
-            dst = os.path.join(self.config_dir, ftpl)
+            dst = os.path.join(self.config_dir, dstname)
             utils.copy_from_template(src, dst, context)
 
     def restart_daemon(self):

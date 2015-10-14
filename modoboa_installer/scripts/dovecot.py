@@ -26,7 +26,9 @@ class Dovecot(base.Installer):
     def get_config_files(self):
         """Additional config files."""
         return self.config_files + [
-            "dovecot-sql-{}.conf.ext".format(self.dbengine)]
+            "dovecot-sql-{}.conf.ext=dovecot-sql.conf.ext"
+            .format(self.dbengine)
+        ]
 
     def get_packages(self):
         """Additional packages."""
