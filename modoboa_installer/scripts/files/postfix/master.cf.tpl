@@ -23,7 +23,7 @@ submission inet n       -       -       -       -       smtpd
   -o smtpd_reject_unlisted_recipient=no
   -o smtpd_client_restrictions=permit_sasl_authenticated,reject
   -o smtpd_helo_restrictions=
-  -o smtpd_sender_restrictions=
+  -o smtpd_sender_restrictions=reject_sender_login_mismatch
   -o smtpd_recipient_restrictions=
   -o milter_macro_daemon_name=ORIGINATING
   -o smtpd_proxy_filter=inet:[127.0.0.1]:10026

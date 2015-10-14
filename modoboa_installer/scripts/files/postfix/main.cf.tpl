@@ -86,6 +86,10 @@ strict_rfc821_envelopes = yes
 %{dovecot_enabled}    $lmtp_sasl_auth_cache_name
 %{dovecot_enabled}    $address_verify_map
 
+smtpd_sender_login_maps =
+        %{db_driver}:/etc/postfix/sql-sender-login-mailboxes.cf
+        %{db_driver}:/etc/postfix/sql-sender-login-aliases.cf
+
 # Recipient restriction rules
 smtpd_recipient_restrictions =
       permit_mynetworks
