@@ -1,0 +1,2 @@
+ALTER TABLE admin_quota ALTER COLUMN bytes SET DEFAULT 0;
+ALTER TABLE admin_quota ALTER COLUMN messages SET DEFAULT 0;
