@@ -2,7 +2,6 @@
 
 import os
 
-from .. import database
 from .. import python
 from .. import utils
 
@@ -68,6 +67,15 @@ class Modoboa(base.Installer):
             "bash -c '{} modoboa-admin.py deploy instance {}'".format(
                 prefix, " ".join(args)),
             sudo_user=self.user, cwd=self.home_dir)
+
+    def get_template_context(self):
+        """Additional variables."""
+        context = super(Modoboa, self).get_template_context()
+        context.update({
+            "dovecot_mailboxes_owner": (
+                self.config.get("dovecot", "mailboxes_owner"))
+        })
+        return context
 
     def post_run(self):
         """Additional tasks."""
