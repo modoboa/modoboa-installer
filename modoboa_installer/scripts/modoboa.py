@@ -18,7 +18,7 @@ class Modoboa(base.Installer):
     no_daemon = True
     packages = [
         "python-dev", "libxml2-dev", "libxslt-dev", "libjpeg-dev",
-        "libcairo2-dev", "rrdtool"]
+        "librrd-dev", "rrdtool"]
     with_db = True
     with_user = True
 
@@ -37,7 +37,7 @@ class Modoboa(base.Installer):
     def _setup_venv(self):
         """Prepare a dedicated virtuelenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
-        packages = ["modoboa", "python-rrdtool"]
+        packages = ["modoboa", "rrdtool"]
         if self.dbengine == "postgres":
             packages.append("psycopg2")
         else:
@@ -77,3 +77,4 @@ class Modoboa(base.Installer):
         self._deploy_instance()
         install("uwsgi", self.config)
         install("nginx", self.config)
+        system.add_user_to_group("www-data", self.user)

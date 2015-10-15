@@ -53,8 +53,8 @@ virtual_alias_maps =
 relay_domains =
         %{db_driver}:/etc/postfix/sql-relaydomains.cf
 transport_maps =
+        %{db_driver}:/etc/postfix/sql-spliteddomains-transport.cf
 	%{db_driver}:/etc/postfix/sql-relaydomains-transport.cf 
-	%{db_driver}:/etc/postfix/sql-relaydomain-aliases-transport.cf
         %{db_driver}:/etc/postfix/sql-autoreplies-transport.cf
 
 ## SASL authentication through Dovecot
