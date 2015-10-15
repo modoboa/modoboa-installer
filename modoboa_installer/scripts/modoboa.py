@@ -103,7 +103,7 @@ class Modoboa(base.Installer):
                 "UPDATE lib_parameter SET value='{}' WHERE name='{}'"
                 .format(value, name)
             )
-            self.backend._exec_query(query)
+            self.backend._exec_query(query, self.dbname, self.dbuser)
 
     def post_run(self):
         """Additional tasks."""

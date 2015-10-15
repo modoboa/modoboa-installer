@@ -40,10 +40,13 @@ class PostgreSQL(Database):
         super(PostgreSQL, self).__init__(config)
         self._pgpass_done = False
 
-    def _exec_query(self, query):
+    def _exec_query(self, query, dbname=None, dbuser=None):
         """Exec a postgresql query."""
+        cmd = "psql"
+        if dbname and dbuser:
+            cmd += " -d {} -U {} -w".format(dbname, dbuser)
         utils.exec_cmd(
-            """psql -c "{}" """.format(query), sudo_user=self.dbuser)
+            """{} -c "{}" """.format(cmd, query), sudo_user=self.dbuser)
 
     def create_user(self, name, password):
         """Create a user."""
@@ -114,7 +117,7 @@ class MySQL(Database):
         utils.exec_cmd("echo '{}' | debconf-set-selections".format(cfg))
         super(MySQL, self).install_package()
 
-    def _exec_query(self, query):
+    def _exec_query(self, query, dbname=None, dbuser=None):
         """Exec a postgresql query."""
         utils.exec_cmd(
             """mysql -u {} -p{} -e "{}" """
