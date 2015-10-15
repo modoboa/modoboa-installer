@@ -1,6 +1,8 @@
 """Modoboa related tasks."""
 
 import os
+import pwd
+import stat
 
 from .. import python
 from .. import utils
@@ -29,6 +31,8 @@ class Modoboa(base.Installer):
         """Get configuration."""
         super(Modoboa, self).__init__(config)
         self.venv_path = config.get("modoboa", "venv_path")
+        self.instance_path = config.get("modoboa", "instance_path")
+        self.extensions = config.get("modoboa", "extensions").split()
 
     def _setup_venv(self):
         """Prepare a dedicated virtuelenv."""
@@ -48,7 +52,7 @@ class Modoboa(base.Installer):
             "--collectstatic",
             "--timezone", self.config.get("modoboa", "timezone"),
             "--domain", self.config.get("general", "hostname"),
-            "--extensions", "all",
+            "--extensions", " ".join(self.extensions),
             "--dburl", "default:{0}://{1}:{2}@localhost/{1}".format(
                 self.config.get("database", "engine"), self.dbname,
                 self.dbpasswd)
@@ -77,9 +81,34 @@ class Modoboa(base.Installer):
         })
         return context
 
+    def apply_settings(self):
+        """Configure modoboa."""
+        rrd_root_dir = os.path.join(self.home_dir, "rrdfiles")
+        pdf_storage_dir = os.path.join(self.home_dir, "pdfcredentials")
+        webmail_media_dir = os.path.join(
+            self.instance_path, "media", "webmail")
+        pw = pwd.getpwnam(self.user)
+        for d in [rrd_root_dir, pdf_storage_dir, webmail_media_dir]:
+            utils.mkdir(d, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
+        settings = {
+            "modoboa_admin.HANDLE_MAILBOXES": "yes",
+            "modoboa_admin.AUTO_ACCOUNT_REMOVAL": "yes",
+            "modoboa_amavis.AM_PDP_MODE": "inet",
+            "modoboa_stats.RRD_ROOT_DIR": rrd_root_dir,
+            "modoboa_pdfcredentials.STORAGE_DIR": pdf_storage_dir,
+        }
+
+        for name, value in settings.items():
+            query = (
+                "UPDATE lib_parameter SET value='{}' WHERE name='{}'"
+                .format(value, name)
+            )
+            self.backend._exec_query(query)
+
     def post_run(self):
         """Additional tasks."""
         self._setup_venv()
         self._deploy_instance()
+        self.apply_settings()
         install("uwsgi", self.config)
         install("nginx", self.config)
