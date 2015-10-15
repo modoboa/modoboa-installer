@@ -19,6 +19,10 @@ class Modoboa(base.Installer):
     packages = [
         "python-dev", "libxml2-dev", "libxslt-dev", "libjpeg-dev",
         "librrd-dev", "rrdtool"]
+    config_files = [
+        "crontab=/etc/cron.d/modoboa",
+        "sudoers=/etc/sudoers.d/modoboa",
+    ]
     with_db = True
     with_user = True
 

@@ -115,7 +115,9 @@ class Installer(object):
             else:
                 dstname = ftpl
             src = self.get_file_path("{}.tpl".format(ftpl))
-            dst = os.path.join(self.config_dir, dstname)
+            dst = dstname
+            if not dst.startswith("/"):
+                dst = os.path.join(self.config_dir, dst)
             utils.copy_from_template(src, dst, context)
 
     def restart_daemon(self):
