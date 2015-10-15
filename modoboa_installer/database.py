@@ -11,7 +11,7 @@ class Database(object):
 
     """Common database backend."""
 
-    package = None
+    packages = None
     service = None
 
     def __init__(self, config):
@@ -25,16 +25,16 @@ class Database(object):
 
     def install_package(self):
         """Install database package if required."""
-        utils.install_system_package(self.package)
-        name = self.service if self.service else self.package
-        utils.exec_cmd("service {} start".format(name))
+        utils.install_system_packages(self.packages)
+        utils.exec_cmd("service {} start".format(self.service))
 
 
 class PostgreSQL(Database):
 
     """Postgres."""
 
-    package = "postgresql"
+    packages = ["postgresql", "postgresql-server-dev-all"]
+    service = "postgresql"
 
     def __init__(self, config):
         super(PostgreSQL, self).__init__(config)
@@ -99,7 +99,7 @@ class MySQL(Database):
 
     """MySQL backend."""
 
-    package = "mysql-server"
+    package = ["mysql-server", "libmysqlclient-dev"]
     service = "mysql"
 
     def install_package(self):
