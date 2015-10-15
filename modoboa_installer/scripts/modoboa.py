@@ -28,13 +28,6 @@ class Modoboa(base.Installer):
         super(Modoboa, self).__init__(config)
         self.venv_path = config.get("modoboa", "venv_path")
 
-    def setup_database(self):
-        """Additional config."""
-        super(Modoboa, self).setup_database()
-        if self.config.getboolean("amavis", "enabled"):
-            self.backend.grant_access(
-                self.config.get("amavis", "dbname"), self.dbuser)
-
     def _setup_venv(self):
         """Prepare a dedicated virtuelenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
@@ -62,7 +55,8 @@ class Modoboa(base.Installer):
             args += [
                 "amavis:{}://{}:{}@localhost/{}".format(
                     self.config.get("database", "engine"),
-                    self.user, self.dbpasswd,
+                    self.config.get("amavis", "dbuser"),
+                    self.config.get("amavis", "dbpassword"),
                     self.config.get("amavis", "dbname")
                 )
             ]
