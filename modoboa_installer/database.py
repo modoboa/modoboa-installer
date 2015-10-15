@@ -18,6 +18,7 @@ class Database(object):
         """Install if necessary."""
         self.config = config
         engine = self.config.get("database", "engine")
+        self.dbhost = self.config.get("database", "host")
         self.dbuser = config.get(engine, "user")
         self.dbpassword = config.get(engine, "password")
         if self.config.getboolean("database", "install"):
@@ -40,11 +41,11 @@ class PostgreSQL(Database):
         super(PostgreSQL, self).__init__(config)
         self._pgpass_done = False
 
-    def _exec_query(self, query, dbname=None, dbuser=None):
+    def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a postgresql query."""
         cmd = "psql"
         if dbname and dbuser:
-            cmd += " -d {} -U {} -w".format(dbname, dbuser)
+            cmd += " -h {} -d {} -U {} -w".format(self.dbhost, dbname, dbuser)
         utils.exec_cmd(
             """{} -c "{}" """.format(cmd, query), sudo_user=self.dbuser)
 
@@ -117,11 +118,15 @@ class MySQL(Database):
         utils.exec_cmd("echo '{}' | debconf-set-selections".format(cfg))
         super(MySQL, self).install_package()
 
-    def _exec_query(self, query, dbname=None, dbuser=None):
+    def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a postgresql query."""
-        utils.exec_cmd(
-            """mysql -u {} -p{} -e "{}" """
-            .format(self.dbuser, self.dbpassword, query))
+        if dbuser is None and dbpassword is None:
+            dbuser = self.dbuser
+            dbpassword = self.dbpassword
+        cmd = "mysql -u {} -p{}".format(dbuser, dbpassword)
+        if dbname:
+            cmd += " -D {}".format(dbname)
+        utils.exec_cmd(cmd + """ -e "{}" """.format(query))
 
     def create_user(self, name, password):
         """Create a user."""
