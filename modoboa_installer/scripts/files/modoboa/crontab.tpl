@@ -13,13 +13,11 @@ INSTANCE=%{instance_path}
 # Logs table cleanup
 0       0       *       *       *       root    $PYTHON $INSTANCE/manage.py cleanlogs
 
-{% if use_amavis %}
 # Quarantine cleanup
-0       0       *       *       *       root    $PYTHON $INSTANCE/manage.py qcleanup
+%{amavis_enabled}0       0       *       *       *       root    $PYTHON $INSTANCE/manage.py qcleanup
 
 # Notifications about pending release requests
-0       12      *       *       *       root    $PYTHON $INSTANCE/manage.py amnotify --baseurl='http://%{hostname}'
-{% endif %}
+%{amavis_enabled}0       12      *       *       *       root    $PYTHON $INSTANCE/manage.py amnotify --baseurl='http://%{hostname}'
 
 # Logs parsing
 */5    *       *       *       *       root    $PYTHON $INSTANCE/manage.py logparser &> /dev/null
