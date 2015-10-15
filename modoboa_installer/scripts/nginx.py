@@ -2,6 +2,7 @@
 
 import os
 
+from .. import system
 from .. import utils
 
 from . import base
@@ -37,3 +38,5 @@ class Nginx(base.Installer):
         if os.path.exists(link):
             return
         os.symlink(dst, link)
+        system.add_user_to_group(
+            "www-data", self.config.get("modoboa", "user"))

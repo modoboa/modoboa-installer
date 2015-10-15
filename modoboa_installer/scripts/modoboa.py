@@ -4,7 +4,6 @@ import os
 
 from .. import database
 from .. import python
-from .. import system
 from .. import utils
 
 from . import base
@@ -72,4 +71,3 @@ class Modoboa(base.Installer):
         self._deploy_instance()
         install("uwsgi", self.config)
         install("nginx", self.config)
-        system.add_user_to_group("www-data", self.user)
