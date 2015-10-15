@@ -32,8 +32,8 @@ class Modoboa(base.Installer):
         """Additional config."""
         super(Modoboa, self).setup_database()
         if self.config.getboolean("amavis", "enabled"):
-            database.grant_database_access(
-                self.config, self.config.get("amavis", "dbname"), self.dbname)
+            self.backend.grant_access(
+                self.config.get("amavis", "dbname"), self.dbuser)
 
     def _setup_venv(self):
         """Prepare a dedicated virtuelenv."""
