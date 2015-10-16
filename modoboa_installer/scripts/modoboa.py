@@ -100,8 +100,8 @@ class Modoboa(base.Installer):
 
         for name, value in settings.items():
             query = (
-                "DELETE FROM lib_parameter WHERE name='{}';".format(name),
-                "INSERT INTO lib_parameter (name, value) VALUES ('{}', '{}')"
+                "DELETE FROM lib_parameter WHERE name='{0}';"
+                "INSERT INTO lib_parameter (name, value) VALUES ('{0}', '{1}')"
                 .format(name, value)
             )
             self.backend._exec_query(query, self.dbname, self.dbuser)
