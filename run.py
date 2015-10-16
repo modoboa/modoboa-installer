@@ -56,7 +56,7 @@ def main():
     scripts.install("amavis", config)
     scripts.install("dovecot", config)
     utils.printcolor(
-        "Congratulations! You can enjoy Modoboa at https://{}"
+        "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
         .format(args.hostname),
         utils.GREEN)
 

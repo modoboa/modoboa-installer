@@ -94,7 +94,7 @@ class Modoboa(base.Installer):
             "modoboa_admin.HANDLE_MAILBOXES": "yes",
             "modoboa_admin.AUTO_ACCOUNT_REMOVAL": "yes",
             "modoboa_amavis.AM_PDP_MODE": "inet",
-            "modoboa_stats.RRD_ROOT_DIR": rrd_root_dir,
+            "modoboa_stats.RRD_ROOTDIR": rrd_root_dir,
             "modoboa_pdfcredentials.STORAGE_DIR": pdf_storage_dir,
         }
 
