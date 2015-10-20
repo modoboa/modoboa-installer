@@ -16,3 +16,10 @@ Usage::
 
 To customize the installation, look at the ``installer.cfg`` file.
 
+By default, the following components are installed:
+
+* Database server (PostgreSQL or MySQL)
+* Nginx and uUWSGI
+* Postfix
+* Dovecot
+* Amavis (with SpamAssassin and ClamAV)  
