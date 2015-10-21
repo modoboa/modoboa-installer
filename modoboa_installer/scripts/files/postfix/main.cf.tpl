@@ -43,10 +43,6 @@ virtual_mailbox_domains = %{db_driver}:/etc/postfix/sql-domains.cf
 virtual_alias_domains = %{db_driver}:/etc/postfix/sql-domain-aliases.cf
 virtual_alias_maps =
         %{db_driver}:/etc/postfix/sql-aliases.cf
-        %{db_driver}:/etc/postfix/sql-domain-aliases-mailboxes.cf
-        %{db_driver}:/etc/postfix/sql-autoreplies.cf
-        %{db_driver}:/etc/postfix/sql-mailboxes-self-aliases.cf
-        %{db_driver}:/etc/postfix/sql-catchall-aliases.cf
 
 ## Relay domains
 #
