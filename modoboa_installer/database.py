@@ -103,7 +103,7 @@ class MySQL(Database):
 
     """MySQL backend."""
 
-    package = ["mysql-server", "libmysqlclient-dev"]
+    packages = ["mysql-server", "libmysqlclient-dev"]
     service = "mysql"
 
     def install_package(self):
