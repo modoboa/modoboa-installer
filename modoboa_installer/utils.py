@@ -42,7 +42,7 @@ def exec_cmd(cmd, sudo_user=None, pinput=None, **kwargs):
     """
     sudo_user = ENV.get("sudo_user", sudo_user)
     if sudo_user is not None:
-        cmd = "sudo -i %s %s" % (sudo_user, cmd)
+        cmd = "sudo -i -u %s %s" % (sudo_user, cmd)
     if "shell" not in kwargs:
         kwargs["shell"] = True
     if pinput is not None:
