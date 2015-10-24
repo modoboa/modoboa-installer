@@ -23,3 +23,5 @@ By default, the following components are installed:
 * Postfix
 * Dovecot
 * Amavis (with SpamAssassin and ClamAV)  
+
+If you want to follow details of installation process, use --debug
