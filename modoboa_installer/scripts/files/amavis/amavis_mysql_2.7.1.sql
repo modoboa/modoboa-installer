@@ -165,6 +165,7 @@ CREATE TABLE msgs (
                                         -- mail Subject header field, UTF8
   host       varchar(255)  NOT NULL,    -- hostname where amavisd is running
   PRIMARY KEY (partition_tag,mail_id),
+  INDEX (mail_id),
   FOREIGN KEY (sid) REFERENCES maddr(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE INDEX msgs_idx_sid      ON msgs (sid);
