@@ -28,7 +28,6 @@ If you want to follow details of installation process, use --debug
 
 At the end of the process, you should consider updating virus database with this command:
 
-
 ```
 freshclam
 /etc/init.d/clamav-daemon restart
