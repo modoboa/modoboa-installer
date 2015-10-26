@@ -48,8 +48,14 @@ class Postfix(base.Installer):
             self.dbengine, self.config.get("modoboa", "dbuser"),
             self.config.get("modoboa", "dbpassword"),
             self.dbhost, self.config.get("modoboa", "dbname"))
+        extensions = self.config.get("modoboa", "extensions")
+        exts_with_maps = ["modoboa-admin", "modoboa-admin-relaydomains",
+                          "modoboa-postfix-autoreply"]
+        extensions = [ext for ext in exts_with_maps if ext in extensions]
+        if not extensions:
+            return
         cmd = (
-            "{} {} postfix_maps --dbtype {} --extensions all --dburl {} {}"
-            .format(python_path, script_path, self.dbengine, db_url,
-                    self.config_dir))
+            "{} {} postfix_maps --dbtype {} --extensions {} --dburl {} {}"
+            .format(python_path, script_path, self.dbengine,
+                    " ".join(extensions), db_url, self.config_dir))
         utils.exec_cmd(cmd)
