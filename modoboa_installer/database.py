@@ -45,6 +45,7 @@ class PostgreSQL(Database):
         """Exec a postgresql query."""
         cmd = "psql"
         if dbname and dbuser:
+            self._setup_pgpass(dbname, dbuser, dbpassword)
             cmd += " -h {} -d {} -U {} -w".format(self.dbhost, dbname, dbuser)
         utils.exec_cmd(
             """{} -c "{}" """.format(cmd, query), sudo_user=self.dbuser)
