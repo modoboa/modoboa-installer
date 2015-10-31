@@ -15,7 +15,7 @@ smtpd     pass  -       -       -       -       -       smtpd
 %{amavis_enabled}  -o smtpd_proxy_options=speed_adjust
 dnsblog   unix  -       -       -       -       0       dnsblog
 
-#tlsproxy  unix  -       -       -       -       0       tlsproxy
+tlsproxy  unix  -       -       -       -       0       tlsproxy
 submission inet n       -       -       -       -       smtpd
   -o syslog_name=postfix/submission
   -o smtpd_tls_security_level=encrypt
