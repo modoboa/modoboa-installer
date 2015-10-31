@@ -50,20 +50,19 @@ class Dovecot(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        if self.dbengine != "postgres":
-            return
-        dbname = self.config.get("modoboa", "dbname")
-        dbuser = self.config.get("modoboa", "dbuser")
-        dbpassword = self.config.get("modoboa", "dbpassword")
-        backend = database.get_backend(self.config)
-        backend.load_sql_file(
-            dbname, dbuser, dbpassword,
-            self.get_file_path("install_modoboa_postgres_trigger.sql")
-        )
-        backend.load_sql_file(
-            dbname, dbuser, dbpassword,
-            self.get_file_path("fix_modoboa_postgres_schema.sql")
-        )
+        if self.dbengine == "postgres":
+            dbname = self.config.get("modoboa", "dbname")
+            dbuser = self.config.get("modoboa", "dbuser")
+            dbpassword = self.config.get("modoboa", "dbpassword")
+            backend = database.get_backend(self.config)
+            backend.load_sql_file(
+                dbname, dbuser, dbpassword,
+                self.get_file_path("install_modoboa_postgres_trigger.sql")
+            )
+            backend.load_sql_file(
+                dbname, dbuser, dbpassword,
+                self.get_file_path("fix_modoboa_postgres_schema.sql")
+            )
         for f in glob.glob("{}/*".format(self.get_file_path("conf.d"))):
             shutil.copy(f, "{}/conf.d".format(self.config_dir))
 
