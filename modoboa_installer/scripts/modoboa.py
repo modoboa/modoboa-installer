@@ -104,7 +104,8 @@ class Modoboa(base.Installer):
                 "INSERT INTO lib_parameter (name, value) VALUES ('{0}', '{1}')"
                 .format(name, value)
             )
-            self.backend._exec_query(query, self.dbname, self.dbuser)
+            self.backend._exec_query(
+                query, self.dbname, self.dbuser, self.dbpasswd)
 
     def post_run(self):
         """Additional tasks."""
