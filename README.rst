@@ -8,7 +8,9 @@ An installer which deploy a complete mail server based on Modoboa.
    This tool is still in beta stage, it has been tested on Debian
    Jessie (8) only.
 
-   /tmp partitions must be mounted without ``noexec``.
+.. warning::
+      
+   ``/tmp`` partition must be mounted without the ``noexec`` option.
 
 Usage::
 
@@ -26,9 +28,11 @@ By default, the following components are installed:
 * Dovecot
 * Amavis (with SpamAssassin and ClamAV)  
 
-If you want to follow details of installation process, use --debug
+If you want more information about the installation process, add the
+``--debug`` option to your command line.
 
-At the end of the process, you should consider updating virus database with this command:: 
+At the end of the process, you should consider updating virus databases
+with this command::
 
-  freshclam
-  /etc/init.d/clamav-daemon restart
+  $ freshclam
+  $ service clamav-daemon restart

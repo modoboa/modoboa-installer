@@ -2,6 +2,7 @@
 
 import contextlib
 import datetime
+import glob
 import os
 import shutil
 import string
@@ -103,14 +104,31 @@ class ConfigFileTemplate(string.Template):
     delimiter = "%"
 
 
+def backup_file(fname):
+    """Create a backup of a given file."""
+    for f in glob.glob("{}.old.*".format(fname)):
+        os.unlink(f)
+    bak_name = "{}.old.{}".format(
+        fname, datetime.datetime.now().isoformat())
+    shutil.copy(fname, bak_name)
+
+
+def copy_file(src, dest):
+    """Copy a file to a destination and make a backup before."""
+    if os.path.isdir(dest):
+        dest = os.path.join(dest, os.path.basename(src))
+    if os.path.isfile(dest):
+        backup_file(dest)
+    shutil.copy(src, dest)
+
+
 def copy_from_template(template, dest, context):
     """Create and copy a configuration file from a template."""
     now = datetime.datetime.now().isoformat()
     with open(template) as fp:
         buf = fp.read()
-    if os.path.exists(dest):
-        bak_name = "{}.{}.{}".format(dest, "old", now)
-        shutil.copy(dest, bak_name)
+    if os.path.isfile(dest):
+        backup_file(dest)
     with open(dest, "w") as fp:
         fp.write(
             "# This file was automatically installed on {}\n"

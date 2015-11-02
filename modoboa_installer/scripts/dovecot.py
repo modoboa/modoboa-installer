@@ -2,7 +2,6 @@
 
 import glob
 import pwd
-import shutil
 
 from .. import database
 from .. import utils
@@ -64,7 +63,7 @@ class Dovecot(base.Installer):
                 self.get_file_path("fix_modoboa_postgres_schema.sql")
             )
         for f in glob.glob("{}/*".format(self.get_file_path("conf.d"))):
-            shutil.copy(f, "{}/conf.d".format(self.config_dir))
+            utils.copy_file(f, "{}/conf.d".format(self.config_dir))
 
     def restart_daemon(self):
         """Restart daemon process.
