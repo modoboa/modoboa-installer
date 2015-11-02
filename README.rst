@@ -8,6 +8,8 @@ An installer which deploy a complete mail server based on Modoboa.
    This tool is still in beta stage, it has been tested on Debian
    Jessie (8) only.
 
+   /tmp partitions must be mounted without ``noexec``.
+
 Usage::
 
   $ git clone https://github.com/modoboa/modoboa-installer
@@ -19,7 +21,7 @@ To customize the installation, look at the ``installer.cfg`` file.
 By default, the following components are installed:
 
 * Database server (PostgreSQL or MySQL)
-* Nginx and uUWSGI
+* Nginx and uWSGI
 * Postfix
 * Dovecot
 * Amavis (with SpamAssassin and ClamAV)  
