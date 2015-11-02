@@ -3,6 +3,7 @@
 import contextlib
 import datetime
 import os
+import shutil
 import string
 import subprocess
 import sys
@@ -104,13 +105,16 @@ class ConfigFileTemplate(string.Template):
 
 def copy_from_template(template, dest, context):
     """Create and copy a configuration file from a template."""
+    now = datetime.datetime.now().isoformat()
     with open(template) as fp:
         buf = fp.read()
+    if os.path.exists(dest):
+        bak_name = "{}.{}.{}".format(dest, "old", now)
+        shutil.copy(dest, bak_name)
     with open(dest, "w") as fp:
-        now = datetime.datetime.now()
         fp.write(
             "# This file was automatically installed on {}\n"
-            .format(now.isoformat()))
+            .format(now))
         fp.write(ConfigFileTemplate(buf).substitute(context))
 
 
