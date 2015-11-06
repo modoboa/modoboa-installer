@@ -33,6 +33,13 @@ class Dovecot(base.Installer):
         """Additional packages."""
         return self.packages + ["dovecot-{}".format(self.db_driver)]
 
+    def install_packages(self):
+        """Preconfigure Dovecot if needed."""
+        if utils.dist_name() == "ubuntu":
+            utils.preconfigure_package(
+                "dovecot-core", "create-ssl-cert", "boolean", "false")
+        super(Dovecot, self).install_packages()
+
     def get_template_context(self):
         """Additional variables."""
         context = super(Dovecot, self).get_template_context()

@@ -21,8 +21,8 @@ class Postfix(base.Installer):
 
     def install_packages(self):
         """Preconfigure postfix package installation."""
-        cfg = "postfix postfix/main_mailer_type select No configuration"
-        utils.exec_cmd("echo '{}' | debconf-set-selections".format(cfg))
+        utils.preconfigure_package(
+            "postfix", "main_mailer_type", "select", "No configuration")
         super(Postfix, self).install_packages()
 
     def get_template_context(self):
@@ -51,9 +51,12 @@ class Postfix(base.Installer):
         extensions = self.config.get("modoboa", "extensions")
         exts_with_maps = ["modoboa-admin", "modoboa-admin-relaydomains",
                           "modoboa-postfix-autoreply"]
-        extensions = [ext for ext in exts_with_maps if ext in extensions]
-        if not extensions:
-            return
+        if extensions == "all":
+            extensions = exts_with_maps
+        else:
+            extensions = [ext for ext in exts_with_maps if ext in extensions]
+            if not extensions:
+                return
         cmd = (
             "{} {} postfix_maps --dbtype {} --extensions {} --dburl {} {}"
             .format(python_path, script_path, self.dbengine,

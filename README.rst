@@ -6,7 +6,7 @@ An installer which deploy a complete mail server based on Modoboa.
 .. warning::
 
    This tool is still in beta stage, it has been tested on Debian
-   Jessie (8) only.
+   Jessie (8) and Ubuntu Trusty (14.04) only.
 
 .. warning::
       

@@ -4,6 +4,7 @@ import contextlib
 import datetime
 import glob
 import os
+import platform
 import shutil
 import string
 import subprocess
@@ -64,6 +65,18 @@ def exec_cmd(cmd, sudo_user=None, pinput=None, **kwargs):
     else:
         process.wait()
     return process.returncode, output
+
+
+def dist_name():
+    """Try to guess the distribution name."""
+    name, version, _id = platform.linux_distribution()
+    return "unknown" if not name else name.lower()
+
+
+def preconfigure_package(name, question, qtype, answer):
+    """Pre-configure a package before installation."""
+    line = "{0} {0}/{1} {2} {3}".format(name, question, qtype, answer)
+    exec_cmd("echo '{}' | debconf-set-selections".format(line))
 
 
 def install_system_package(name, update=False):

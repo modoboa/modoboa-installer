@@ -109,14 +109,10 @@ class MySQL(Database):
 
     def install_package(self):
         """Preseed package installation."""
-        cfg = (
-            "mysql-server mysql-server/root_password password {}"
-            .format(self.dbpassword))
-        utils.exec_cmd("echo '{}' | debconf-set-selections".format(cfg))
-        cfg = (
-            "mysql-server mysql-server/root_password_again password {}"
-            .format(self.dbpassword))
-        utils.exec_cmd("echo '{}' | debconf-set-selections".format(cfg))
+        utils.preconfigure_package(
+            "mysql-server", "root_password", "password", self.dbpassword)
+        utils.preconfigure_package(
+            "mysql-server", "root_password_again", "password", self.dbpassword)
         super(MySQL, self).install_package()
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):

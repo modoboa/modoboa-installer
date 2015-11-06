@@ -20,4 +20,10 @@ class Clamav(base.Installer):
         system.add_user_to_group(
             user, self.config.get("amavis", "user")
         )
-        utils.exec_cmd("freshclam", sudo_user=user)
+        if utils.dist_name == "ubuntu":
+            # Stop freshclam daemon to allow manual download
+            utils.exec_cmd("service clamav-freshclam stop")
+            utils.exec_cmd("freshclam", sudo_user=user)
+            utils.exec_cmd("service clamav-freshclam start")
+        else:
+            utils.exec_cmd("freshclam", sudo_user=user)
