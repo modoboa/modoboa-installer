@@ -84,6 +84,7 @@
 # "proxy::<name>".
 
 dict {
+  # Enable quota dictionnary
   quota = %{db_driver}:/etc/dovecot/dovecot-dict-sql.conf.ext
   #expire = sqlite:/etc/dovecot/dovecot-dict-sql.conf.ext
 }

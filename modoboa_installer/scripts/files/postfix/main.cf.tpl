@@ -3,7 +3,7 @@ inet_protocols = ipv4
 myhostname = %hostname
 myorigin = $myhostname
 mydestination =
-mynetworks = 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+mynetworks = 127.0.0.0/8
 smtpd_banner = $myhostname ESMTP
 biff = no
 unknown_local_recipient_reject_code = 550
@@ -11,9 +11,6 @@ unverified_recipient_reject_code = 550
 
 # appending .domain is the MUA's job.
 append_dot_mydomain = no
-
-# Uncomment the next line to generate "delayed mail" warnings
-#delay_warning_time = 4h
 
 readme_directory = no
 
@@ -82,6 +79,7 @@ strict_rfc821_envelopes = yes
 %{dovecot_enabled}    $lmtp_sasl_auth_cache_name
 %{dovecot_enabled}    $address_verify_map
 
+# List of authorized senders
 smtpd_sender_login_maps =
         %{db_driver}:/etc/postfix/sql-sender-login-mailboxes.cf
         %{db_driver}:/etc/postfix/sql-sender-login-aliases.cf
@@ -105,6 +103,7 @@ postscreen_access_list =
        permit_mynetworks
 postscreen_blacklist_action = enforce 
 
+# Use some DNSBL
 postscreen_dnsbl_sites = 
 	zen.spamhaus.org*3 
 	bl.spameatingmonkey.net*2 
