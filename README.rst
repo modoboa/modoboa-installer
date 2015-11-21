@@ -12,6 +12,12 @@ An installer which deploy a complete mail server based on Modoboa.
       
    ``/tmp`` partition must be mounted without the ``noexec`` option.
 
+.. note::
+
+   The server (physical or virtual) running Modoboa needs at least 1GB
+   of RAM in order to compile the required dependencies during the
+   installation process.
+
 Usage::
 
   $ git clone https://github.com/modoboa/modoboa-installer
