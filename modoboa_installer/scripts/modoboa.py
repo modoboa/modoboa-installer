@@ -91,8 +91,8 @@ class Modoboa(base.Installer):
         for d in [rrd_root_dir, pdf_storage_dir, webmail_media_dir]:
             utils.mkdir(d, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
         settings = {
-            "modoboa_admin.HANDLE_MAILBOXES": "yes",
-            "modoboa_admin.AUTO_ACCOUNT_REMOVAL": "yes",
+            "admin.HANDLE_MAILBOXES": "yes",
+            "admin.AUTO_ACCOUNT_REMOVAL": "yes",
             "modoboa_amavis.AM_PDP_MODE": "inet",
             "modoboa_stats.RRD_ROOTDIR": rrd_root_dir,
             "modoboa_pdfcredentials.STORAGE_DIR": pdf_storage_dir,
