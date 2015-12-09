@@ -19,7 +19,8 @@ class Dovecot(base.Installer):
         "dovecot-sieve"
     ]
     config_files = [
-        "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf"]
+        "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
+        "20-lmtp.conf"]
     with_user = True
 
     def get_config_files(self):
