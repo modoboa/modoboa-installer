@@ -32,7 +32,10 @@ class Dovecot(base.Installer):
 
     def get_packages(self):
         """Additional packages."""
-        return self.packages + ["dovecot-{}".format(self.db_driver)]
+        packages = ["dovecot-{}".format(self.db_driver)]
+        if "pop3" in self.config.get("dovecot", "extra_protocols"):
+            packages += ["dovecot-pop3d"]
+        return self.packages + packages
 
     def install_packages(self):
         """Preconfigure Dovecot if needed."""
