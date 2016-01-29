@@ -20,6 +20,11 @@ class Clamav(base.Installer):
         system.add_user_to_group(
             user, self.config.get("amavis", "user")
         )
+        pattern = (
+            "s/^AllowSupplementaryGroups false/"
+            "AllowSupplementaryGroups true/")
+        utils.exec_cmd(
+            "perl -pi -e '{}' /etc/clamav/clamd.conf".format(pattern))
         if utils.dist_name == "ubuntu":
             # Stop freshclam daemon to allow manual download
             utils.exec_cmd("service clamav-freshclam stop")
