@@ -2,6 +2,7 @@
 
 import os
 import pwd
+import shutil
 import stat
 
 from .. import python
@@ -46,6 +47,19 @@ class Modoboa(base.Installer):
 
     def _deploy_instance(self):
         """Deploy Modoboa."""
+        target = os.path.join(self.home_dir, "instance")
+        if os.path.exists(target):
+            utils.printcolor(
+                "Target directory for Modoboa deployment ({}) already exists."
+                " If you choose to continue, it will be removed.".format(
+                    target),
+                utils.YELLOW
+            )
+            answer = utils.user_input("Do you confirm? (Y/n) ")
+            if answer.lower().startswith("n"):
+                return
+            shutil.rmtree(target)
+
         prefix = ". {}; ".format(
             os.path.join(self.venv_path, "bin", "activate"))
         args = [
@@ -66,7 +80,6 @@ class Modoboa(base.Installer):
                     self.config.get("amavis", "dbname")
                 )
             ]
-
         utils.exec_cmd(
             "bash -c '{} modoboa-admin.py deploy instance {}'".format(
                 prefix, " ".join(args)),
