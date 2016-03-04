@@ -67,16 +67,17 @@ class Modoboa(base.Installer):
             "--timezone", self.config.get("modoboa", "timezone"),
             "--domain", self.config.get("general", "hostname"),
             "--extensions", " ".join(self.extensions),
-            "--dburl", "default:{0}://{1}:{2}@localhost/{1}".format(
+            "--dburl", "default:{0}://{1}:{2}@{3}/{1}".format(
                 self.config.get("database", "engine"), self.dbname,
-                self.dbpasswd)
+                self.dbpasswd, self.dbhost)
         ]
         if self.config.getboolean("amavis", "enabled"):
             args += [
-                "amavis:{}://{}:{}@localhost/{}".format(
+                "amavis:{}://{}:{}@{}/{}".format(
                     self.config.get("database", "engine"),
                     self.config.get("amavis", "dbuser"),
                     self.config.get("amavis", "dbpassword"),
+                    self.dbhost,
                     self.config.get("amavis", "dbname")
                 )
             ]

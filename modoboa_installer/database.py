@@ -81,6 +81,9 @@ class PostgreSQL(Database):
         """Setup .pgpass file."""
         if self._pgpass_done:
             return
+        if self.dbname not in ["localhost", "127.0.0.1"]:
+            self._pgpass_done = True
+            return
         pw = pwd.getpwnam(self.dbuser)
         target = os.path.join(pw[5], ".pgpass")
         with open(target, "w") as fp:
@@ -96,7 +99,7 @@ class PostgreSQL(Database):
         self._setup_pgpass(dbname, dbuser, dbpassword)
         utils.exec_cmd(
             "psql -h {} -d {} -U {} -w < {}".format(
-                "127.0.0.1", dbname, dbuser, path),
+                self.dbhost, dbname, dbuser, path),
             sudo_user=self.dbuser)
 
 
@@ -120,7 +123,7 @@ class MySQL(Database):
         if dbuser is None and dbpassword is None:
             dbuser = self.dbuser
             dbpassword = self.dbpassword
-        cmd = "mysql -u {} -p{}".format(dbuser, dbpassword)
+        cmd = "mysql -h {} -u {} -p{}".format(self.dbhost, dbuser, dbpassword)
         if dbname:
             cmd += " -D {}".format(dbname)
         utils.exec_cmd(cmd + """ -e "{}" """.format(query))
@@ -128,7 +131,7 @@ class MySQL(Database):
     def create_user(self, name, password):
         """Create a user."""
         self._exec_query(
-            "CREATE USER '{}'@'localhost' IDENTIFIED BY '{}'".format(
+            "CREATE USER '{}'@'%' IDENTIFIED BY '{}'".format(
                 name, password))
 
     def create_database(self, name, owner):
@@ -140,15 +143,14 @@ class MySQL(Database):
     def grant_access(self, dbname, user):
         """Grant access to dbname."""
         self._exec_query(
-            "GRANT ALL PRIVILEGES ON {}.* to '{}'@'localhost'"
+            "GRANT ALL PRIVILEGES ON {}.* to '{}'@'%'"
             .format(dbname, user))
 
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""
-        dbhost = self.config.get("database", "host")
         utils.exec_cmd(
             "mysql -h {} -u {} -p{} {} < {}".format(
-                dbhost, dbuser, dbpassword, dbname, path)
+                self.dbhost, dbuser, dbpassword, dbname, path)
         )
 
 
