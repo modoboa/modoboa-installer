@@ -81,7 +81,7 @@ class PostgreSQL(Database):
         """Setup .pgpass file."""
         if self._pgpass_done:
             return
-        if self.dbname not in ["localhost", "127.0.0.1"]:
+        if self.dbhost not in ["localhost", "127.0.0.1"]:
             self._pgpass_done = True
             return
         pw = pwd.getpwnam(self.dbuser)
