@@ -23,4 +23,4 @@ INSTANCE=%{instance_path}
 */5    *       *       *       *       root    $PYTHON $INSTANCE/manage.py logparser &> /dev/null
 
 # Radicale rights file
-*/2    *       *       *       *        root    $PYTHON $INSTANCE/manage.py generate_rights
+%{radicale_enabled}*/2    *       *       *       *        root    $PYTHON $INSTANCE/manage.py generate_rights

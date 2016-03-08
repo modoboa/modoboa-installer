@@ -89,9 +89,12 @@ class Modoboa(base.Installer):
     def get_template_context(self):
         """Additional variables."""
         context = super(Modoboa, self).get_template_context()
+        extensions = self.config.get("modoboa", "extensions")
+        extensions = extensions.split()
         context.update({
             "dovecot_mailboxes_owner": (
-                self.config.get("dovecot", "mailboxes_owner"))
+                self.config.get("dovecot", "mailboxes_owner")),
+            "radicale_enabled": "#" if "modoboa-radicale" in extensions else ""
         })
         return context
 
