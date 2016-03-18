@@ -34,6 +34,7 @@ class Modoboa(base.Installer):
         self.venv_path = config.get("modoboa", "venv_path")
         self.instance_path = config.get("modoboa", "instance_path")
         self.extensions = config.get("modoboa", "extensions").split()
+        self.devmode = config.getboolean("modoboa", "devmode")
 
     def _setup_venv(self):
         """Prepare a dedicated virtuelenv."""
@@ -44,6 +45,11 @@ class Modoboa(base.Installer):
         else:
             packages.append("MYSQL-Python")
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
+        if self.devmode:
+            # FIXME: use dev-requirements instead
+            python.install_packages(
+                ["django-bower", "django-debug-toolbar"], self.venv_path,
+                sudo_user=self.user)
 
     def _deploy_instance(self):
         """Deploy Modoboa."""
@@ -71,6 +77,8 @@ class Modoboa(base.Installer):
                 self.config.get("database", "engine"), self.dbname,
                 self.dbpasswd, self.dbhost)
         ]
+        if self.devmode:
+            args = ["--devel"] + args
         if self.config.getboolean("amavis", "enabled"):
             args += [
                 "amavis:{}://{}:{}@{}/{}".format(
