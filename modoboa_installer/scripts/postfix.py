@@ -62,3 +62,7 @@ class Postfix(base.Installer):
             .format(python_path, script_path, self.dbengine,
                     " ".join(extensions), db_url, self.config_dir))
         utils.exec_cmd(cmd)
+
+        # Generate EDH parameters
+        cmd = "openssl dhparam -out dh2048.pem 2048"
+        utils.exec_cmd(cmd, cwd=self.config_dir)
