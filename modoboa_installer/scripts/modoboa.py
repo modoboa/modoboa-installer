@@ -20,7 +20,7 @@ class Modoboa(base.Installer):
     no_daemon = True
     packages = [
         "build-essential", "python-dev", "libxml2-dev", "libxslt-dev",
-        "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev"]
+        "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron"]
     config_files = [
         "crontab=/etc/cron.d/modoboa",
         "sudoers=/etc/sudoers.d/modoboa",

@@ -86,8 +86,10 @@ def install_system_package(name, update=False):
     exec_cmd("apt-get install --quiet --assume-yes {}".format(name))
 
 
-def install_system_packages(names):
+def install_system_packages(names, update=False):
     """Install some packages system-wide."""
+    if update:
+        exec_cmd("apt-get update --quiet")
     exec_cmd("apt-get install --quiet --assume-yes {}".format(" ".join(names)))
 
 
