@@ -96,7 +96,7 @@ def install_system_packages(names, update=False):
 def mkdir(path, mode, uid, gid):
     """Create a directory."""
     if not os.path.exists(path):
-        os.mkdir(path, mode)
+        os.makedirs(path, mode)
     else:
         os.chmod(path, mode)
     os.chown(path, uid, gid)
