@@ -10,3 +10,4 @@ harakiri = 60
 processes = %nb_processes
 vhost = true
 no-default-app = true
+socket = %uwsgi_socket_path

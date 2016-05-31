@@ -4,6 +4,7 @@ import os
 import pwd
 import stat
 
+from . import package
 from . import utils
 
 
@@ -26,7 +27,7 @@ class Database(object):
 
     def install_package(self):
         """Install database package if required."""
-        utils.install_system_packages(self.packages)
+        package.backend.install_many(self.packages[package.backend.FORMAT])
         utils.exec_cmd("service {} start".format(self.service))
 
 
@@ -34,12 +35,25 @@ class PostgreSQL(Database):
 
     """Postgres."""
 
-    packages = ["postgresql", "postgresql-server-dev-all"]
+    packages = {
+        "deb": ["postgresql", "postgresql-server-dev-all"],
+        "rpm": ["postgresql-server", "postgresql-devel"]
+    }
     service = "postgresql"
 
     def __init__(self, config):
         super(PostgreSQL, self).__init__(config)
         self._pgpass_done = False
+
+    def install_package(self):
+        """Install database if required."""
+        package.backend.install_many(self.packages[package.backend.FORMAT])
+        if package.backend.FORMAT == "rpm":
+            utils.exec_cmd("postgresql-setup initdb")
+            pattern = "s/^host(.+)ident$/host$1md5/"
+            cfgfile = "/var/lib/pgsql/data/pg_hba.conf"
+            utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfgfile))
+        utils.exec_cmd("service {} start".format(self.service))
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a postgresql query."""
@@ -107,14 +121,17 @@ class MySQL(Database):
 
     """MySQL backend."""
 
-    packages = ["mysql-server", "libmysqlclient-dev"]
+    packages = {
+        "deb": ["mysql-server", "libmysqlclient-dev"],
+        "rpm": ["mariadb", "mariadb-devel"],
+    }
     service = "mysql"
 
     def install_package(self):
         """Preseed package installation."""
-        utils.preconfigure_package(
+        package.backend.preconfigure(
             "mysql-server", "root_password", "password", self.dbpassword)
-        utils.preconfigure_package(
+        package.backend.preconfigure(
             "mysql-server", "root_password_again", "password", self.dbpassword)
         super(MySQL, self).install_package()
 

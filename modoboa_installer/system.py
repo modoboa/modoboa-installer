@@ -19,6 +19,8 @@ def create_user(name, home=None):
     if home:
         cmd += "-d {} ".format(home)
     utils.exec_cmd("{} {}".format(cmd, name))
+    if home:
+        utils.exec_cmd("chmod 755 {}".format(home))
 
 
 def add_user_to_group(user, group):
@@ -34,3 +36,8 @@ def add_user_to_group(user, group):
         print("Group {} does not exist".format(group))
         sys.exit(1)
     utils.exec_cmd("usermod -a -G {} {}".format(group, user))
+
+
+def enable_service(name):
+    """Enable a service at startup."""
+    utils.exec_cmd("systemctl enable {}".format(name))

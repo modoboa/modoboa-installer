@@ -73,26 +73,6 @@ def dist_name():
     return "unknown" if not name else name.lower()
 
 
-def preconfigure_package(name, question, qtype, answer):
-    """Pre-configure a package before installation."""
-    line = "{0} {0}/{1} {2} {3}".format(name, question, qtype, answer)
-    exec_cmd("echo '{}' | debconf-set-selections".format(line))
-
-
-def install_system_package(name, update=False):
-    """Install a package system-wide."""
-    if update:
-        exec_cmd("apt-get update --quiet")
-    exec_cmd("apt-get install --quiet --assume-yes {}".format(name))
-
-
-def install_system_packages(names, update=False):
-    """Install some packages system-wide."""
-    if update:
-        exec_cmd("apt-get update --quiet")
-    exec_cmd("apt-get install --quiet --assume-yes {}".format(" ".join(names)))
-
-
 def mkdir(path, mode, uid, gid):
     """Create a directory."""
     if not os.path.exists(path):

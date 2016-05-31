@@ -3,6 +3,7 @@
 import os
 
 from .. import database
+from .. import package
 from .. import system
 from .. import utils
 
@@ -27,13 +28,20 @@ class Installer(object):
         self.db_driver = (
             "pgsql" if self.dbengine == "postgres" else self.dbengine)
         self.dbhost = self.config.get("database", "host")
-        if self.config.has_option(self.appname, "config_dir"):
-            self.config_dir = self.config.get(self.appname, "config_dir")
+        self._config_dir = None
         if not self.with_db:
             return
         self.dbname = self.config.get(self.appname, "dbname")
         self.dbuser = self.config.get(self.appname, "dbuser")
         self.dbpasswd = self.config.get(self.appname, "dbpassword")
+
+    @property
+    def config_dir(self):
+        """Return main configuration directory."""
+        if self._config_dir is None and self.config.has_option(
+                self.appname, "config_dir"):
+            self._config_dir = self.config.get(self.appname, "config_dir")
+        return self._config_dir
 
     def get_sql_schema_path(self):
         """Return a schema to install."""
@@ -90,14 +98,14 @@ class Installer(object):
 
     def get_packages(self):
         """Return the list of packages to install."""
-        return self.packages
+        return self.packages[package.backend.FORMAT]
 
     def install_packages(self):
         """Install required packages."""
         packages = self.get_packages()
         if not packages:
             return
-        utils.install_system_packages(packages)
+        package.backend.install_many(packages)
 
     def get_config_files(self):
         """Return the list of configuration files to copy."""
@@ -120,11 +128,16 @@ class Installer(object):
                 dst = os.path.join(self.config_dir, dst)
             utils.copy_from_template(src, dst, context)
 
+    def get_daemon_name(self):
+        """Return daemon name if defined."""
+        return self.daemon_name if self.daemon_name else self.appname
+
     def restart_daemon(self):
         """Restart daemon process."""
         if self.no_daemon:
             return
-        name = self.daemon_name if self.daemon_name else self.appname
+        name = self.get_daemon_name()
+        system.enable_service(name)
         code, output = utils.exec_cmd("service {} status".format(name))
         action = "start" if code else "restart"
         utils.exec_cmd("service {} {}".format(name, action))

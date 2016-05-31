@@ -15,7 +15,10 @@ class Razor(base.Installer):
 
     appname = "razor"
     no_daemon = True
-    packages = ["razor"]
+    packages = {
+        "deb": ["razor"],
+        "rpm": ["perl-Razor-Agent"]
+    }
 
     def post_run(self):
         """Additional tasks."""
@@ -27,7 +30,7 @@ class Razor(base.Installer):
             stat.S_IROTH | stat.S_IXOTH,
             pw[2], pw[3]
         )
-        path = os.path.join(self.config.get("amavis", "home_dir"), ".razor")
+        path = os.path.join(pw[5], ".razor")
         utils.mkdir(path, stat.S_IRWXU, pw[2], pw[3])
         utils.exec_cmd("razor-admin -home {} -create".format(path))
         utils.copy_file(

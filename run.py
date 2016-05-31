@@ -10,6 +10,7 @@ except ImportError:
 
 from modoboa_installer import scripts
 from modoboa_installer import utils
+from modoboa_installer import package
 
 
 def main():
@@ -50,7 +51,7 @@ def main():
         "The process can be long, feel free to take a coffee "
         "and come back later ;)", utils.BLUE)
     utils.printcolor("Starting...", utils.GREEN)
-    utils.install_system_package("sudo", update=True)
+    package.backend.install("sudo")
     scripts.install("modoboa", config)
     scripts.install("postfix", config)
     scripts.install("amavis", config)

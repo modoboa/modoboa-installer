@@ -2,6 +2,7 @@
 
 import os
 
+from .. import package
 from .. import utils
 
 from . import base
@@ -12,16 +13,23 @@ class Postfix(base.Installer):
     """Postfix installer."""
 
     appname = "postfix"
-    packages = ["postfix"]
+    packages = {
+        "deb": ["postfix"],
+        "rpm": ["postfix"],
+    }
     config_files = ["main.cf", "master.cf"]
 
     def get_packages(self):
         """Additional packages."""
-        return self.packages + ["postfix-{}".format(self.db_driver)]
+        if package.backend.FORMAT == "deb":
+            packages = ["postfix-{}".format(self.db_driver)]
+        else:
+            packages = []
+        return super(Postfix, self).get_packages() + packages
 
     def install_packages(self):
         """Preconfigure postfix package installation."""
-        utils.preconfigure_package(
+        package.backend.preconfigure(
             "postfix", "main_mailer_type", "select", "No configuration")
         super(Postfix, self).install_packages()
 
@@ -64,5 +72,6 @@ class Postfix(base.Installer):
         utils.exec_cmd(cmd)
 
         # Generate EDH parameters
-        cmd = "openssl dhparam -out dh2048.pem 2048"
-        utils.exec_cmd(cmd, cwd=self.config_dir)
+        if not os.path.exists("{}/dh2048.pem".format(self.config_dir)):
+            cmd = "openssl dhparam -out dh2048.pem 2048"
+            utils.exec_cmd(cmd, cwd=self.config_dir)
