@@ -67,10 +67,10 @@ WantedBy=multi-user.target
 EOM
 """.format(path))
 
-        if utils.dist_name() == "ubuntu":
+        if utils.dist_name() in ["debian", "ubuntu"]:
             # Stop freshclam daemon to allow manual download
             utils.exec_cmd("service clamav-freshclam stop")
-            utils.exec_cmd("freshclam", sudo_user=user)
+            utils.exec_cmd("freshclam", sudo_user=user, login=False)
             utils.exec_cmd("service clamav-freshclam start")
         else:
             utils.exec_cmd("freshclam", sudo_user=user, login=False)
