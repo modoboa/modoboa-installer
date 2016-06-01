@@ -5,8 +5,11 @@ An installer which deploy a complete mail server based on Modoboa.
 
 .. warning::
 
-   This tool is still in beta stage, it has been tested on Debian
-   Jessie (8) and Ubuntu Trusty (14.04) only.
+   This tool is still in beta stage, it has been tested on:
+
+   * Debian Jessie (8)
+   * Ubuntu Trusty (14.04) and upper
+   * CentOS 7
 
 .. warning::
       
@@ -36,9 +39,3 @@ By default, the following components are installed:
 
 If you want more information about the installation process, add the
 ``--debug`` option to your command line.
-
-At the end of the process, you should consider updating virus databases
-with this command::
-
-  $ freshclam
-  $ service clamav-daemon restart
