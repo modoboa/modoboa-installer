@@ -33,7 +33,7 @@ def user_input(message):
     return answer
 
 
-def exec_cmd(cmd, sudo_user=None, pinput=None, **kwargs):
+def exec_cmd(cmd, sudo_user=None, pinput=None, login=True, **kwargs):
     """Execute a shell command.
     Run a command using the current user. Set :keyword:`sudo_user` if
     you need different privileges.
@@ -45,7 +45,7 @@ def exec_cmd(cmd, sudo_user=None, pinput=None, **kwargs):
     """
     sudo_user = ENV.get("sudo_user", sudo_user)
     if sudo_user is not None:
-        cmd = "sudo -i -u %s %s" % (sudo_user, cmd)
+        cmd = "sudo {}-u {} {}".format("-i " if login else "", sudo_user, cmd)
     if "shell" not in kwargs:
         kwargs["shell"] = True
     if pinput is not None:
@@ -71,26 +71,6 @@ def dist_name():
     """Try to guess the distribution name."""
     name, version, _id = platform.linux_distribution()
     return "unknown" if not name else name.lower()
-
-
-def preconfigure_package(name, question, qtype, answer):
-    """Pre-configure a package before installation."""
-    line = "{0} {0}/{1} {2} {3}".format(name, question, qtype, answer)
-    exec_cmd("echo '{}' | debconf-set-selections".format(line))
-
-
-def install_system_package(name, update=False):
-    """Install a package system-wide."""
-    if update:
-        exec_cmd("apt-get update --quiet")
-    exec_cmd("apt-get install --quiet --assume-yes {}".format(name))
-
-
-def install_system_packages(names, update=False):
-    """Install some packages system-wide."""
-    if update:
-        exec_cmd("apt-get update --quiet")
-    exec_cmd("apt-get install --quiet --assume-yes {}".format(" ".join(names)))
 
 
 def mkdir(path, mode, uid, gid):

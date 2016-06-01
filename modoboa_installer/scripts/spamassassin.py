@@ -1,5 +1,8 @@
 """Spamassassin related functions."""
 
+import os
+
+from .. import package
 from .. import utils
 
 from . import base
@@ -12,16 +15,28 @@ class Spamassassin(base.Installer):
 
     appname = "spamassassin"
     no_daemon = True
-    packages = ["spamassassin", "pyzor"]
+    packages = {
+        "deb": ["spamassassin", "pyzor"],
+        "rpm": ["spamassassin", "pyzor"]
+    }
     with_db = True
     config_files = ["v310.pre", "local.cf"]
 
     def get_sql_schema_path(self):
         """Return SQL schema."""
         if self.dbengine == "postgres":
-            schema = "/usr/share/doc/spamassassin/sql/bayes_pg.sql"
+            fname = "bayes_pg.sql"
         else:
-            schema = "/usr/share/doc/spamassassin/sql/bayes_mysql.sql"
+            fname = "bayes_mysql.sql"
+        schema = "/usr/share/doc/spamassassin/sql/{}".format(fname)
+        if not os.path.exists(schema):
+            version = package.backend.get_installed_version("spamassassin")
+            version = version.replace(".", "_")
+            url = (
+                "http://svn.apache.org/repos/asf/spamassassin/tags/"
+                "spamassassin_release_{}/sql/{}".format(version, fname))
+            schema = "/tmp/{}".format(fname)
+            utils.exec_cmd("wget {} -O {}".format(url, schema))
         return schema
 
     def get_template_context(self):
@@ -40,5 +55,7 @@ class Spamassassin(base.Installer):
     def post_run(self):
         """Additional tasks."""
         utils.exec_cmd(
-            "pyzor discover", sudo_user=self.config.get("amavis", "user"))
+            "pyzor discover", sudo_user=self.config.get("amavis", "user"),
+            login=False
+        )
         install("razor", self.config)

@@ -4,6 +4,7 @@ import glob
 import pwd
 
 from .. import database
+from .. import package
 from .. import utils
 
 from . import base
@@ -14,10 +15,13 @@ class Dovecot(base.Installer):
     """Dovecot installer."""
 
     appname = "dovecot"
-    packages = [
-        "dovecot-imapd", "dovecot-lmtpd", "dovecot-managesieved",
-        "dovecot-sieve"
-    ]
+    packages = {
+        "deb": [
+            "dovecot-imapd", "dovecot-lmtpd", "dovecot-managesieved",
+            "dovecot-sieve"],
+        "rpm": [
+            "dovecot", "dovecot-pigeonhole"]
+    }
     config_files = [
         "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
         "conf.d/20-lmtp.conf"]
@@ -33,21 +37,29 @@ class Dovecot(base.Installer):
     def get_packages(self):
         """Additional packages."""
         packages = ["dovecot-{}".format(self.db_driver)]
-        if "pop3" in self.config.get("dovecot", "extra_protocols"):
-            packages += ["dovecot-pop3d"]
-        return self.packages + packages
+        if package.backend.FORMAT == "deb":
+            if "pop3" in self.config.get("dovecot", "extra_protocols"):
+                packages += ["dovecot-pop3d"]
+        return super(Dovecot, self).get_packages() + packages
 
     def install_packages(self):
         """Preconfigure Dovecot if needed."""
-        if utils.dist_name() == "ubuntu":
-            utils.preconfigure_package(
-                "dovecot-core", "create-ssl-cert", "boolean", "false")
+        package.backend.preconfigure(
+            "dovecot-core", "create-ssl-cert", "boolean", "false")
         super(Dovecot, self).install_packages()
 
     def get_template_context(self):
         """Additional variables."""
         context = super(Dovecot, self).get_template_context()
         pw = pwd.getpwnam(self.user)
+        if "centos" in utils.dist_name():
+            protocols = "protocols = imap lmtp sieve"
+            extra_protocols = self.config.get("dovecot", "extra_protocols")
+            if extra_protocols:
+                protocols += " {}".format(extra_protocols)
+        else:
+            # Protocols are automatically guessed on debian/ubuntu
+            protocols = ""
         context.update({
             "db_driver": self.db_driver,
             "mailboxes_owner_uid": pw[2],
@@ -55,6 +67,7 @@ class Dovecot(base.Installer):
             "modoboa_dbname": self.config.get("modoboa", "dbname"),
             "modoboa_dbuser": self.config.get("modoboa", "dbuser"),
             "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
+            "protocols": protocols
         })
         return context
 

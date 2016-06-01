@@ -2,6 +2,7 @@
 
 import os
 
+from . import package
 from . import utils
 
 
@@ -31,7 +32,7 @@ def setup_virtualenv(path, sudo_user=None):
     """Install a virtualenv if needed."""
     if os.path.exists(path):
         return
-    utils.install_system_package("python-virtualenv")
+    package.backend.install("python-virtualenv")
     with utils.settings(sudo_user=sudo_user):
         utils.exec_cmd("virtualenv {}".format(path))
         install_package("pip", venv=path, upgrade=True)

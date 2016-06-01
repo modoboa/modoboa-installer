@@ -18,9 +18,15 @@ class Modoboa(base.Installer):
 
     appname = "modoboa"
     no_daemon = True
-    packages = [
-        "build-essential", "python-dev", "libxml2-dev", "libxslt-dev",
-        "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron"]
+    packages = {
+        "deb": [
+            "build-essential", "python-dev", "libxml2-dev", "libxslt-dev",
+            "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron"],
+        "rpm": [
+            "gcc", "gcc-c++", "python-devel", "libxml2-devel", "libxslt-devel",
+            "libjpeg-turbo-devel", "rrdtool-devel", "rrdtool", "libffi-devel",
+        ]
+    }
     config_files = [
         "crontab=/etc/cron.d/modoboa",
         "sudoers=/etc/sudoers.d/modoboa",
@@ -102,7 +108,7 @@ class Modoboa(base.Installer):
         context.update({
             "dovecot_mailboxes_owner": (
                 self.config.get("dovecot", "mailboxes_owner")),
-            "radicale_enabled": "#" if "modoboa-radicale" in extensions else ""
+            "radicale_enabled": "" if "modoboa-radicale" in extensions else "#"
         })
         return context
 
@@ -122,6 +128,9 @@ class Modoboa(base.Installer):
             "modoboa_stats.RRD_ROOTDIR": rrd_root_dir,
             "modoboa_pdfcredentials.STORAGE_DIR": pdf_storage_dir,
         }
+        for path in ["/var/log/maillog", "/var/log/mail.log"]:
+            if os.path.exists(path):
+                settings["modoboa_stats.LOGFILE"] = path
 
         for name, value in settings.items():
             query = (
