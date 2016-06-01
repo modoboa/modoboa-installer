@@ -34,7 +34,7 @@ class Uwsgi(base.Installer):
             "modoboa_venv_path": self.config.get("modoboa", "venv_path"),
             "modoboa_instance_path": (
                 self.config.get("modoboa", "instance_path")),
-            "uwsgi_socket_path": self.socket_path
+            "uwsgi_socket_path": self.socket_path,
         })
         return context
 
@@ -58,9 +58,11 @@ class Uwsgi(base.Installer):
             os.symlink(dst, link)
         else:
             system.add_user_to_group(
-                "uwsgi", self.config.get("modoboa", "user"))
+                self.config.get("modoboa", "user"), "uwsgi")
+            utils.exec_cmd("chmod -R g+w {}/media".format(
+                self.config.get("modoboa", "instance_path")))
             pattern = (
-                "s/emperor-tyrant = true/emperor-tyrant false/")
+                "s/emperor-tyrant = true/emperor-tyrant = false/")
             utils.exec_cmd(
                 "perl -pi -e '{}' /etc/uwsgi.ini".format(pattern))
 

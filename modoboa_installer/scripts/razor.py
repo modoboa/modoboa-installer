@@ -36,7 +36,7 @@ class Razor(base.Installer):
         utils.copy_file(
             os.path.join(path, "razor-agent.conf"), self.config_dir)
         utils.exec_cmd("razor-admin -home {} -discover".format(path),
-                       sudo_user=user)
+                       sudo_user=user, login=False)
         utils.exec_cmd("razor-admin -home {} -register".format(path),
-                       sudo_user=user)
+                       sudo_user=user, login=False)
         # FIXME: move log file to /var/log ?

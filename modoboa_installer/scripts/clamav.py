@@ -12,7 +12,6 @@ class Clamav(base.Installer):
     """ClamAV installer."""
 
     appname = "clamav"
-    daemon_name = "clamav-daemon"
     packages = {
         "deb": ["clamav-daemon"],
         "rpm": [
@@ -55,17 +54,23 @@ class Clamav(base.Installer):
             user = "clamupdate"
             utils.exec_cmd(
                 "perl -pi -e 's/^Example/#Example/' /etc/freshclam.conf")
-            utils.exec_cmd(
-                """cat <<EOM >> /usr/lib/systemd/system/clamd@.service
+            # Check if not present before
+            path = "/usr/lib/systemd/system/clamd@.service"
+            code, output = utils.exec_cmd(
+                "grep 'WantedBy=multi-user.target' {}".format(path))
+            if code:
+                utils.exec_cmd(
+                    """cat <<EOM >> {}
+
 [Install]
 WantedBy=multi-user.target
 EOM
-""")
+""".format(path))
 
-        if utils.dist_name == "ubuntu":
+        if utils.dist_name() == "ubuntu":
             # Stop freshclam daemon to allow manual download
             utils.exec_cmd("service clamav-freshclam stop")
             utils.exec_cmd("freshclam", sudo_user=user)
             utils.exec_cmd("service clamav-freshclam start")
         else:
-            utils.exec_cmd("freshclam", sudo_user=user)
+            utils.exec_cmd("freshclam", sudo_user=user, login=False)

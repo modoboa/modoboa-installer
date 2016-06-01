@@ -11,6 +11,7 @@ except ImportError:
 from modoboa_installer import scripts
 from modoboa_installer import utils
 from modoboa_installer import package
+from modoboa_installer import ssl
 
 
 def main():
@@ -30,6 +31,8 @@ def main():
     config = configparser.SafeConfigParser()
     with open("installer.cfg") as fp:
         config.readfp(fp)
+    if not config.has_section("general"):
+        config.add_section("general")
     config.set("general", "hostname", args.hostname)
     utils.printcolor(
         "Your mail server {} will be installed with the following components:"
@@ -52,6 +55,7 @@ def main():
         "and come back later ;)", utils.BLUE)
     utils.printcolor("Starting...", utils.GREEN)
     package.backend.install("sudo")
+    ssl.get_backend(config).create()
     scripts.install("modoboa", config)
     scripts.install("postfix", config)
     scripts.install("amavis", config)

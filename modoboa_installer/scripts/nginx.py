@@ -44,11 +44,12 @@ class Nginx(base.Installer):
             if os.path.exists(link):
                 return
             os.symlink(dst, link)
-            group = "www-data"
+            group = self.config.get("modoboa", "user")
+            user = "www-data"
         else:
             dst = os.path.join(
                 self.config_dir, "conf.d", "{}.conf".format(hostname))
             utils.copy_from_template(src, dst, context)
-            group = "nginx"
-        system.add_user_to_group(
-            group, self.config.get("modoboa", "user"))
+            group = "uwsgi"
+            user = "nginx"
+        system.add_user_to_group(user, group)

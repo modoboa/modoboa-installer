@@ -25,6 +25,12 @@ class Amavis(base.Installer):
             return "/etc/amavisd"
         return "/etc/amavis"
 
+    def get_daemon_name(self):
+        """Return appropriate daemon name."""
+        if package.backend.FORMAT == "rpm":
+            return "amavisd"
+        return "amavis"
+
     def get_config_files(self):
         """Return appropriate config files."""
         if package.backend.FORMAT == "deb":

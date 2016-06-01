@@ -1,5 +1,9 @@
 """Postfix related tools."""
 
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 import os
 
 from .. import package
@@ -29,6 +33,17 @@ class Postfix(base.Installer):
 
     def install_packages(self):
         """Preconfigure postfix package installation."""
+        if "centos" in utils.dist_name():
+            config = configparser.SafeConfigParser()
+            with open("/etc/yum.repos.d/CentOS-Base.repo") as fp:
+                config.readfp(fp)
+            config.set("centosplus", "enabled", "1")
+            config.set("centosplus", "includepkgs", "postfix-*")
+            config.set("base", "exclude", "postfix-*")
+            config.set("updates", "exclude", "postfix-*")
+            with open("/etc/yum.repos.d/CentOS-Base.repo", "w") as fp:
+                config.write(fp)
+
         package.backend.preconfigure(
             "postfix", "main_mailer_type", "select", "No configuration")
         super(Postfix, self).install_packages()
@@ -70,6 +85,16 @@ class Postfix(base.Installer):
             .format(python_path, script_path, self.dbengine,
                     " ".join(extensions), db_url, self.config_dir))
         utils.exec_cmd(cmd)
+
+        # Check chroot directory
+        chroot_dir = "/var/spool/postfix/etc"
+        chroot_files = ["services", "resolv.conf"]
+        if not os.path.exists(chroot_dir):
+            os.mkdir(chroot_dir)
+        for f in chroot_files:
+            path = os.path.join(chroot_dir, f)
+            if not os.path.exists(path):
+                utils.copy_file(os.path.join("/etc", f), path)
 
         # Generate EDH parameters
         if not os.path.exists("{}/dh2048.pem".format(self.config_dir)):

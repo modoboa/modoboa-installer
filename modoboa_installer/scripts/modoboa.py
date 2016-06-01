@@ -108,7 +108,7 @@ class Modoboa(base.Installer):
         context.update({
             "dovecot_mailboxes_owner": (
                 self.config.get("dovecot", "mailboxes_owner")),
-            "radicale_enabled": "#" if "modoboa-radicale" in extensions else ""
+            "radicale_enabled": "" if "modoboa-radicale" in extensions else "#"
         })
         return context
 
@@ -128,6 +128,9 @@ class Modoboa(base.Installer):
             "modoboa_stats.RRD_ROOTDIR": rrd_root_dir,
             "modoboa_pdfcredentials.STORAGE_DIR": pdf_storage_dir,
         }
+        for path in ["/var/log/maillog", "/var/log/mail.log"]:
+            if os.path.exists(path):
+                settings["modoboa_stats.LOGFILE"] = path
 
         for name, value in settings.items():
             query = (

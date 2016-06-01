@@ -52,6 +52,14 @@ class Dovecot(base.Installer):
         """Additional variables."""
         context = super(Dovecot, self).get_template_context()
         pw = pwd.getpwnam(self.user)
+        if "centos" in utils.dist_name():
+            protocols = "protocols = imap lmtp sieve"
+            extra_protocols = self.config.get("dovecot", "extra_protocols")
+            if extra_protocols:
+                protocols += " {}".format(extra_protocols)
+        else:
+            # Protocols are automatically guessed on debian/ubuntu
+            protocols = ""
         context.update({
             "db_driver": self.db_driver,
             "mailboxes_owner_uid": pw[2],
@@ -59,6 +67,7 @@ class Dovecot(base.Installer):
             "modoboa_dbname": self.config.get("modoboa", "dbname"),
             "modoboa_dbuser": self.config.get("modoboa", "dbuser"),
             "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
+            "protocols": protocols
         })
         return context
 

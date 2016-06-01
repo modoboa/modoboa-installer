@@ -55,5 +55,7 @@ class Spamassassin(base.Installer):
     def post_run(self):
         """Additional tasks."""
         utils.exec_cmd(
-            "pyzor discover", sudo_user=self.config.get("amavis", "user"))
+            "pyzor discover", sudo_user=self.config.get("amavis", "user"),
+            login=False
+        )
         install("razor", self.config)
