@@ -73,6 +73,14 @@ class Modoboa(base.Installer):
                     return
             shutil.rmtree(target)
 
+        # Sanity check for amavis
+        amavis_enabled = False
+        if "modoboa-amavis" in self.extensions:
+            if self.config.getboolean("amavis", "enabled"):
+                amavis_enabled = True
+            else:
+                self.extensions.remove("modoboa-amavis")
+
         prefix = ". {}; ".format(
             os.path.join(self.venv_path, "bin", "activate"))
         args = [
@@ -86,7 +94,7 @@ class Modoboa(base.Installer):
         ]
         if self.devmode:
             args = ["--devel"] + args
-        if self.config.getboolean("amavis", "enabled"):
+        if amavis_enabled:
             args += [
                 "'amavis:{}://{}:{}@{}/{}'".format(
                     self.config.get("database", "engine"),
