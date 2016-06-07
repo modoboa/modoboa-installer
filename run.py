@@ -50,6 +50,7 @@ def main():
         answer = utils.user_input("Do you confirm? (Y/n) ")
         if answer.lower().startswith("n"):
             return
+    config.set("general", "force", str(args.force))
     utils.printcolor(
         "The process can be long, feel free to take a coffee "
         "and come back later ;)", utils.BLUE)

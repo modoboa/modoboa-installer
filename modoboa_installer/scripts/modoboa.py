@@ -61,15 +61,16 @@ class Modoboa(base.Installer):
         """Deploy Modoboa."""
         target = os.path.join(self.home_dir, "instance")
         if os.path.exists(target):
-            utils.printcolor(
-                "Target directory for Modoboa deployment ({}) already exists."
-                " If you choose to continue, it will be removed.".format(
-                    target),
-                utils.YELLOW
-            )
-            answer = utils.user_input("Do you confirm? (Y/n) ")
-            if answer.lower().startswith("n"):
-                return
+            if not self.config.getboolean("general", "force"):
+                utils.printcolor(
+                    "Target directory for Modoboa deployment ({}) already "
+                    "exists. If you choose to continue, it will be removed."
+                    .format(target),
+                    utils.YELLOW
+                )
+                answer = utils.user_input("Do you confirm? (Y/n) ")
+                if answer.lower().startswith("n"):
+                    return
             shutil.rmtree(target)
 
         prefix = ". {}; ".format(

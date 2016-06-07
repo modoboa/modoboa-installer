@@ -29,10 +29,11 @@ class SelfSignedCertificate(CertificateBackend):
     def create(self):
         """Create a certificate."""
         if os.path.exists(self.config.get("general", "tls_key_file")):
-            answer = utils.user_input(
-                "Overwrite the existing SSL certificate? (y/N) ")
-            if not answer.lower().startswith("y"):
-                return
+            if not self.config.getboolean("general", "force"):
+                answer = utils.user_input(
+                    "Overwrite the existing SSL certificate? (y/N) ")
+                if not answer.lower().startswith("y"):
+                    return
         utils.printcolor(
             "Generating new self-signed certificate", utils.YELLOW)
         utils.exec_cmd(
