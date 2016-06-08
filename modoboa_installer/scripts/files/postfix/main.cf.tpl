@@ -42,6 +42,10 @@ smtpd_tls_mandatory_exclude_ciphers = ECDHE-RSA-RC4-SHA
 # Enable elliptic curve cryptography
 smtpd_tls_eecdh_grade = strong
 
+# Use TLS if this is supported by the remote SMTP server, otherwise use plaintext.
+smtp_tls_security_level = may
+smtp_tls_loglevel = 1
+
 ## Virtual transport settings
 #
 %{dovecot_enabled}virtual_transport = lmtp:unix:private/dovecot-lmtp
