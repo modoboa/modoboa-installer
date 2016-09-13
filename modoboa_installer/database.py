@@ -123,9 +123,9 @@ class MySQL(Database):
 
     packages = {
         "deb": ["mysql-server", "libmysqlclient-dev"],
-        "rpm": ["mariadb", "mariadb-devel"],
+        "rpm": ["mariadb", "mariadb-devel","mariadb-server"],
     }
-    service = "mysql"
+    service = "mariadb" if package.backend.FORMAT == "rpm" else "mysql"
 
     def install_package(self):
         """Preseed package installation."""
@@ -134,9 +134,11 @@ class MySQL(Database):
         package.backend.preconfigure(
             "mysql-server", "root_password_again", "password", self.dbpassword)
         super(MySQL, self).install_package()
+	if package.backend.FORMAT == "rpm":
+		utils.exec_cmd("mysqladmin -u root password '{}'".format(self.dbpassword))
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
-        """Exec a postgresql query."""
+        """Exec a mysql query."""
         if dbuser is None and dbpassword is None:
             dbuser = self.dbuser
             dbpassword = self.dbpassword
@@ -150,6 +152,9 @@ class MySQL(Database):
         self._exec_query(
             "CREATE USER '{}'@'%' IDENTIFIED BY '{}'".format(
                 name, password))
+        self._exec_query(
+            "CREATE USER '{}'@'localhost' IDENTIFIED BY '{}'".format(
+                name, password))
 
     def create_database(self, name, owner):
         """Create a database."""
@@ -161,6 +166,9 @@ class MySQL(Database):
         """Grant access to dbname."""
         self._exec_query(
             "GRANT ALL PRIVILEGES ON {}.* to '{}'@'%'"
+            .format(dbname, user))
+        self._exec_query(
+            "GRANT ALL PRIVILEGES ON {}.* to '{}'@'localhost'"
             .format(dbname, user))
 
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
