@@ -134,8 +134,8 @@ class MySQL(Database):
         package.backend.preconfigure(
             "mysql-server", "root_password_again", "password", self.dbpassword)
         super(MySQL, self).install_package()
-	if package.backend.FORMAT == "rpm":
-		utils.exec_cmd("mysqladmin -u root password '{}'".format(self.dbpassword))
+        if package.backend.FORMAT == "rpm":
+        	utils.exec_cmd("mysqladmin -u root password '{}'".format(self.dbpassword))
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a mysql query."""
