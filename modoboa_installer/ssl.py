@@ -11,16 +11,19 @@ class CertificateBackend(object):
     def __init__(self, config):
         """Set path to certificates."""
         self.config = config
-        for base_dir in ["/etc/pki/tls", "/etc/ssl"]:
-            if os.path.exists(base_dir):
-                self.config.set(
-                    "general", "tls_key_file",
-                    "{}/private/%(hostname)s.key".format(base_dir))
-                self.config.set(
-                    "general", "tls_cert_file",
-                    "{}/certs/%(hostname)s.cert".format(base_dir))
-                return
-        raise RuntimeError("Cannot find a directory to store certificate")
+        if not config.has_option("general", "tls_key_file"):
+            for base_dir in ["/etc/pki/tls", "/etc/ssl"]:
+                if os.path.exists(base_dir):
+                    self.config.set(
+                        "general", "tls_key_file",
+                        "{}/private/%(hostname)s.key".format(base_dir))
+                    self.config.set(
+                        "general", "tls_cert_file",
+                        "{}/certs/%(hostname)s.cert".format(base_dir))
+                    return
+            raise RuntimeError("Cannot find a directory to store certificate")
+        else:
+            return
 
 
 class SelfSignedCertificate(CertificateBackend):
