@@ -20,7 +20,13 @@ INSTANCE=%{instance_path}
 %{amavis_enabled}0       12      *       *       *       root    $PYTHON $INSTANCE/manage.py amnotify --baseurl='http://%{hostname}'
 
 # Logs parsing
-*/5    *       *       *       *       root    $PYTHON $INSTANCE/manage.py logparser &> /dev/null
+*/5     *       *       *       *       root    $PYTHON $INSTANCE/manage.py logparser &> /dev/null
 
 # Radicale rights file
 %{radicale_enabled}*/2    *       *       *       *        root    $PYTHON $INSTANCE/manage.py generate_rights
+
+# DNSBL checks
+*/30    *       *       *       *       root    $PYTHON $INSTANCE/manage.py modo check_mx
+
+# Public API communication
+0       *       *       *       *       root    $PYTHON $INSTANCE/manage.py communicate_with_public_api
