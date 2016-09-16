@@ -58,9 +58,11 @@ class Uwsgi(base.Installer):
             os.symlink(dst, link)
         else:
             system.add_user_to_group(
-                self.config.get("modoboa", "user"), "uwsgi")
+                "uwsgi", self.config.get("modoboa", "user"))
             utils.exec_cmd("chmod -R g+w {}/media".format(
                 self.config.get("modoboa", "instance_path")))
+            utils.exec_cmd("chmod -R g+w {}/pdfcredentials".format(
+                self.config.get("modoboa", "home_dir")))
             pattern = (
                 "s/emperor-tyrant = true/emperor-tyrant = false/")
             utils.exec_cmd(
