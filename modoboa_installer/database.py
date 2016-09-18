@@ -159,7 +159,12 @@ class MySQL(Database):
     def create_database(self, name, owner):
         """Create a database."""
         self._exec_query(
-            "CREATE DATABASE IF NOT EXISTS {}".format(name))
+            "CREATE DATABASE IF NOT EXISTS {} "
+            "DEFAULT CHARACTER SET {} "
+            "DEFAULT COLLATE {}".format(
+                name, self.config.get("mysql", "charset"),
+                self.config.get("mysql", "collation"))
+        )
         self.grant_access(name, owner)
 
     def grant_access(self, dbname, user):
