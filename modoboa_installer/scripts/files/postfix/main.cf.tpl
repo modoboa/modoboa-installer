@@ -97,6 +97,7 @@ strict_rfc821_envelopes = yes
 smtpd_sender_login_maps =
         %{db_driver}:/etc/postfix/sql-sender-login-mailboxes.cf
         %{db_driver}:/etc/postfix/sql-sender-login-aliases.cf
+        %{db_driver}:/etc/postfix/sql-sender-login-mailboxes-extra.cf
 
 # Recipient restriction rules
 smtpd_recipient_restrictions =
