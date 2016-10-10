@@ -69,13 +69,10 @@ class LetsEncryptCertificate(CertificateBackend):
         utils.exec_cmd(
             "wget https://dl.eff.org/certbot-auto; chmod a+x certbot-auto",
             cwd="/opt")
-        webroot = os.path.join(
-            self.config.get("modoboa", "instance_path"),
-            "sitestatic/.well-known")
         utils.exec_cmd(
             "/opt/certbot-auto certonly -n --standalone -d {} "
             "-m {} --agree-tos".format(
-                webroot, hostname, self.config.get("letsencrypt", "email")))
+                hostname, self.config.get("letsencrypt", "email")))
         self.config.set("general", "tls_cert_file", (
             "/etc/letsencrypt/live/{}/fullchain.pem".format(hostname)))
         self.config.set("general", "tls_key_file", (
