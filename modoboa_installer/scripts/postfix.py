@@ -66,24 +66,11 @@ class Postfix(base.Installer):
         """Additional tasks."""
         venv_path = self.config.get("modoboa", "venv_path")
         python_path = os.path.join(venv_path, "bin", "python")
-        script_path = os.path.join(venv_path, "bin", "modoboa-admin.py")
-        db_url = "{}://{}:{}@{}/{}".format(
-            self.dbengine, self.config.get("modoboa", "dbuser"),
-            self.config.get("modoboa", "dbpassword"),
-            self.dbhost, self.config.get("modoboa", "dbname"))
-        extensions = self.config.get("modoboa", "extensions")
-        exts_with_maps = ["modoboa-admin", "modoboa-admin-relaydomains",
-                          "modoboa-postfix-autoreply"]
-        if extensions == "all":
-            extensions = exts_with_maps
-        else:
-            extensions = [ext for ext in exts_with_maps if ext in extensions]
-            if not extensions:
-                return
+        instance_path = self.config.get("modoboa", "instance_path")
+        script_path = os.path.join(instance_path, "manage.py")
         cmd = (
-            "{} {} postfix_maps --dbtype {} --extensions {} --dburl {} {}"
-            .format(python_path, script_path, self.dbengine,
-                    " ".join(extensions), db_url, self.config_dir))
+            "{} {} generate_postfix_maps --destdir {} --force-overwrite"
+            .format(python_path, script_path, self.config_dir))
         utils.exec_cmd(cmd)
 
         # Check chroot directory
