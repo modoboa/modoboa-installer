@@ -39,3 +39,26 @@ By default, the following components are installed:
 
 If you want more information about the installation process, add the
 ``--debug`` option to your command line.
+
+Let's Encrypt certificate
+-------------------------
+
+.. warning::
+
+   Please note this option requires the hostname you're using to be
+   valid (ie. it can be resolved with a DNS query) and to match the
+   server you're installing Modoboa on.
+
+If you want to generate a valid certificate using `Let's Encrypt
+<https://letsencrypt.org/>`_, edit the ``installer.cfg`` file and
+modify the following settings::
+
+  [certificate]
+  generate = true
+  type = letsencrypt
+
+  [letsencrypt]
+  email = admin@example.com
+
+Change the ``email`` setting to a valid value since it will be used
+for account recovery.

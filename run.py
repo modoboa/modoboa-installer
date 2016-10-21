@@ -39,7 +39,8 @@ def main():
         .format(args.hostname), utils.BLUE)
     components = []
     for section in config.sections():
-        if section in ["general", "database", "mysql", "postgres"]:
+        if section in ["general", "database", "mysql", "postgres",
+                       "certificate", "letsencrypt"]:
             continue
         if (config.has_option(section, "enabled") and
                 not config.getboolean(section, "enabled")):
@@ -56,7 +57,9 @@ def main():
         "and come back later ;)", utils.BLUE)
     utils.printcolor("Starting...", utils.GREEN)
     package.backend.install("sudo")
-    ssl.get_backend(config).create()
+    ssl_backend = ssl.get_backend(config)
+    if ssl_backend:
+        ssl_backend.create()
     scripts.install("modoboa", config)
     scripts.install("postfix", config)
     scripts.install("amavis", config)
