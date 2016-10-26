@@ -77,7 +77,7 @@ def mkdir(path, mode, uid, gid):
     """Create a directory."""
     dir = os.path.dirname(path)
     if not os.path.exists(dir):
-        os.makedirs(dir)
+        os.makedirs(dir, mode)
     else:
         os.chmod(dir, mode)
     os.chown(dir, uid, gid)
