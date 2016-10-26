@@ -75,11 +75,12 @@ def dist_name():
 
 def mkdir(path, mode, uid, gid):
     """Create a directory."""
-    if not os.path.exists(path):
-        os.mkdir(path, mode)
+    dir = os.path.dirname(path)
+    if not os.path.exists(dir):
+        os.makedirs(dir)
     else:
-        os.chmod(path, mode)
-    os.chown(path, uid, gid)
+        os.chmod(dir, mode)
+    os.chown(dir, uid, gid)
 
 
 @contextlib.contextmanager
