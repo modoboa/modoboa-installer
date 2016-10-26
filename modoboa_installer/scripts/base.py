@@ -1,6 +1,8 @@
 """Base classes."""
 
 import os
+import pwd
+import grp
 
 from .. import database
 from .. import package
@@ -66,6 +68,16 @@ class Installer(object):
             self.backend.load_sql_file(
                 self.dbname, self.dbuser, self.dbpasswd, schema)
 
+    def _chown(self, path, uid, gid):
+        os.chown(path, uid, gid)
+        for item in os.listdir(path):
+            itempath = os.path.join(path, item)
+            if os.path.isfile(itempath):
+                os.chown(itempath, uid, gid)
+            elif os.path.isdir(itempath):
+                os.chown(itempath, uid, gid)
+                self._chown(itempath, uid, gid)
+
     def create_user(self):
         """Create a system user."""
         if not self.with_user:
@@ -76,6 +88,10 @@ class Installer(object):
         else:
             self.home_dir = None
         system.create_user(self.user, self.home_dir)
+        uid = pwd.getpwnam(self.user).pw_uid
+        gid = grp.getgrnam(self.user).gr_gid
+        path = self.home_dir
+        self._chown(path, uid, gid)
 
     def get_template_context(self):
         """Return context used for template rendering."""
