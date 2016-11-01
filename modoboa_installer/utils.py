@@ -79,7 +79,7 @@ def mkdir(path, mode, uid, gid):
         try: 
             os.mkdir(path)
         except OSError:
-            os.mkdirs(path)
+            os.makedirs(path)
         pass
     os.chmod(path, mode)
     os.chown(path, uid, gid)
