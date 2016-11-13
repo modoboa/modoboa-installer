@@ -45,7 +45,7 @@ class Modoboa(base.Installer):
     def _setup_venv(self):
         """Prepare a dedicated virtuelenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
-        packages = ["modoboa", "rrdtool"]
+        packages = ["modoboa", "rrdtool==0.1.6"]
         if self.dbengine == "postgres":
             packages.append("psycopg2")
         else:
