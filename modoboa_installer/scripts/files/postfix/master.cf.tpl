@@ -19,6 +19,7 @@ tlsproxy  unix  -       -       -       -       0       tlsproxy
 submission inet n       -       -       -       -       smtpd
   -o syslog_name=postfix/submission
   -o smtpd_tls_security_level=encrypt
+  -o tls_preempt_cipherlist=yes
   -o smtpd_sasl_auth_enable=yes
   -o smtpd_reject_unlisted_recipient=no
   -o smtpd_client_restrictions=permit_sasl_authenticated,reject

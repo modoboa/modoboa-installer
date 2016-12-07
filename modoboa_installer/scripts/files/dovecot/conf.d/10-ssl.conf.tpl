@@ -41,10 +41,11 @@ ssl_key = <%tls_key_file
 #ssl_parameters_regenerate = 168
 
 # SSL protocols to use
-#ssl_protocols = !SSLv2
+ssl_protocols = !SSLv2 !SSLv3
+
 
 # SSL ciphers to use
-#ssl_cipher_list = ALL:!LOW:!SSLv2:!EXP:!aNULL
+ssl_cipher_list = EECDH+ECDSA+AESGCM:EECDH+aRSA+AESGCM:EECDH+ECDSA+SHA384:EECDH+ECDSA+SHA256:EECDH+aRSA+SHA384:EECDH+aRSA+SHA256:EECDH+aRSA+RC4:EECDH:EDH+aRSA:!aNULL:!eNULL:!LOW:!3DES:!MD5:!EXP:!PSK:!SRP:!DSS:!RC4
 
 # SSL crypto device to use, for valid values run "openssl engine"
 #ssl_crypto_device =
