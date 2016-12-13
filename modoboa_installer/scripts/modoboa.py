@@ -13,7 +13,6 @@ from . import install
 
 
 class Modoboa(base.Installer):
-
     """Modoboa installation."""
 
     appname = "modoboa"
