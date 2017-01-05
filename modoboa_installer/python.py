@@ -32,7 +32,10 @@ def setup_virtualenv(path, sudo_user=None):
     """Install a virtualenv if needed."""
     if os.path.exists(path):
         return
-    package.backend.install_many(["python-virtualenv", "virtualenv"])
+    packages = ["python-virtualenv"]
+    if utils.dist_name() == "debian":
+        packages.append("virtualenv")
+    package.backend.install_many(packages)
     with utils.settings(sudo_user=sudo_user):
         utils.exec_cmd("virtualenv {}".format(path))
         install_package("pip", venv=path, upgrade=True)
