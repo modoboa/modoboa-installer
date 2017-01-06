@@ -85,5 +85,5 @@ class Postfix(base.Installer):
 
         # Generate EDH parameters
         if not os.path.exists("{}/dh2048.pem".format(self.config_dir)):
-            cmd = "openssl dhparam -out dh2048.pem 2048"
+            cmd = "openssl dhparam -dsaparam -out dh2048.pem 2048"
             utils.exec_cmd(cmd, cwd=self.config_dir)
