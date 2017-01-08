@@ -55,5 +55,5 @@ class Nginx(base.Installer):
         system.add_user_to_group(user, group)
 
         if not os.path.exists("{}/dhparam.pem".format(self.config_dir)):
-            cmd = "openssl dhparam -out dhparam.pem 4096"
+            cmd = "openssl dhparam -dsaparam -out dhparam.pem 4096"
             utils.exec_cmd(cmd, cwd=self.config_dir)
