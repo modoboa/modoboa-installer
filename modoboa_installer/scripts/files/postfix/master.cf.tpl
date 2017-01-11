@@ -27,7 +27,7 @@ submission inet n       -       -       -       -       smtpd
   -o smtpd_sender_restrictions=reject_sender_login_mismatch
   -o smtpd_recipient_restrictions=
   -o milter_macro_daemon_name=ORIGINATING
-  -o smtpd_proxy_filter=inet:[127.0.0.1]:10026
+%{amavis_enabled}  -o smtpd_proxy_filter=inet:[127.0.0.1]:10026
 #smtps     inet  n       -       -       -       -       smtpd
 #  -o syslog_name=postfix/smtps
 #  -o smtpd_tls_wrappermode=yes
