@@ -21,6 +21,22 @@ recipient_delimiter = +
 alias_maps = hash:/etc/aliases
 alias_database = hash:/etc/aliases
 
+## Proxy maps
+proxy_read_maps =
+        proxy:unix:passwd.byname
+        proxy:pgsql:/etc/postfix/sql-domains.cf
+        proxy:pgsql:/etc/postfix/sql-domain-aliases.cf
+        proxy:pgsql:/etc/postfix/sql-aliases.cf
+        proxy:pgsql:/etc/postfix/sql-relaydomains.cf
+        proxy:pgsql:/etc/postfix/sql-relaydomains-transport.cf
+        proxy:pgsql:/etc/postfix/sql-relaydomain-aliases-transport.cf
+        proxy:pgsql:/etc/postfix/sql-autoreplies-transport.cf
+        proxy:pgsql:/etc/postfix/sql-maintain.cf
+        proxy:pgsql:/etc/postfix/sql-relay-recipient-verification.cf
+        proxy:pgsql:/etc/postfix/sql-sender-login-mailboxes.cf
+        proxy:pgsql:/etc/postfix/sql-sender-login-aliases.cf
+        proxy:pgsql:/etc/postfix/sql-spliteddomains-transport.cf
+
 ## TLS settings
 #
 smtpd_use_tls = yes
@@ -52,19 +68,19 @@ smtp_tls_exclude_ciphers = EXPORT, LOW
 #
 %{dovecot_enabled}virtual_transport = lmtp:unix:private/dovecot-lmtp
 
-virtual_mailbox_domains = %{db_driver}:/etc/postfix/sql-domains.cf
-virtual_alias_domains = %{db_driver}:/etc/postfix/sql-domain-aliases.cf
+virtual_mailbox_domains = proxy:%{db_driver}:/etc/postfix/sql-domains.cf
+virtual_alias_domains = proxy:%{db_driver}:/etc/postfix/sql-domain-aliases.cf
 virtual_alias_maps =
-        %{db_driver}:/etc/postfix/sql-aliases.cf
+        proxy:%{db_driver}:/etc/postfix/sql-aliases.cf
 
 ## Relay domains
 #
 relay_domains =
-        %{db_driver}:/etc/postfix/sql-relaydomains.cf
+        proxy:%{db_driver}:/etc/postfix/sql-relaydomains.cf
 transport_maps =
-        %{db_driver}:/etc/postfix/sql-spliteddomains-transport.cf
-	%{db_driver}:/etc/postfix/sql-relaydomains-transport.cf 
-        %{db_driver}:/etc/postfix/sql-autoreplies-transport.cf
+        proxy:%{db_driver}:/etc/postfix/sql-spliteddomains-transport.cf
+	proxy:%{db_driver}:/etc/postfix/sql-relaydomains-transport.cf 
+        proxy:%{db_driver}:/etc/postfix/sql-autoreplies-transport.cf
 
 ## SASL authentication through Dovecot
 #
@@ -97,17 +113,17 @@ strict_rfc821_envelopes = yes
 
 # List of authorized senders
 smtpd_sender_login_maps =
-        %{db_driver}:/etc/postfix/sql-sender-login-mailboxes.cf
-        %{db_driver}:/etc/postfix/sql-sender-login-aliases.cf
-        %{db_driver}:/etc/postfix/sql-sender-login-mailboxes-extra.cf
+        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes.cf
+        proxy:%{db_driver}:/etc/postfix/sql-sender-login-aliases.cf
+        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes-extra.cf
 
 # Recipient restriction rules
 smtpd_recipient_restrictions =
       permit_mynetworks
       permit_sasl_authenticated
       check_recipient_access
-          %{db_driver}:/etc/postfix/sql-maintain.cf
-          %{db_driver}:/etc/postfix/sql-relay-recipient-verification.cf
+          proxy:%{db_driver}:/etc/postfix/sql-maintain.cf
+          proxy:%{db_driver}:/etc/postfix/sql-relay-recipient-verification.cf
       reject_unverified_recipient
       reject_unauth_destination
       reject_non_fqdn_sender
