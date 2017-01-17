@@ -28,11 +28,11 @@ server {
     error_log /var/log/nginx/%{hostname}-error.log;
 
     location /sitestatic/ {
-        autoindex on;
+        try_files $uri $uri/ =404;
     }
 
     location /media/ {
-        autoindex on;
+        try_files $uri $uri/ =404;
     }
 
     location / {
