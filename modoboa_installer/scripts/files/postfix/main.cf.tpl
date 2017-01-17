@@ -24,18 +24,19 @@ alias_database = hash:/etc/aliases
 ## Proxy maps
 proxy_read_maps =
         proxy:unix:passwd.byname
-        proxy:pgsql:/etc/postfix/sql-domains.cf
-        proxy:pgsql:/etc/postfix/sql-domain-aliases.cf
-        proxy:pgsql:/etc/postfix/sql-aliases.cf
-        proxy:pgsql:/etc/postfix/sql-relaydomains.cf
-        proxy:pgsql:/etc/postfix/sql-relaydomains-transport.cf
-        proxy:pgsql:/etc/postfix/sql-relaydomain-aliases-transport.cf
-        proxy:pgsql:/etc/postfix/sql-autoreplies-transport.cf
-        proxy:pgsql:/etc/postfix/sql-maintain.cf
-        proxy:pgsql:/etc/postfix/sql-relay-recipient-verification.cf
-        proxy:pgsql:/etc/postfix/sql-sender-login-mailboxes.cf
-        proxy:pgsql:/etc/postfix/sql-sender-login-aliases.cf
-        proxy:pgsql:/etc/postfix/sql-spliteddomains-transport.cf
+        proxy:%{db_driver}:/etc/postfix/sql-domains.cf
+        proxy:%{db_driver}:/etc/postfix/sql-domain-aliases.cf
+        proxy:%{db_driver}:/etc/postfix/sql-aliases.cf
+        proxy:%{db_driver}:/etc/postfix/sql-relaydomains.cf
+        proxy:%{db_driver}:/etc/postfix/sql-relaydomains-transport.cf
+        proxy:%{db_driver}:/etc/postfix/sql-relaydomain-aliases-transport.cf
+        proxy:%{db_driver}:/etc/postfix/sql-autoreplies-transport.cf
+        proxy:%{db_driver}:/etc/postfix/sql-maintain.cf
+        proxy:%{db_driver}:/etc/postfix/sql-relay-recipient-verification.cf
+        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes.cf
+        proxy:%{db_driver}:/etc/postfix/sql-sender-login-aliases.cf
+        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes-extra.cf
+        proxy:%{db_driver}:/etc/postfix/sql-spliteddomains-transport.cf
 
 ## TLS settings
 #
