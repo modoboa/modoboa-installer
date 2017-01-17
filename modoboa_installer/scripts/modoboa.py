@@ -4,6 +4,7 @@ import os
 import pwd
 import shutil
 import stat
+import sys
 
 from .. import python
 from .. import utils
@@ -49,6 +50,9 @@ class Modoboa(base.Installer):
             packages.append("psycopg2")
         else:
             packages.append("MYSQL-Python")
+        if sys.version_info.major == 2 and sys.version_info.micro < 9:
+            # Add extra packages to fix the SNI issue
+            packages += ["pyOpenSSL", "ndg-httpsclient"]
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
         if self.devmode:
             # FIXME: use dev-requirements instead
