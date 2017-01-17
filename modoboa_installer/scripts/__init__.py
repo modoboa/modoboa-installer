@@ -11,7 +11,7 @@ def install(appname, config):
     if (config.has_option(appname, "enabled") and
             not config.getboolean(appname, "enabled")):
         return
-    utils.printcolor("Installing {}".format(appname), utils.YELLOW)
+    utils.printcolor("Installing {}".format(appname), utils.MAGENTA)
     try:
         script = importlib.import_module(
             "modoboa_installer.scripts.{}".format(appname))
