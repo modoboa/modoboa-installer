@@ -33,6 +33,12 @@ class Razor(base.Installer):
         path = os.path.join(pw[5], ".razor")
         utils.mkdir(path, stat.S_IRWXU, pw[2], pw[3])
         utils.exec_cmd("razor-admin -home {} -create".format(path))
+        utils.mkdir(
+            self.config_dir,
+            stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
+            stat.S_IROTH | stat.S_IXOTH,
+            0, 0
+        )
         utils.copy_file(
             os.path.join(path, "razor-agent.conf"), self.config_dir)
         utils.exec_cmd("razor-admin -home {} -discover".format(path),

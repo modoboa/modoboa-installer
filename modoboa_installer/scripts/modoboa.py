@@ -6,6 +6,7 @@ import shutil
 import stat
 import sys
 
+from .. import package
 from .. import python
 from .. import utils
 
@@ -52,7 +53,7 @@ class Modoboa(base.Installer):
             packages.append("MYSQL-Python")
         if sys.version_info.major == 2 and sys.version_info.micro < 9:
             # Add extra packages to fix the SNI issue
-            packages += ["pyOpenSSL", "ndg-httpsclient"]
+            packages += ["pyOpenSSL"]
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
         if self.devmode:
             # FIXME: use dev-requirements instead
@@ -111,6 +112,18 @@ class Modoboa(base.Installer):
             "bash -c '{} modoboa-admin.py deploy instance {}'".format(
                 prefix, " ".join(args)),
             sudo_user=self.user, cwd=self.home_dir)
+
+    def get_packages(self):
+        """Include extra packages if needed."""
+        packages = super(Modoboa, self).get_packages()
+        condition = (
+            package.backend.FORMAT == "rpm" and
+            sys.version_info.major == 2 and
+            sys.version_info.micro < 9)
+        if condition:
+            # Add extra packages to fix the SNI issue
+            packages += ["openssl-devel"]
+        return packages
 
     def get_template_context(self):
         """Additional variables."""
