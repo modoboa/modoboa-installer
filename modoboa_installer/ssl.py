@@ -79,10 +79,11 @@ class LetsEncryptCertificate(CertificateBackend):
             "/etc/letsencrypt/live/{}/privkey.pem".format(hostname)))
         with open("/etc/cron.d/letsencrypt", "w") as fp:
             fp.write("0 */12 * * * root /opt/certbot-auto renew "
-                     "--quiet --no-self-upgrade && "
-                     "service nginx reload && "
+                     "--quiet --no-self-upgrade --force-renewal "
+                     "--pre-hook 'service nginx stop' "
+                     "--post-hook 'service nginx start && "
                      "service postfix reload && "
-                     "service dovecot reload")
+                     "service dovecot reload'")
 
 
 def get_backend(config):
