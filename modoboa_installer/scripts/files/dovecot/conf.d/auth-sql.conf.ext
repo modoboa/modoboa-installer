@@ -9,6 +9,13 @@ passdb {
   args = /etc/dovecot/dovecot-sql.conf.ext
 }
 
+passdb {
+  driver = sql
+  args = /etc/dovecot/dovecot-sql-master.conf.ext
+  master = yes
+  pass = yes
+}
+
 # "prefetch" user database means that the passdb already provided the
 # needed information and there's no need to do a separate userdb lookup.
 # <doc/wiki/UserDatabase.Prefetch.txt>
