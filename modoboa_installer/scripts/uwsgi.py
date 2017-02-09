@@ -10,7 +10,6 @@ from . import base
 
 
 class Uwsgi(base.Installer):
-
     """uWSGI installer."""
 
     appname = "uwsgi"
@@ -19,22 +18,21 @@ class Uwsgi(base.Installer):
         "rpm": ["uwsgi", "uwsgi-plugin-python"],
     }
 
-    @property
-    def socket_path(self):
+    def get_socket_path(self, app):
         """Return socket path."""
         if package.backend.FORMAT == "deb":
-            return "/run/uwsgi/app/modoboa_instance/socket"
-        return "/run/uwsgi/modoboa_instance.sock"
+            return "/run/uwsgi/app/{}_instance/socket".format(app)
+        return "/run/uwsgi/{}_instance.sock".format(app)
 
-    def get_template_context(self):
+    def get_template_context(self, app):
         """Additionnal variables."""
         context = super(Uwsgi, self).get_template_context()
         context.update({
-            "modoboa_user": self.config.get("modoboa", "user"),
-            "modoboa_venv_path": self.config.get("modoboa", "venv_path"),
-            "modoboa_instance_path": (
-                self.config.get("modoboa", "instance_path")),
-            "uwsgi_socket_path": self.socket_path,
+            "app_user": self.config.get(app, "user"),
+            "app_venv_path": self.config.get(app, "venv_path"),
+            "app_instance_path": (
+                self.config.get(app, "instance_path")),
+            "uwsgi_socket_path": self.get_socket_path(app),
         })
         return context
 
@@ -44,18 +42,28 @@ class Uwsgi(base.Installer):
             return os.path.join(self.config_dir, "apps-available")
         return "{}.d".format(self.config_dir)
 
-    def post_run(self):
-        """Additionnal tasks."""
-        context = self.get_template_context()
-        src = self.get_file_path("uwsgi.ini.tpl")
-        dst = os.path.join(self.get_config_dir(), "modoboa_instance.ini")
+    def _enable_config_debian(self, dst):
+        """Enable config file."""
+        link = os.path.join(
+            self.config_dir, "apps-enabled", os.path.basename(dst))
+        if os.path.exists(link):
+            return
+        os.symlink(dst, link)
+
+    def _setup_config(self, app):
+        """Common setup code."""
+        context = self.get_template_context(app)
+        src = self.get_file_path("{}.ini.tpl".format(app))
+        dst = os.path.join(
+            self.get_config_dir(), "{}_instance.ini".format(app))
         utils.copy_from_template(src, dst, context)
+        return dst
+
+    def _setup_modoboa_config(self):
+        """Custom modoboa configuration."""
+        dst = self._setup_config("modoboa")
         if package.backend.FORMAT == "deb":
-            link = os.path.join(
-                self.config_dir, "apps-enabled", os.path.basename(dst))
-            if os.path.exists(link):
-                return
-            os.symlink(dst, link)
+            self._enable_config_debian(dst)
         else:
             system.add_user_to_group(
                 "uwsgi", self.config.get("modoboa", "user"))
@@ -68,8 +76,32 @@ class Uwsgi(base.Installer):
             utils.exec_cmd(
                 "perl -pi -e '{}' /etc/uwsgi.ini".format(pattern))
 
+    def _setup_automx_config(self):
+        """Custom automx configuration."""
+        dst = self._setup_config("automx")
+        if package.backend.FORMAT == "deb":
+            self._enable_config_debian(dst)
+        else:
+            system.add_user_to_group(
+                "uwsgi", self.config.get("automx", "user"))
+            pattern = (
+                "s/emperor-tyrant = true/emperor-tyrant = false/")
+            utils.exec_cmd(
+                "perl -pi -e '{}' /etc/uwsgi.ini".format(pattern))
+
+    def post_run(self):
+        """Additionnal tasks."""
+        self._setup_modoboa_config()
+        if self.config.getboolean("automx", "enabled"):
+            self._setup_automx_config()
+
     def restart_daemon(self):
         """Restart daemon process."""
-        code, output = utils.exec_cmd("service uwsgi status modoboa_instance")
-        action = "start" if code else "restart"
-        utils.exec_cmd("service uwsgi {}".format(action))
+        instances = ["modoboa_instance"]
+        if self.config.getboolean("automx", "enabled"):
+            instances.append("automx_instance")
+        for instance in instances:
+            code, output = utils.exec_cmd("service uwsgi status {}".format(
+                instance))
+            action = "start" if code else "restart"
+            utils.exec_cmd("service uwsgi {}".format(action))

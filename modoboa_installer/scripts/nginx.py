@@ -11,7 +11,6 @@ from .uwsgi import Uwsgi
 
 
 class Nginx(base.Installer):
-
     """Nginx installer."""
 
     appname = "nginx"
@@ -20,21 +19,23 @@ class Nginx(base.Installer):
         "rpm": ["nginx"]
     }
 
-    def get_template_context(self):
+    def get_template_context(self, app):
         """Additionnal variables."""
         context = super(Nginx, self).get_template_context()
         context.update({
-            "modoboa_instance_path": (
-                self.config.get("modoboa", "instance_path")),
-            "uwsgi_socket_path": Uwsgi(self.config).socket_path
+            "app_instance_path": (
+                self.config.get(app, "instance_path")),
+            "uwsgi_socket_path": Uwsgi(self.config).get_socket_path(app)
         })
         return context
 
-    def post_run(self):
-        """Additionnal tasks."""
-        hostname = self.config.get("general", "hostname")
-        context = self.get_template_context()
-        src = self.get_file_path("nginx.conf.tpl")
+    def _setup_config(self, app, hostname=None):
+        """Custom app configuration."""
+        if hostname is None:
+            hostname = self.config.get("general", "hostname")
+        context = self.get_template_context(app)
+        context.update({"hostname": hostname})
+        src = self.get_file_path("{}.conf.tpl".format(app))
         if package.backend.FORMAT == "deb":
             dst = os.path.join(
                 self.config_dir, "sites-available", "{}.conf".format(hostname))
@@ -44,7 +45,7 @@ class Nginx(base.Installer):
             if os.path.exists(link):
                 return
             os.symlink(dst, link)
-            group = self.config.get("modoboa", "user")
+            group = self.config.get(app, "user")
             user = "www-data"
         else:
             dst = os.path.join(
@@ -54,6 +55,13 @@ class Nginx(base.Installer):
             user = "nginx"
         system.add_user_to_group(user, group)
 
+    def post_run(self):
+        """Additionnal tasks."""
+        self._setup_config("modoboa")
+        if self.config.getboolean("automx", "enabled"):
+            hostname = "autoconfig.{}".format(
+                self.config.get("general", "domain"))
+            self._setup_config("automx", hostname)
         if not os.path.exists("{}/dhparam.pem".format(self.config_dir)):
             cmd = "openssl dhparam -dsaparam -out dhparam.pem 4096"
             utils.exec_cmd(cmd, cwd=self.config_dir)

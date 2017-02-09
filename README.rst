@@ -25,7 +25,7 @@ Usage::
 
   $ git clone https://github.com/modoboa/modoboa-installer
   $ cd modoboa-installer
-  $ sudo ./run.py <mail server hostname>
+  $ sudo ./run.py <your domain>
 
 To customize the installation, look at the ``installer.cfg`` file.
 
@@ -35,7 +35,7 @@ By default, the following components are installed:
 * Nginx and uWSGI
 * Postfix
 * Dovecot
-* Amavis (with SpamAssassin and ClamAV)  
+* Amavis (with SpamAssassin and ClamAV)
 
 If you want more information about the installation process, add the
 ``--debug`` option to your command line.

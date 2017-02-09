@@ -11,7 +11,7 @@ server {
 server {
     listen 443 ssl;
     server_name %hostname;
-    root %modoboa_instance_path;
+    root %app_instance_path;
 
     ssl_certificate %tls_cert_file;
     ssl_certificate_key %tls_key_file;

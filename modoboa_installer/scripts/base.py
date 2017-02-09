@@ -9,7 +9,6 @@ from .. import utils
 
 
 class Installer(object):
-
     """Simple installer for one application."""
 
     appname = None

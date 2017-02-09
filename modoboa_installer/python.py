@@ -6,6 +6,14 @@ from . import package
 from . import utils
 
 
+def get_path(cmd, venv=None):
+    """Return path to cmd."""
+    path = cmd
+    if venv:
+        path = os.path.join(venv, "bin", path)
+    return path
+
+
 def get_pip_path(venv):
     """Return the full path to pip command."""
     binpath = "pip"

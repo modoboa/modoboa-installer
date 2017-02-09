@@ -1,9 +1,9 @@
 [uwsgi]
-uid = %modoboa_user
-gid = %modoboa_user
+uid = %app_user
+gid = %app_user
 plugins = python
-home = %modoboa_venv_path
-chdir = %modoboa_instance_path
+home = %app_venv_path
+chdir = %app_instance_path
 module = instance.wsgi:application
 master = true
 processes = %nb_processes
