@@ -6,6 +6,7 @@ import shutil
 import stat
 
 from .. import python
+from .. import system
 from .. import utils
 
 from . import base
@@ -19,7 +20,7 @@ class Automx(base.Installer):
     no_daemon = True
     packages = {
         "deb": ["memcached", "unzip"],
-        "rpm": []
+        "rpm": ["memcached", "unzip"]
     }
     with_user = True
 
@@ -90,3 +91,4 @@ class Automx(base.Installer):
         """Additional tasks."""
         self._setup_venv()
         self._deploy_instance()
+        system.enable_and_start_service("memcached")

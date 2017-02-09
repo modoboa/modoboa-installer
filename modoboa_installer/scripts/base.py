@@ -136,10 +136,7 @@ class Installer(object):
         if self.no_daemon:
             return
         name = self.get_daemon_name()
-        system.enable_service(name)
-        code, output = utils.exec_cmd("service {} status".format(name))
-        action = "start" if code else "restart"
-        utils.exec_cmd("service {} {}".format(name, action))
+        system.enable_and_start_service(name)
 
     def run(self):
         """Run the installer."""
