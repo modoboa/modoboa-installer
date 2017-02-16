@@ -137,4 +137,4 @@ password_query = SELECT email AS user, password FROM core_user WHERE email='%%u'
 
 # Query to get a list of all usernames.
 #iterate_query = SELECT username AS user FROM users
-iterate_query = SELECT email AS username FROM core_user
+iterate_query = SELECT email AS user FROM core_user
