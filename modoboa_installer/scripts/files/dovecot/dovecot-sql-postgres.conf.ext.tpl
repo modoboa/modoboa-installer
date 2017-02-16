@@ -133,7 +133,7 @@ user_query = SELECT '%{home_dir}/%%d/%%n' AS home, %mailboxes_owner_uid as uid, 
 #  SELECT userid AS user, password, \
 #    home AS userdb_home, uid AS userdb_uid, gid AS userdb_gid \
 #  FROM users WHERE userid = '%%u'
-password_query = SELECT email AS user, password FROM core_user WHERE email='%%u' and is_active
+password_query = SELECT email AS user, password, '%{home_dir}/%%d/%%n' AS userdb_home, %mailboxes_owner_uid AS userdb_uid, %mailboxes_owner_gid AS userdb_gid, CONCAT('*:bytes=', mb.quota, 'M') AS userdb_quota_rule FROM core_user u INNER JOIN admin_mailbox mb ON u.id=mb.user_id INNER JOIN admin_domain dom ON mb.domain_id=dom.id WHERE email='%u' AND is_active AND dom.enabled
 
 # Query to get a list of all usernames.
 #iterate_query = SELECT username AS user FROM users
