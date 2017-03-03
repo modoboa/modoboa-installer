@@ -109,10 +109,12 @@ class Modoboa(base.Installer):
                     self.config.get("amavis", "dbname")
                 )
             ]
-        utils.exec_cmd(
+        code, output = utils.exec_cmd(
             "bash -c '{} modoboa-admin.py deploy instance {}'".format(
                 prefix, " ".join(args)),
             sudo_user=self.user, cwd=self.home_dir)
+        if code:
+            raise utils.FatalError(output)
 
     def get_packages(self):
         """Include extra packages if needed."""
@@ -167,7 +169,7 @@ class Modoboa(base.Installer):
                 settings["modoboa_stats"]["logfile"] = path
         settings = json.dumps(settings)
         query = (
-            "UPDATE core_localconfig SET _parameters='\"'\"'{}'\"'\"'"
+            "UPDATE core_localconfig SET _parameters='{}'"
             .format(settings)
         )
         self.backend._exec_query(

@@ -18,4 +18,9 @@ def install(appname, config):
     except ImportError:
         print("Unknown application {}".format(appname))
         sys.exit(1)
-    getattr(script, appname.capitalize())(config).run()
+    try:
+        getattr(script, appname.capitalize())(config).run()
+    except utils.FatalError as inst:
+        utils.printcolor(utils.RED, "Failure")
+        print(inst)
+        sys.exit(1)

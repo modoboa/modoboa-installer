@@ -61,6 +61,7 @@ class PostgreSQL(Database):
         if dbname and dbuser:
             self._setup_pgpass(dbname, dbuser, dbpassword)
             cmd += " -h {} -d {} -U {} -w".format(self.dbhost, dbname, dbuser)
+        query = query.replace("'", "'\"'\"'")
         cmd = "{} -c '{}' ".format(cmd, query)
         utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
@@ -146,7 +147,8 @@ class MySQL(Database):
         cmd = "mysql -h {} -u {} -p{}".format(self.dbhost, dbuser, dbpassword)
         if dbname:
             cmd += " -D {}".format(dbname)
-        utils.exec_cmd(cmd + """ -e "{}" """.format(query))
+        query = query.replace("'", "'\"'\"'")
+        utils.exec_cmd(cmd + """ -e '{}' """.format(query))
 
     def create_user(self, name, password):
         """Create a user."""
