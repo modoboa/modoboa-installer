@@ -1,5 +1,6 @@
 """Modoboa related tasks."""
 
+import json
 import os
 import pwd
 import shutil
@@ -147,24 +148,30 @@ class Modoboa(base.Installer):
         for d in [rrd_root_dir, pdf_storage_dir, webmail_media_dir]:
             utils.mkdir(d, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
         settings = {
-            "admin.HANDLE_MAILBOXES": "yes",
-            "admin.AUTO_ACCOUNT_REMOVAL": "yes",
-            "modoboa_amavis.AM_PDP_MODE": "inet",
-            "modoboa_stats.RRD_ROOTDIR": rrd_root_dir,
-            "modoboa_pdfcredentials.STORAGE_DIR": pdf_storage_dir,
+            "admin": {
+                "handle_mailboxes": True,
+                "account_auto_removal": True
+            },
+            "modoboa_amavis": {
+                "am_pdp_mode": "inet",
+            },
+            "modoboa_stats": {
+                "rrd_rootdir": rrd_root_dir,
+            },
+            "modoboa_pdfcredentials": {
+                "storage_dir": pdf_storage_dir
+            }
         }
         for path in ["/var/log/maillog", "/var/log/mail.log"]:
             if os.path.exists(path):
-                settings["modoboa_stats.LOGFILE"] = path
-
-        for name, value in settings.items():
-            query = (
-                "DELETE FROM lib_parameter WHERE name='{0}';"
-                "INSERT INTO lib_parameter (name, value) VALUES ('{0}', '{1}')"
-                .format(name, value)
-            )
-            self.backend._exec_query(
-                query, self.dbname, self.dbuser, self.dbpasswd)
+                settings["modoboa_stats"]["logfile"] = path
+        settings = json.dumps(settings)
+        query = (
+            "UPDATE core_localconfig SET _parameters='\"'\"'{}'\"'\"'"
+            .format(settings)
+        )
+        self.backend._exec_query(
+            query, self.dbname, self.dbuser, self.dbpasswd)
 
     def post_run(self):
         """Additional tasks."""

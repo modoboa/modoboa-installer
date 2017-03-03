@@ -61,8 +61,8 @@ class PostgreSQL(Database):
         if dbname and dbuser:
             self._setup_pgpass(dbname, dbuser, dbpassword)
             cmd += " -h {} -d {} -U {} -w".format(self.dbhost, dbname, dbuser)
-        utils.exec_cmd(
-            """{} -c "{}" """.format(cmd, query), sudo_user=self.dbuser)
+        cmd = "{} -c '{}' ".format(cmd, query)
+        utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
     def create_user(self, name, password):
         """Create a user."""
