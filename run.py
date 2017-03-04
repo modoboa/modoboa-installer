@@ -60,9 +60,9 @@ def main():
     ssl_backend = ssl.get_backend(config)
     if ssl_backend:
         ssl_backend.create()
+    scripts.install("amavis", config)
     scripts.install("modoboa", config)
     scripts.install("postfix", config)
-    scripts.install("amavis", config)
     scripts.install("dovecot", config)
     utils.printcolor(
         "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"

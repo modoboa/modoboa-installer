@@ -61,12 +61,6 @@ class Amavis(base.Installer):
         return self.get_file_path(
             "amavis_{}_{}.sql".format(self.dbengine, version))
 
-    def setup_database(self):
-        """Additional config."""
-        super(Amavis, self).setup_database()
-        self.backend.grant_access(
-            self.dbname, self.config.get("modoboa", "dbuser"))
-
     def post_run(self):
         """Additional tasks."""
         with open("/etc/mailname", "w") as fp:

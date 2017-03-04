@@ -21,6 +21,5 @@ def install(appname, config):
     try:
         getattr(script, appname.capitalize())(config).run()
     except utils.FatalError as inst:
-        utils.printcolor(utils.RED, "Failure")
-        print(inst)
+        utils.printcolor(u"{}".format(inst), utils.RED)
         sys.exit(1)
