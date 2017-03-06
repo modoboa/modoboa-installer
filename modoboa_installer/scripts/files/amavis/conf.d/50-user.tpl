@@ -18,6 +18,10 @@ $spam_quarantine_method = 'sql:';
 $banned_files_quarantine_method = 'sql:';
 $bad_header_quarantine_method = 'sql:';
 
+# Tag Level
+$sa_tag_level_deflt =  -999;
+$sa_tag2_level_deflt =  5.0;
+
 # Discard spam
 $final_spam_destiny = D_DISCARD;
 

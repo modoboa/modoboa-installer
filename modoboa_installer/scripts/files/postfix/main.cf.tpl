@@ -139,22 +139,40 @@ postscreen_blacklist_action = enforce
 
 # Use some DNSBL
 postscreen_dnsbl_sites = 
-	zen.spamhaus.org*3 
-	bl.spameatingmonkey.net*2 
-	dnsbl.habl.org 
-	bl.spamcop.net 
-	dnsbl.sorbs.net 
-postscreen_dnsbl_threshold = 3 
+  b.barracudacentral.org=127.0.0.2*7
+  dnsbl.inps.de=127.0.0.2*7
+  bl.mailspike.net=127.0.0.2*5
+  bl.mailspike.net=127.0.0.[10;11;12]*4
+  dnsbl.sorbs.net=127.0.0.10*8
+  dnsbl.sorbs.net=127.0.0.5*6
+  dnsbl.sorbs.net=127.0.0.7*3
+  dnsbl.sorbs.net=127.0.0.8*2
+  dnsbl.sorbs.net=127.0.0.6*2
+  dnsbl.sorbs.net=127.0.0.9*2
+  zen.spamhaus.org=127.0.0.[10;11]*8
+  zen.spamhaus.org=127.0.0.[4..7]*6
+  zen.spamhaus.org=127.0.0.3*4
+  zen.spamhaus.org=127.0.0.2*3
+  hostkarma.junkemailfilter.com=127.0.0.2*3
+  hostkarma.junkemailfilter.com=127.0.0.4*1
+  hostkarma.junkemailfilter.com=127.0.1.2*1
+  wl.mailspike.net=127.0.0.[18;19;20]*-2
+  hostkarma.junkemailfilter.com=127.0.0.1*-2 
+  bl.spameatingmonkey.net*2 
+  dnsbl.habl.org 
+  bl.spamcop.net 
+postscreen_dnsbl_threshold = 8 
 postscreen_dnsbl_action = enforce 
 
 postscreen_greet_banner = Welcome, please wait... 
 postscreen_greet_action = enforce
 
-postscreen_pipelining_enable = yes
-postscreen_pipelining_action = enforce
+# Fix GMAIL ... Others ?
+postscreen_pipelining_enable = no
+# postscreen_pipelining_action = enforce
 
-postscreen_non_smtp_command_enable = yes
-postscreen_non_smtp_command_action = enforce
+postscreen_non_smtp_command_enable = no
+# postscreen_non_smtp_command_action = enforce
 
-postscreen_bare_newline_enable = yes
-postscreen_bare_newline_action = enforce
+postscreen_bare_newline_enable = no
+# postscreen_bare_newline_action = enforce
