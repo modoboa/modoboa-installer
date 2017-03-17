@@ -12,7 +12,6 @@ from .. import python
 from .. import utils
 
 from . import base
-from . import install
 
 
 class Modoboa(base.Installer):
@@ -52,7 +51,7 @@ class Modoboa(base.Installer):
                 self.extensions.remove("modoboa-amavis")
 
     def _setup_venv(self):
-        """Prepare a dedicated virtuelenv."""
+        """Prepare a dedicated virtualenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
         packages = ["modoboa", "rrdtool"]
         if self.dbengine == "postgres":
@@ -187,5 +186,3 @@ class Modoboa(base.Installer):
         self._setup_venv()
         self._deploy_instance()
         self.apply_settings()
-        install("uwsgi", self.config)
-        install("nginx", self.config)

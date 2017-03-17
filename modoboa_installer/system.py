@@ -49,3 +49,11 @@ def add_user_to_group(user, group):
 def enable_service(name):
     """Enable a service at startup."""
     utils.exec_cmd("systemctl enable {}".format(name))
+
+
+def enable_and_start_service(name):
+    """Enable a start a service."""
+    enable_service(name)
+    code, output = utils.exec_cmd("service {} status".format(name))
+    action = "start" if code else "restart"
+    utils.exec_cmd("service {} {}".format(name, action))
