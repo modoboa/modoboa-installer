@@ -56,7 +56,7 @@ def main():
         "The process can be long, feel free to take a coffee "
         "and come back later ;)", utils.BLUE)
     utils.printcolor("Starting...", utils.GREEN)
-    package.backend.install("sudo")
+    package.backend.install_many(["sudo", "wget"])
     ssl_backend = ssl.get_backend(config)
     if ssl_backend:
         ssl_backend.create()
