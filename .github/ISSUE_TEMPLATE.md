@@ -1,14 +1,13 @@
 # Impacted versions
 
-* Modoboa: X.X.x
-* Distribution: Debian / Ubuntu / Centos / Others
-* Codename: Jessie / Trusty / Centos 7 / ....
+* Distribution: Debian / Ubuntu / Centos
+* Codename: Jessie / Trusty / Centos 7 / ...
 * Arch: 32 Bits / 64 Bits
-* Webserver: Nginx/Apache
+* Database: PostgreSQL / MySQL
 
 # Steps to reproduce
 
-# Current behavior
+# Full trace using --debug option or current behaviour
 
 # Expected behavior
 
