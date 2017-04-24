@@ -97,11 +97,7 @@ class Uwsgi(base.Installer):
 
     def restart_daemon(self):
         """Restart daemon process."""
-        instances = ["modoboa_instance"]
-        if self.config.getboolean("automx", "enabled"):
-            instances.append("automx_instance")
-        for instance in instances:
-            code, output = utils.exec_cmd("service uwsgi status {}".format(
-                instance))
-            action = "start" if code else "restart"
-            utils.exec_cmd("service uwsgi {}".format(action))
+        code, output = utils.exec_cmd("service uwsgi status")
+        action = "start" if code else "restart"
+        utils.exec_cmd("service uwsgi {}".format(action))
+        system.enable_service(self.get_daemon_name())

@@ -5,6 +5,7 @@ import pwd
 import stat
 
 from . import package
+from . import system
 from . import utils
 
 
@@ -28,7 +29,7 @@ class Database(object):
     def install_package(self):
         """Install database package if required."""
         package.backend.install_many(self.packages[package.backend.FORMAT])
-        utils.exec_cmd("service {} start".format(self.service))
+        system.enable_and_start_service(self.service)
 
 
 class PostgreSQL(Database):
@@ -53,7 +54,7 @@ class PostgreSQL(Database):
             pattern = "s/^host(.+)ident$/host$1md5/"
             cfgfile = "/var/lib/pgsql/data/pg_hba.conf"
             utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfgfile))
-        utils.exec_cmd("service {} start".format(self.service))
+        system.enable_and_start_service(self.service)
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a postgresql query."""

@@ -5,6 +5,7 @@ import pwd
 
 from .. import database
 from .. import package
+from .. import system
 from .. import utils
 
 from . import base
@@ -102,5 +103,6 @@ class Dovecot(base.Installer):
         code, output = utils.exec_cmd("service dovecot status")
         action = "start" if code else "restart"
         utils.exec_cmd(
-            "service dovecot {} > /dev/null 2>&1".format(action),
+            "service {} {} > /dev/null 2>&1".format(self.appname, action),
             capture_output=False)
+        system.enable_service(self.get_daemon_name())
