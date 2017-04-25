@@ -21,6 +21,8 @@ def main():
                         help="Enable debug output")
     parser.add_argument("--force", action="store_true", default=False,
                         help="Force installation")
+    parser.add_argument("--configfile", default="installer.cfg",
+                        help="Configuration file to use")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args()
@@ -28,8 +30,9 @@ def main():
     if args.debug:
         utils.ENV["debug"] = True
     utils.printcolor("Welcome to Modoboa installer!", utils.GREEN)
+    utils.check_config_file(args.configfile)
     config = configparser.SafeConfigParser()
-    with open("installer.cfg") as fp:
+    with open(args.configfile) as fp:
         config.readfp(fp)
     if not config.has_section("general"):
         config.add_section("general")

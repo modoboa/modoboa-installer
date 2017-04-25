@@ -5,6 +5,7 @@ import datetime
 import glob
 import os
 import platform
+import random
 import shutil
 import string
 import subprocess
@@ -82,6 +83,13 @@ def mkdir(path, mode, uid, gid):
     os.chown(path, uid, gid)
 
 
+def make_password(length=16):
+    """Create a random password."""
+    return "".join(
+        random.SystemRandom().choice(
+            string.letters + string.digits) for _ in range(length))
+
+
 @contextlib.contextmanager
 def settings(**kwargs):
     """Context manager to declare temporary settings."""
@@ -129,6 +137,25 @@ def copy_from_template(template, dest, context):
             "# This file was automatically installed on {}\n"
             .format(now))
         fp.write(ConfigFileTemplate(buf).substitute(context))
+
+
+def check_config_file(dest):
+    """Create a new installer config file if needed."""
+    if os.path.exists(dest):
+        return
+    printcolor(
+        "Configuration file {} not found, creating new one."
+        .format(dest), YELLOW)
+    with open("installer.cfg.default") as fp:
+        buf = fp.read()
+    context = {
+        "mysql_password": make_password(),
+        "modoboa_password": make_password(),
+        "amavis_password": make_password(),
+        "sa_password": make_password()
+    }
+    with open(dest, "w") as fp:
+        fp.write(string.Template(buf).substitute(context))
 
 
 def has_colours(stream):

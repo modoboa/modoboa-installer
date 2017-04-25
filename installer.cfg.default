@@ -23,7 +23,7 @@ password =
 
 [mysql]
 user = root
-password = password
+password = $mysql_password
 charset = utf8
 collation = utf8_general_ci
 
@@ -35,7 +35,7 @@ instance_path = %(home_dir)s/instance
 timezone = Europe/Paris
 dbname = modoboa
 dbuser = modoboa
-dbpassword = password
+dbpassword = $modoboa_password
 # Extensions to install
 # also available: modoboa-radicale modoboa-dmarc modoboa-imap-migration
 extensions = modoboa-amavis modoboa-pdfcredentials modoboa-postfix-autoreply modoboa-sievefilters modoboa-stats modoboa-webmail
@@ -58,7 +58,7 @@ max_servers = 1
 
 dbname = amavis
 dbuser = amavis
-dbpassword = password
+dbpassword = $amavis_password
 
 [clamav]
 enabled = true
@@ -95,7 +95,7 @@ config_dir = /etc/mail/spamassassin
 
 dbname = spamassassin
 dbuser = spamassassin
-dbpassword = password
+dbpassword = $sa_password
 
 [uwsgi]
 enabled = true 
