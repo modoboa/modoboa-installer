@@ -87,7 +87,7 @@ def make_password(length=16):
     """Create a random password."""
     return "".join(
         random.SystemRandom().choice(
-            string.letters + string.digits) for _ in range(length))
+            string.ascii_letters + string.digits) for _ in range(length))
 
 
 @contextlib.contextmanager
