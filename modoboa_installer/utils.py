@@ -77,9 +77,12 @@ def dist_name():
 def mkdir(path, mode, uid, gid):
     """Create a directory."""
     if not os.path.exists(path):
-        os.mkdir(path, mode)
-    else:
-        os.chmod(path, mode)
+        try: 
+            os.mkdir(path)
+        except OSError:
+            os.makedirs(path)
+        pass
+    os.chmod(path, mode)
     os.chown(path, uid, gid)
 
 
