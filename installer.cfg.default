@@ -38,7 +38,7 @@ dbuser = modoboa
 dbpassword = $modoboa_password
 # Extensions to install
 # also available: modoboa-radicale modoboa-dmarc modoboa-imap-migration
-extensions = modoboa-amavis modoboa-pdfcredentials modoboa-postfix-autoreply modoboa-sievefilters modoboa-stats modoboa-webmail
+extensions = modoboa-amavis modoboa-pdfcredentials modoboa-postfix-autoreply modoboa-sievefilters modoboa-stats modoboa-webmail modoboa-contacts
 
 # Deploy Modoboa and enable development mode
 devmode = false
