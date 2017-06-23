@@ -53,9 +53,9 @@ class DEBPackage(Package):
         """Get installed package version."""
         code, output = utils.exec_cmd(
             "dpkg -s {} | grep Version".format(name), capture_output=True)
-        match = re.match(r"Version: \d:(.+)-\d", output.decode())
+        match = re.match(r"Version: (\d:)?(.+)-\d", output.decode())
         if match:
-            return match.group(1)
+            return match.group(2)
         return None
 
 

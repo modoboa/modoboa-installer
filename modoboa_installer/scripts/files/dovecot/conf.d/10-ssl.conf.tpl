@@ -41,7 +41,7 @@ ssl_key = <%tls_key_file
 #ssl_parameters_regenerate = 168
 
 # SSL protocols to use
-ssl_protocols = !SSLv2 !SSLv3
+ssl_protocols = %ssl_protocols
 
 
 # SSL ciphers to use

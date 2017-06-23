@@ -55,6 +55,9 @@ class Dovecot(base.Installer):
         """Additional variables."""
         context = super(Dovecot, self).get_template_context()
         pw = pwd.getpwnam(self.user)
+        ssl_protocols = "!SSLv2 !SSLv3"
+        if package.backend.get_installed_version("openssl").startswith("1.1"):
+            ssl_protocols = "!SSLv3"
         if "centos" in utils.dist_name():
             protocols = "protocols = imap lmtp sieve"
             extra_protocols = self.config.get("dovecot", "extra_protocols")
@@ -70,7 +73,8 @@ class Dovecot(base.Installer):
             "modoboa_dbname": self.config.get("modoboa", "dbname"),
             "modoboa_dbuser": self.config.get("modoboa", "dbuser"),
             "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
-            "protocols": protocols
+            "protocols": protocols,
+            "ssl_protocols": ssl_protocols
         })
         return context
 
