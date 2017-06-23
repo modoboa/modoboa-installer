@@ -146,7 +146,7 @@ def check_config_file(dest):
     printcolor(
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)
-    with open("installer.cfg.default") as fp:
+    with open("installer.cfg.template") as fp:
         buf = fp.read()
     context = {
         "mysql_password": make_password(),

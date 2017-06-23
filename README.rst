@@ -27,7 +27,9 @@ Usage::
   $ cd modoboa-installer
   $ sudo ./run.py <your domain>
 
-To customize the installation, look at the ``installer.cfg`` file.
+A configuration file will be automatically generated the first time
+you run the installer, please don't copy the
+``installer.cfg.template`` file manually.
 
 By default, the following components are installed:
 
@@ -36,6 +38,13 @@ By default, the following components are installed:
 * Postfix
 * Dovecot
 * Amavis (with SpamAssassin and ClamAV)
+
+If you want to customize configuration before running the installer,
+run the following command::
+
+  $ ./run.py --stop-after-configfile-check <your domain>
+
+Make your modifications and run the installer as usual.
 
 If you want more information about the installation process, add the
 ``--debug`` option to your command line.
