@@ -87,3 +87,8 @@ class Postfix(base.Installer):
         if not os.path.exists("{}/dh2048.pem".format(self.config_dir)):
             cmd = "openssl dhparam -dsaparam -out dh2048.pem 2048"
             utils.exec_cmd(cmd, cwd=self.config_dir)
+
+        # Generate /etc/aliases.db file to avoid warnings
+        aliases_file = "/etc/aliases"
+        if os.path.exists(aliases_file):
+            utils.exec_cmd("postalias {}".format(aliases_file))
