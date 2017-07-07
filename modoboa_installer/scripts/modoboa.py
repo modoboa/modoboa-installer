@@ -7,6 +7,7 @@ import shutil
 import stat
 import sys
 
+from .. import compatibility_matrix
 from .. import package
 from .. import python
 from .. import utils
@@ -50,10 +51,36 @@ class Modoboa(base.Installer):
             else:
                 self.extensions.remove("modoboa-amavis")
 
+    def is_extension_ok_for_version(self, extension, version):
+        """Check if extension can be installed with this modo version."""
+        if extension not in compatibility_matrix.EXTENSIONS_AVAILABILITY:
+            return True
+        version = utils.convert_version_to_int(version)
+        min_version = compatibility_matrix.EXTENSIONS_AVAILABILITY[extension]
+        min_version = utils.convert_version_to_int(min_version)
+        return version >= min_version
+
     def _setup_venv(self):
         """Prepare a dedicated virtualenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
-        packages = ["modoboa", "rrdtool"]
+        packages = ["rrdtool"]
+        version = self.config.get("modoboa", "version")
+        if version == "latest":
+            packages += ["modoboa"] + self.extensions
+        else:
+            matrix = compatibility_matrix.COMPATIBILITY_MATRIX[version]
+            packages.append("modoboa=={}".format(version))
+            for extension in list(self.extensions):
+                if not self.is_extension_ok_for_version(extension, version):
+                    self.extensions.remove(extension)
+                    continue
+                if extension in matrix:
+                    req_version = matrix[extension]
+                    req_version = req_version.replace("<", "\<")
+                    req_version = req_version.replace(">", "\>")
+                    packages.append("{}{}".format(extension, req_version))
+                else:
+                    packages.append(extension)
         if self.dbengine == "postgres":
             packages.append("psycopg2")
         else:
@@ -91,6 +118,7 @@ class Modoboa(base.Installer):
             "--timezone", self.config.get("modoboa", "timezone"),
             "--domain", self.config.get("general", "hostname"),
             "--extensions", " ".join(self.extensions),
+            "--dont-install-extensions",
             "--dburl", "'default:{0}://{1}:{2}@{3}/{1}'".format(
                 self.config.get("database", "engine"), self.dbname,
                 self.dbpasswd, self.dbhost)

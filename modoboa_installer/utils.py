@@ -171,6 +171,8 @@ def has_colours(stream):
     except:
         # guess false in case of error
         return False
+
+
 has_colours = has_colours(sys.stdout)
 
 
@@ -179,3 +181,30 @@ def printcolor(message, color):
     if has_colours:
         message = "\x1b[1;{}m{}\x1b[0m".format(30 + color, message)
     print(message)
+
+
+def convert_version_to_int(version):
+    """Convert a version string to an integer."""
+    number_bits = (8, 8, 16)
+
+    numbers = [int(number_string) for number_string in version.split(".")]
+    if len(numbers) > len(number_bits):
+        raise NotImplementedError(
+            "Versions with more than {0} decimal places are not supported"
+            .format(len(number_bits) - 1)
+        )
+    # add 0s for missing numbers
+    numbers.extend([0] * (len(number_bits) - len(numbers)))
+    # convert to single int and return
+    number = 0
+    total_bits = 0
+    for num, bits in reversed(list(zip(numbers, number_bits))):
+        max_num = (bits + 1) - 1
+        if num >= 1 << max_num:
+            raise ValueError(
+                "Number {0} cannot be stored with only {1} bits. Max is {2}"
+                .format(num, bits, max_num)
+            )
+        number += num << total_bits
+        total_bits += bits
+    return number
