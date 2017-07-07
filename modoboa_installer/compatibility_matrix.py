@@ -1,6 +1,9 @@
 """Modoboa compatibility matrix."""
 
 COMPATIBILITY_MATRIX = {
+    # Example:
+    #
+    # "1.8.1": {}
 }
 
 EXTENSIONS_AVAILABILITY = {
