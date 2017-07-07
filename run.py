@@ -8,10 +8,11 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-from modoboa_installer import scripts
-from modoboa_installer import utils
+from modoboa_installer import compatibility_matrix
 from modoboa_installer import package
+from modoboa_installer import scripts
 from modoboa_installer import ssl
+from modoboa_installer import utils
 
 
 def main():
@@ -23,6 +24,10 @@ def main():
                         help="Force installation")
     parser.add_argument("--configfile", default="installer.cfg",
                         help="Configuration file to use")
+    parser.add_argument(
+        "--version", default="latest",
+        choices=["latest"] + compatibility_matrix.COMPATIBILITY_MATRIX.keys(),
+        help="Modoboa version to install")
     parser.add_argument(
         "--stop-after-configfile-check", action="store_true", default=False,
         help="Check configuration, generate it if needed and exit")
@@ -42,6 +47,7 @@ def main():
     if not config.has_section("general"):
         config.add_section("general")
     config.set("general", "domain", args.domain)
+    config.set("modoboa", "version", args.version)
     utils.printcolor(
         "Your mail server will be installed with the following components:",
         utils.BLUE)
@@ -79,6 +85,7 @@ def main():
         "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
         .format(config.get("general", "hostname")),
         utils.GREEN)
+
 
 if __name__ == "__main__":
     main()
