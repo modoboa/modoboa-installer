@@ -31,13 +31,14 @@ A configuration file will be automatically generated the first time
 you run the installer, please don't copy the
 ``installer.cfg.template`` file manually.
 
-By default, the following components are installed:
+The following components are installed by the installer:
 
 * Database server (PostgreSQL or MySQL)
 * Nginx and uWSGI
 * Postfix
 * Dovecot
 * Amavis (with SpamAssassin and ClamAV)
+* automx (autoconfiguration service)
 
 If you want to customize configuration before running the installer,
 run the following command::
@@ -45,6 +46,15 @@ run the following command::
   $ ./run.py --stop-after-configfile-check <your domain>
 
 Make your modifications and run the installer as usual.
+
+By default, the latest Modoboa version is installed but you can select
+a previous one using the ``--version`` option::
+
+  $ sudo ./run.py --version=X.X.X <your domain>
+
+.. note::
+
+   Version selection is available only for Modoboa >= 1.8.1.
 
 If you want more information about the installation process, add the
 ``--debug`` option to your command line.
