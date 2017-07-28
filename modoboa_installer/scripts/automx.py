@@ -56,7 +56,7 @@ class Automx(base.Installer):
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
         packages = [
             "future", "lxml", "ipaddress", "sqlalchemy", "python-memcached",
-            "python-dateutil", "configparser"
+            "python-dateutil", "configparser", "psycopg2"
         ]
         if self.dbengine == "postgres":
             packages.append("psycopg2")
