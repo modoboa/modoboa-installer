@@ -1,9 +1,10 @@
 """Modoboa compatibility matrix."""
 
 COMPATIBILITY_MATRIX = {
-    # Example:
-    #
-    # "1.8.1": {}
+    "1.8.1": {
+        "modoboa-webmail": "<=1.1.5",
+        "modoboa-sievefilers": "<=1.1.1",
+    }
 }
 
 EXTENSIONS_AVAILABILITY = {
