@@ -2,8 +2,9 @@
 
 COMPATIBILITY_MATRIX = {
     "1.8.1": {
-        "modoboa-webmail": "<=1.1.5",
+        "modoboa-pdfcredentials": "<=1.1.0",
         "modoboa-sievefilers": "<=1.1.0",
+        "modoboa-webmail": "<=1.1.5",
     }
 }
 
