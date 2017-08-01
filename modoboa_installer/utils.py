@@ -208,3 +208,17 @@ def convert_version_to_int(version):
         number += num << total_bits
         total_bits += bits
     return number
+
+
+def random_key(l=16):
+    """Generate a random key.
+
+    :param integer l: the key's length
+    :return: a string
+    """
+    punctuation = """!#$%&()*+,-./:;<=>?@[]^_`{|}~"""
+    population = string.digits + string.ascii_letters + punctuation
+    while True:
+        key = "".join(random.sample(population * l, l))
+        if len(key) == l:
+            return key

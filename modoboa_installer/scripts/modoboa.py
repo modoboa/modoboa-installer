@@ -188,6 +188,14 @@ class Modoboa(base.Installer):
                 "handle_mailboxes": True,
                 "account_auto_removal": True
             },
+            # FIXME: since we rewrite all parameters, the secret key
+            # previously created will disappear. As a quick fix, we
+            # recreate a new one here but it will mess up opened
+            # sessions if the installer is used to upgrade an existing
+            # database...
+            "core": {
+                "secret_key": utils.random_key()
+            },
             "modoboa_amavis": {
                 "am_pdp_mode": "inet",
             },
