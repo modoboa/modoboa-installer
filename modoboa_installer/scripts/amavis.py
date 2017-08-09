@@ -13,8 +13,15 @@ class Amavis(base.Installer):
 
     appname = "amavis"
     packages = {
-        "deb": ["libdbi-perl", "amavisd-new"],
-        "rpm": ["amavisd-new"],
+        "deb": [
+            "libdbi-perl", "amavisd-new", "arc", "arj", "cabextract",
+            "liblz4-tool", "lrzip", "lzop", "p7zip-full", "rpm2cpio",
+            "unrar-free", "zoo", "ripole"
+        ],
+        "rpm": [
+            "amavisd-new", "arj", "cabextract", "lz4", "lrzip",
+            "lzop", "p7zip", "unar", "unzoo"
+        ],
     }
     with_db = True
 
