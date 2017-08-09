@@ -40,4 +40,5 @@ server {
         uwsgi_param UWSGI_SCRIPT instance.wsgi:application;
         uwsgi_pass modoboa;
     }
+    %{extra_config}
 }

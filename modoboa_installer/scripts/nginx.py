@@ -29,12 +29,12 @@ class Nginx(base.Installer):
         })
         return context
 
-    def _setup_config(self, app, hostname=None):
+    def _setup_config(self, app, hostname=None, extra_config=None):
         """Custom app configuration."""
         if hostname is None:
             hostname = self.config.get("general", "hostname")
         context = self.get_template_context(app)
-        context.update({"hostname": hostname})
+        context.update({"hostname": hostname, "extra_config": extra_config})
         src = self.get_file_path("{}.conf.tpl".format(app))
         if package.backend.FORMAT == "deb":
             dst = os.path.join(
@@ -57,11 +57,24 @@ class Nginx(base.Installer):
 
     def post_run(self):
         """Additionnal tasks."""
-        self._setup_config("modoboa")
+        extra_modoboa_config = ""
         if self.config.getboolean("automx", "enabled"):
             hostname = "autoconfig.{}".format(
                 self.config.get("general", "domain"))
             self._setup_config("automx", hostname)
+            extra_modoboa_config = """
+    location /autodiscover/autodiscover.xml {
+        include uwsgi_params;
+        uwsgi_pass automx;
+    }
+    location /mobileconfig {
+        include uwsgi_params;
+        uwsgi_pass automx;
+    }
+"""
+        self._setup_config(
+            "modoboa", extra_config=extra_modoboa_config)
+
         if not os.path.exists("{}/dhparam.pem".format(self.config_dir)):
             cmd = "openssl dhparam -dsaparam -out dhparam.pem 4096"
             utils.exec_cmd(cmd, cwd=self.config_dir)
