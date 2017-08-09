@@ -1,6 +1,7 @@
 """Database related tools."""
 
 import os
+import platform
 import pwd
 import stat
 
@@ -124,32 +125,51 @@ class MySQL(Database):
     """MySQL backend."""
 
     packages = {
-        "deb": ["mysql-server", "libmysqlclient-dev"],
+        "deb": ["mariadb-server"],
         "rpm": ["mariadb", "mariadb-devel", "mariadb-server"],
     }
-    service = "mariadb" if package.backend.FORMAT == "rpm" else "mysql"
+    service = "mariadb"
+
+    def _escape(self, query):
+        """Replace special characters."""
+        return query.replace("'", "'\"'\"'")
 
     def install_package(self):
         """Preseed package installation."""
-        package.backend.preconfigure(
-            "mysql-server", "root_password", "password", self.dbpassword)
-        package.backend.preconfigure(
-            "mysql-server", "root_password_again", "password", self.dbpassword)
+        name, version, _id = platform.linux_distribution()
+        if name == "debian":
+            mysql_name = "mysql" if version.startswith("8") else "mariadb"
+            self.packages["deb"].append("lib{}client-dev".format(mysql_name))
         super(MySQL, self).install_package()
-        if package.backend.FORMAT == "rpm":
-            utils.exec_cmd("mysqladmin -u root password '{}'".format(
-                self.dbpassword))
+        if name == "debian" and version.startswith("8"):
+            package.backend.preconfigure(
+                "mariadb-server", "root_password", "password",
+                self.dbpassword)
+            package.backend.preconfigure(
+                "mariadb-server", "root_password_again", "password",
+                self.dbpassword)
+        else:
+            queries = [
+                "UPDATE user SET plugin='' WHERE user='root'",
+                "UPDATE user SET password=PASSWORD('{}') WHERE USER='root'"
+                .format(self.dbpassword),
+                "flush privileges"
+            ]
+            for query in queries:
+                utils.exec_cmd(
+                    "mysql -D mysql -e '{}'".format(self._escape(query)))
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a mysql query."""
         if dbuser is None and dbpassword is None:
             dbuser = self.dbuser
             dbpassword = self.dbpassword
-        cmd = "mysql -h {} -u {} -p{}".format(self.dbhost, dbuser, dbpassword)
+        cmd = "mysql -h {} -u {}".format(self.dbhost, dbuser)
+        if dbpassword:
+            cmd += " -p{}".format(dbpassword)
         if dbname:
             cmd += " -D {}".format(dbname)
-        query = query.replace("'", "'\"'\"'")
-        utils.exec_cmd(cmd + """ -e '{}' """.format(query))
+        utils.exec_cmd(cmd + """ -e '{}' """.format(self._escape(query)))
 
     def create_user(self, name, password):
         """Create a user."""

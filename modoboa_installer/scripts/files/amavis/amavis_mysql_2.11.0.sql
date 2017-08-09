@@ -107,7 +107,7 @@ CREATE TABLE policy (
 --  SELECT COUNT(*) FROM T statement, InnoDB must scan an index of the table,
 --  which takes some time if the index is not entirely in the buffer pool.
 --
---  Wayne Smith adds: When using MySQL with InnoDB one might want to
+--        Wayne Smith adds: When using MySQL with InnoDB one might want to
 --  increase buffer size for both pool and log, and might also want
 --  to change flush settings for a little better performance. Example:
 --    innodb_buffer_pool_size = 384M
@@ -157,22 +157,22 @@ CREATE TABLE msgs (
   dsn_sent   char(1),                   -- was DSN sent? Y/N/q (q=quenched)
   spam_level float,                     -- SA spam level (no boosts)
   message_id varchar(255)  DEFAULT '',  -- mail Message-ID header field
-  from_addr  varchar(255)  CHARACTER SET utf8mb4 COLLATE utf8_bin  DEFAULT '',
+  from_addr  varchar(255)  CHARACTER SET utf8mb4 COLLATE utf8mb4_bin  DEFAULT '',
                                         -- mail From header field,    UTF8
-  subject    varchar(255)  CHARACTER SET utf8mb4 COLLATE utf8_bin  DEFAULT '',
+  subject    varchar(255)  CHARACTER SET utf8mb4 COLLATE utf8mb4_bin  DEFAULT '',
                                         -- mail Subject header field, UTF8
   host       varchar(255)  NOT NULL,    -- hostname where amavisd is running
-  PRIMARY KEY (partition_tag,mail_id)
+  PRIMARY KEY (partition_tag,mail_id),
   FOREIGN KEY (sid) REFERENCES maddr(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 CREATE INDEX msgs_idx_sid      ON msgs (sid);
 CREATE INDEX msgs_idx_mess_id  ON msgs (message_id); -- useful with pen pals
 CREATE INDEX msgs_idx_time_num ON msgs (time_num);
 -- alternatively when purging based on time_iso (instead of msgs_idx_time_num):
---   CREATE INDEX msgs_idx_time_iso ON msgs (time_iso);
+CREATE INDEX msgs_idx_time_iso ON msgs (time_iso);
 -- When using FOREIGN KEY contraints, InnoDB requires index on a field
 -- (an the field must be the first field in the index).  Hence create it:
---   CREATE INDEX msgs_idx_mail_id  ON msgs (mail_id);
+CREATE INDEX msgs_idx_mail_id  ON msgs (mail_id);
 
 -- per-recipient information related to each processed message;
 -- NOTE: records in msgrcpt without corresponding msgs.mail_id record are
@@ -191,12 +191,14 @@ CREATE TABLE msgrcpt (
   wl         char(1)  DEFAULT ' ',       -- sender whitelisted by this recip
   bspam_level float,                     -- per-recipient (total) spam level
   smtp_resp  varchar(255)  DEFAULT '',   -- SMTP response given to MTA
-  PRIMARY KEY (partition_tag,mail_id,rseqnum)
+  PRIMARY KEY (partition_tag,mail_id,rseqnum),
   FOREIGN KEY (rid)     REFERENCES maddr(id)     ON DELETE RESTRICT,
   FOREIGN KEY (mail_id) REFERENCES msgs(mail_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 CREATE INDEX msgrcpt_idx_mail_id  ON msgrcpt (mail_id);
 CREATE INDEX msgrcpt_idx_rid      ON msgrcpt (rid);
+-- Additional index on rs since Modoboa uses it to filter its quarantine
+CREATE INDEX msgrcpt_idx_rs       ON msgrcpt (rs);
 
 -- mail quarantine in SQL, enabled by $*_quarantine_method='sql:'
 -- NOTE: records in quarantine without corresponding msgs.mail_id record are
@@ -206,6 +208,6 @@ CREATE TABLE quarantine (
   mail_id    varbinary(16) NOT NULL,     -- long-term unique mail id
   chunk_ind  integer unsigned NOT NULL,  -- chunk number, starting with 1
   mail_text  blob          NOT NULL,     -- store mail as chunks of octets
-  PRIMARY KEY (partition_tag,mail_id,chunk_ind)
+  PRIMARY KEY (partition_tag,mail_id,chunk_ind),
   FOREIGN KEY (mail_id) REFERENCES msgs(mail_id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

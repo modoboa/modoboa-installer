@@ -173,6 +173,8 @@ CREATE TABLE msgrcpt (
 );
 CREATE INDEX msgrcpt_idx_mail_id  ON msgrcpt (mail_id);
 CREATE INDEX msgrcpt_idx_rid      ON msgrcpt (rid);
+-- Additional index on rs since Modoboa uses it to filter its quarantine
+CREATE INDEX msgrcpt_idx_rs       ON msgrcpt (rs);
 
 -- mail quarantine in SQL, enabled by $*_quarantine_method='sql:'
 -- NOTE: records in quarantine without corresponding msgs.mail_id record are
