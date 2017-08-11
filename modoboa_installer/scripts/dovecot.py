@@ -25,7 +25,7 @@ class Dovecot(base.Installer):
     }
     config_files = [
         "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
-        "conf.d/20-lmtp.conf"]
+        "conf.d/10-master.conf", "conf.d/20-lmtp.conf"]
     with_user = True
 
     def get_config_files(self):
@@ -34,6 +34,8 @@ class Dovecot(base.Installer):
             "dovecot-sql-{}.conf.ext=dovecot-sql.conf.ext"
             .format(self.dbengine),
             "dovecot-sql-master-{}.conf.ext=dovecot-sql-master.conf.ext"
+            .format(self.dbengine),
+            "postlogin-{}.sh=/usr/local/bin/postlogin.sh"
             .format(self.dbengine),
         ]
 
@@ -70,6 +72,7 @@ class Dovecot(base.Installer):
             "db_driver": self.db_driver,
             "mailboxes_owner_uid": pw[2],
             "mailboxes_owner_gid": pw[3],
+            "modoboa_user": self.config.get("modoboa", "user"),
             "modoboa_dbname": self.config.get("modoboa", "dbname"),
             "modoboa_dbuser": self.config.get("modoboa", "dbuser"),
             "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
@@ -95,6 +98,8 @@ class Dovecot(base.Installer):
             )
         for f in glob.glob("{}/*".format(self.get_file_path("conf.d"))):
             utils.copy_file(f, "{}/conf.d".format(self.config_dir))
+        # Make postlogin script executable
+        utils.exec_cmd("chmod +x /usr/local/bin/postlogin.sh")
 
     def restart_daemon(self):
         """Restart daemon process.
