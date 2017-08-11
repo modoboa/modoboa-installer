@@ -21,6 +21,7 @@ INSTANCE=%{instance_path}
 
 # Logs parsing
 */5     *       *       *       *       root    $PYTHON $INSTANCE/manage.py logparser &> /dev/null
+0       *       *       *       *       root    $PYTHON $INSTANCE/manage.py update_statistics
 
 # Radicale rights file
 %{radicale_enabled}*/2    *       *       *       *        root    $PYTHON $INSTANCE/manage.py generate_rights
