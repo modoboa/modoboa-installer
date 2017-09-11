@@ -10,7 +10,7 @@ rate_limit_exception_networks = 127.0.0.0/8, ::1/128
 
 [global]
 backend = sql
-actions = settings
+action = settings
 account_type = email
 host = %sql_dsn
 query = %sql_query
