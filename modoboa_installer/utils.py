@@ -10,6 +10,12 @@ import shutil
 import string
 import subprocess
 import sys
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
+from . import config_dict_template
 
 
 ENV = {}
@@ -139,23 +145,14 @@ def copy_from_template(template, dest, context):
         fp.write(ConfigFileTemplate(buf).substitute(context))
 
 
-def check_config_file(dest):
+def check_config_file(dest, interactive=False):
     """Create a new installer config file if needed."""
     if os.path.exists(dest):
         return
     printcolor(
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)
-    with open("installer.cfg.template") as fp:
-        buf = fp.read()
-    context = {
-        "mysql_password": make_password(),
-        "modoboa_password": make_password(),
-        "amavis_password": make_password(),
-        "sa_password": make_password()
-    }
-    with open(dest, "w") as fp:
-        fp.write(string.Template(buf).substitute(context))
+    gen_config(dest, interactive)
 
 
 def has_colours(stream):
@@ -222,3 +219,64 @@ def random_key(l=16):
         key = "".join(random.sample(population * l, l))
         if len(key) == l:
             return key
+
+
+def validate(value, config_entry):
+    if value is None:
+        return False
+    if "values" not in config_entry and "validators" not in config_entry:
+        return True
+    if "values" in config_entry:
+        try:
+            value = int(value)
+        except ValueError:
+            return False
+        return value >= 0 and value < len(config_entry["values"])
+    if "validators" in config_entry:
+        for validator in config_entry["validators"]:
+            valide, message = validator(value)
+            if not valide:
+                printcolor(message, MAGENTA)
+                return False
+        return True
+
+
+def gen_config(dest, interactive=False):
+    """Create config file from dict template"""
+    tpl_dict = config_dict_template.ConfigDictTemplate
+    config = configparser.ConfigParser()
+    # only ask about options we need, else still generate default
+    for section in tpl_dict:
+        if "if" in section:
+            config_key, value = section.get("if").split("=")
+            section_name, option = config_key.split(".")
+            interactive_section = (
+                config.get(section_name, option) == value and interactive)
+        else:
+            interactive_section = interactive
+        config.add_section(section["name"])
+        for config_entry in section["values"]:
+            if callable(config_entry["default"]):
+                default_value = config_entry["default"]()
+            else:
+                default_value = config_entry["default"]
+            user_value = None
+            if config_entry.get("customizable") and interactive_section:
+                while (user_value != '' and
+                       not validate(user_value, config_entry)):
+                    print(config_entry.get("question"))
+                    if config_entry.get("values"):
+                        print("Please choose from the list")
+                        values = config_entry.get("values")
+                        for index, value in enumerate(values):
+                            print("{}   {}".format(index, value))
+                    print("default is <{}>".format(default_value))
+                    user_value = user_input("->")
+
+                if config_entry.get("values") and user_value != '':
+                    user_value = values[int(user_value)]
+            value = user_value or default_value
+            config.set(section["name"], config_entry["option"], value)
+
+    with open(dest, "w") as configfile:
+        config.write(configfile)
