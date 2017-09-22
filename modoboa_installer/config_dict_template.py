@@ -10,9 +10,9 @@ def make_password(length=16):
 
 
 # Validators should return a tuple bool, error message
-def is_email(input):
+def is_email(user_input):
     """Return True in input is a valid email"""
-    return "@" in input and "." in input, "Please enter a valid email"
+    return "@" in user_input, "Please enter a valid email"
 
 
 ConfigDictTemplate = [
@@ -137,7 +137,7 @@ ConfigDictTemplate = [
                  },
                  {
                     "option": "timezone",
-                    "default": "Euroope/Paris",
+                    "default": "Europe/Paris",
                  },
                  {
                     "option": "dbname",

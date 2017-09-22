@@ -241,6 +241,28 @@ def validate(value, config_entry):
         return True
 
 
+def get_entry_value(entry, interactive):
+    if callable(entry["default"]):
+        default_value = entry["default"]()
+    else:
+        default_value = entry["default"]
+    user_value = None
+    if entry.get("customizable") and interactive:
+        while (user_value != '' and not validate(user_value, entry)):
+            print(entry.get("question"))
+            if entry.get("values"):
+                print("Please choose from the list")
+                values = entry.get("values")
+                for index, value in enumerate(values):
+                    print("{}   {}".format(index, value))
+            print("default is <{}>".format(default_value))
+            user_value = user_input("->")
+
+        if entry.get("values") and user_value != '':
+            user_value = values[int(user_value)]
+    return user_value if user_value else default_value
+
+
 def gen_config(dest, interactive=False):
     """Create config file from dict template"""
     tpl_dict = config_dict_template.ConfigDictTemplate
@@ -256,26 +278,7 @@ def gen_config(dest, interactive=False):
             interactive_section = interactive
         config.add_section(section["name"])
         for config_entry in section["values"]:
-            if callable(config_entry["default"]):
-                default_value = config_entry["default"]()
-            else:
-                default_value = config_entry["default"]
-            user_value = None
-            if config_entry.get("customizable") and interactive_section:
-                while (user_value != '' and
-                       not validate(user_value, config_entry)):
-                    print(config_entry.get("question"))
-                    if config_entry.get("values"):
-                        print("Please choose from the list")
-                        values = config_entry.get("values")
-                        for index, value in enumerate(values):
-                            print("{}   {}".format(index, value))
-                    print("default is <{}>".format(default_value))
-                    user_value = user_input("->")
-
-                if config_entry.get("values") and user_value != '':
-                    user_value = values[int(user_value)]
-            value = user_value or default_value
+            value = get_entry_value(config_entry, interactive_section)
             config.set(section["name"], config_entry["option"], value)
 
     with open(dest, "w") as configfile:
