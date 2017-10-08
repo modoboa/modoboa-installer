@@ -1,7 +1,7 @@
 modoboa-installer
 =================
 
-|travis|
+|travis| |codecov|
 
 An installer which deploy a complete mail server based on Modoboa.
 
@@ -86,3 +86,5 @@ for account recovery.
 
 .. |travis| image:: https://travis-ci.org/modoboa/modoboa-installer.png?branch=master
    :target: https://travis-ci.org/modoboa/modoboa-installer
+.. |codecov| image:: http://codecov.io/github/modoboa/modoboa-installer/coverage.svg?branch=master
+   :target: http://codecov.io/github/modoboa/modoboa-installer?branch=master
