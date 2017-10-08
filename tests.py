@@ -1,15 +1,13 @@
 """Installer unit tests."""
 
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 import os
 import shutil
 import sys
 import tempfile
 import unittest
 
+from six import StringIO
+from six.moves import configparser
 try:
     from unittest.mock import patch
 except ImportError:
@@ -76,6 +74,22 @@ class ConfigFileTestCase(unittest.TestCase):
         self.assertEqual(config.get("certificate", "type"), "letsencrypt")
         self.assertEqual(
             config.get("letsencrypt", "email"), "admin@example.test")
+
+    @patch("modoboa_installer.utils.user_input")
+    def test_configfile_loading(self, mock_user_input):
+        """Check interactive mode."""
+        mock_user_input.side_effect = ["no"]
+        out = StringIO()
+        sys.stdout = out
+        run.main([
+            "--configfile", self.cfgfile,
+            "example.test"])
+        self.assertTrue(os.path.exists(self.cfgfile))
+        self.assertIn(
+            "modoboa automx amavis clamav dovecot nginx razor postfix"
+            " spamassassin uwsgi",
+            out.getvalue()
+        )
 
 
 if __name__ == "__main__":
