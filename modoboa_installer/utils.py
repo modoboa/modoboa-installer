@@ -249,16 +249,17 @@ def get_entry_value(entry, interactive):
     user_value = None
     if entry.get("customizable") and interactive:
         while (user_value != '' and not validate(user_value, entry)):
-            print(entry.get("question"))
+            question = entry.get("question")
             if entry.get("values"):
-                print("Please choose from the list")
+                question += " from the list"
                 values = entry.get("values")
                 for index, value in enumerate(values):
-                    print("{}   {}".format(index, value))
+                    question += "\n{}   {}".format(index, value)
+            print(question)
             print("default is <{}>".format(default_value))
-            user_value = user_input("->")
+            user_value = user_input("-> ")
 
-        if entry.get("values") and user_value != '':
+        if entry.get("values") and user_value != "":
             user_value = values[int(user_value)]
     return user_value if user_value else default_value
 

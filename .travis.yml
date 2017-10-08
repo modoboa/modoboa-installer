@@ -6,7 +6,7 @@ python:
   - "3.4"
 
 before_install:
-  - pip install codecov
+  - pip install -r test-requirements.txt
 
 script:
   - coverage run tests.py
