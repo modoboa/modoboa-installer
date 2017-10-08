@@ -7,6 +7,7 @@ try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
+import sys
 
 from modoboa_installer import compatibility_matrix
 from modoboa_installer import package
@@ -15,7 +16,7 @@ from modoboa_installer import ssl
 from modoboa_installer import utils
 
 
-def main():
+def main(input_args):
     """Install process."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", default=False,
@@ -36,7 +37,7 @@ def main():
         help="Generate configuration file with user interaction")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
-    args = parser.parse_args()
+    args = parser.parse_args(input_args)
 
     if args.debug:
         utils.ENV["debug"] = True
@@ -91,4 +92,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])
