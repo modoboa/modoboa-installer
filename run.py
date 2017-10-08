@@ -31,6 +31,9 @@ def main():
     parser.add_argument(
         "--stop-after-configfile-check", action="store_true", default=False,
         help="Check configuration, generate it if needed and exit")
+    parser.add_argument(
+        "--interactive", action="store_true", default=False,
+        help="Generate configuration file with user interaction")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args()
@@ -38,7 +41,7 @@ def main():
     if args.debug:
         utils.ENV["debug"] = True
     utils.printcolor("Welcome to Modoboa installer!", utils.GREEN)
-    utils.check_config_file(args.configfile)
+    utils.check_config_file(args.configfile, args.interactive)
     if args.stop_after_configfile_check:
         return
     config = configparser.SafeConfigParser()
