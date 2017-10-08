@@ -57,6 +57,26 @@ class ConfigFileTestCase(unittest.TestCase):
         self.assertEqual(config.get("certificate", "type"), "self-signed")
         self.assertEqual(config.get("database", "engine"), "postgres")
 
+    @patch("modoboa_installer.utils.user_input")
+    def test_interactive_mode_letsencrypt(self, mock_user_input):
+        """Check interactive mode."""
+        mock_user_input.side_effect = [
+            "1", "admin@example.test", "0", "", "", "", ""
+        ]
+        with open(os.devnull, "w") as fp:
+            sys.stdout = fp
+            run.main([
+                "--stop-after-configfile-check",
+                "--configfile", self.cfgfile,
+                "--interactive",
+                "example.test"])
+        self.assertTrue(os.path.exists(self.cfgfile))
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        self.assertEqual(config.get("certificate", "type"), "letsencrypt")
+        self.assertEqual(
+            config.get("letsencrypt", "email"), "admin@example.test")
+
 
 if __name__ == "__main__":
     unittest.main()
