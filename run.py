@@ -19,6 +19,9 @@ from modoboa_installer import utils
 def main(input_args):
     """Install process."""
     parser = argparse.ArgumentParser()
+    versions = (
+        ["latest"] + list(compatibility_matrix.COMPATIBILITY_MATRIX.keys())
+    )
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Enable debug output")
     parser.add_argument("--force", action="store_true", default=False,
@@ -26,8 +29,7 @@ def main(input_args):
     parser.add_argument("--configfile", default="installer.cfg",
                         help="Configuration file to use")
     parser.add_argument(
-        "--version", default="latest",
-        choices=["latest"] + compatibility_matrix.COMPATIBILITY_MATRIX.keys(),
+        "--version", default="latest", choices=versions,
         help="Modoboa version to install")
     parser.add_argument(
         "--stop-after-configfile-check", action="store_true", default=False,

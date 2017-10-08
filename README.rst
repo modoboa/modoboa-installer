@@ -1,6 +1,8 @@
 modoboa-installer
 =================
 
+|travis|
+
 An installer which deploy a complete mail server based on Modoboa.
 
 .. warning::
@@ -81,3 +83,6 @@ modify the following settings::
 
 Change the ``email`` setting to a valid value since it will be used
 for account recovery.
+
+.. |travis| image:: https://travis-ci.org/modoboa/modoboa-installer.png?branch=master
+   :target: https://travis-ci.org/modoboa/modoboa-installer
