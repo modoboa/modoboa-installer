@@ -53,6 +53,7 @@ def main(input_args):
     if not config.has_section("general"):
         config.add_section("general")
     config.set("general", "domain", args.domain)
+    config.set("dovecot", "domain", args.domain)
     config.set("modoboa", "version", args.version)
     utils.printcolor(
         "Your mail server will be installed with the following components:",

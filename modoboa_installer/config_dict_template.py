@@ -129,11 +129,11 @@ ConfigDictTemplate = [
                  },
                  {
                     "option": "venv_path",
-                    "default": "%(home_dir)s/instance",
+                    "default": "%(home_dir)s/env",
                  },
                  {
                     "option": "instance_path",
-                    "default": "%(home_dir)s/env",
+                    "default": "%(home_dir)s/instance",
                  },
                  {
                     "option": "timezone",
@@ -161,7 +161,7 @@ ConfigDictTemplate = [
                         "modoboa-stats modoboa-webmail modoboa-contacts"),
                  },
                  {
-                    "option": "devmod",
+                    "option": "devmode",
                     "default": "false",
                  },
             ]

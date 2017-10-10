@@ -47,6 +47,10 @@ run the following command::
 
   $ ./run.py --stop-after-configfile-check <your domain>
 
+An interactive mode is also available::
+
+  $ ./run.py --interactive <your domain>
+
 Make your modifications and run the installer as usual.
 
 By default, the latest Modoboa version is installed but you can select
