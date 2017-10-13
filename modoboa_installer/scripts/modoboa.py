@@ -168,6 +168,9 @@ class Modoboa(base.Installer):
         extensions = self.config.get("modoboa", "extensions")
         extensions = extensions.split()
         context.update({
+            "sudo_user": (
+                "uwsgi" if package.backend.FORMAT == "rpm" else context["user"]
+            ),
             "dovecot_mailboxes_owner": (
                 self.config.get("dovecot", "mailboxes_owner")),
             "radicale_enabled": "" if "modoboa-radicale" in extensions else "#"
