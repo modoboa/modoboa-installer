@@ -119,9 +119,10 @@ class Modoboa(base.Installer):
             "--domain", self.config.get("general", "hostname"),
             "--extensions", " ".join(self.extensions),
             "--dont-install-extensions",
-            "--dburl", "'default:{0}://{1}:{2}@{3}/{1}'".format(
-                self.config.get("database", "engine"), self.dbname,
-                self.dbpasswd, self.dbhost)
+            "--dburl", "'default:{}://{}:{}@{}/{}'".format(
+                self.config.get("database", "engine"),
+                self.dbuser, self.dbpasswd, self.dbhost, self.dbname
+            )
         ]
         if self.devmode:
             args = ["--devel"] + args
