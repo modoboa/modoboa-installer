@@ -43,7 +43,7 @@ def main(input_args):
 
     if args.debug:
         utils.ENV["debug"] = True
-    utils.printcolor("Welcome to Modoboa installer!", utils.GREEN)
+    utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
     utils.check_config_file(args.configfile, args.interactive)
     if args.stop_after_configfile_check:
         return
@@ -55,6 +55,15 @@ def main(input_args):
     config.set("general", "domain", args.domain)
     config.set("dovecot", "domain", args.domain)
     config.set("modoboa", "version", args.version)
+    utils.printcolor(
+        "Warning:\n"
+        "Before you start the installation, please make sure the following "
+        "DNS records exist for domain '{}':\n"
+        "  mail IN A   <IP ADDRESS OF YOUR SERVER>\n"
+        "       IN MX  {}.\n".format(
+            args.domain, config.get("general", "hostname")),
+        utils.CYAN
+    )
     utils.printcolor(
         "Your mail server will be installed with the following components:",
         utils.BLUE)
