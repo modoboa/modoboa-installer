@@ -87,7 +87,7 @@ class ConfigFileTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(self.cfgfile))
         self.assertIn(
             "modoboa automx amavis clamav dovecot nginx razor postfix"
-            " spamassassin uwsgi",
+            " postwhite spamassassin uwsgi",
             out.getvalue()
         )
 

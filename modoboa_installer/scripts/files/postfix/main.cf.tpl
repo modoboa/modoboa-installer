@@ -135,6 +135,7 @@ smtpd_recipient_restrictions =
 #
 postscreen_access_list =
        permit_mynetworks
+       cidr:/etc/postfix/postscreen_spf_whitelist.cidr
 postscreen_blacklist_action = enforce 
 
 # Use some DNSBL
