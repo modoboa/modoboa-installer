@@ -14,7 +14,7 @@ class Installer(object):
     appname = None
     no_daemon = False
     daemon_name = None
-    packages = []
+    packages = {}
     with_user = False
     with_db = False
     config_files = []
@@ -97,7 +97,7 @@ class Installer(object):
 
     def get_packages(self):
         """Return the list of packages to install."""
-        return self.packages[package.backend.FORMAT]
+        return self.packages.get(package.backend.FORMAT, {})
 
     def install_packages(self):
         """Install required packages."""

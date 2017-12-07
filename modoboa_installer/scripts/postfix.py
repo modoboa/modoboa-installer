@@ -10,6 +10,7 @@ from .. import package
 from .. import utils
 
 from . import base
+from . import install
 
 
 class Postfix(base.Installer):
@@ -92,3 +93,6 @@ class Postfix(base.Installer):
         aliases_file = "/etc/aliases"
         if os.path.exists(aliases_file):
             utils.exec_cmd("postalias {}".format(aliases_file))
+
+        # Postwhite
+        install("postwhite", self.config)
