@@ -84,6 +84,9 @@ class LetsEncryptCertificate(CertificateBackend):
                      "--post-hook 'service nginx start && "
                      "service postfix reload && "
                      "service dovecot reload'")
+        cfg_file = "/etc/letsencrypt/renewal/{}.conf".format(hostname)
+        pattern = "s/authenticator = standalone/authenticator = nginx/"
+        utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfg_file))
 
 
 def get_backend(config):
