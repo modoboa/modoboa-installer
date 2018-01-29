@@ -28,15 +28,12 @@ proxy_read_maps =
         proxy:%{db_driver}:/etc/postfix/sql-domain-aliases.cf
         proxy:%{db_driver}:/etc/postfix/sql-aliases.cf
         proxy:%{db_driver}:/etc/postfix/sql-relaydomains.cf
-        proxy:%{db_driver}:/etc/postfix/sql-relaydomains-transport.cf
-        proxy:%{db_driver}:/etc/postfix/sql-relaydomain-aliases-transport.cf
         proxy:%{db_driver}:/etc/postfix/sql-autoreplies-transport.cf
         proxy:%{db_driver}:/etc/postfix/sql-maintain.cf
         proxy:%{db_driver}:/etc/postfix/sql-relay-recipient-verification.cf
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes.cf
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-aliases.cf
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes-extra.cf
+        proxy:%{db_driver}:/etc/postfix/sql-sender-login-map.cf
         proxy:%{db_driver}:/etc/postfix/sql-spliteddomains-transport.cf
+        proxy:%{db_driver}:/etc/postfix/sql-transport.cf
 
 ## TLS settings
 #
@@ -79,8 +76,8 @@ virtual_alias_maps =
 relay_domains =
         proxy:%{db_driver}:/etc/postfix/sql-relaydomains.cf
 transport_maps =
+	proxy:%{db_driver}:/etc/postfix/sql-transport.cf
         proxy:%{db_driver}:/etc/postfix/sql-spliteddomains-transport.cf
-	proxy:%{db_driver}:/etc/postfix/sql-relaydomains-transport.cf 
         proxy:%{db_driver}:/etc/postfix/sql-autoreplies-transport.cf
 
 ## SASL authentication through Dovecot
@@ -114,9 +111,7 @@ strict_rfc821_envelopes = yes
 
 # List of authorized senders
 smtpd_sender_login_maps =
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes.cf
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-aliases.cf
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes-extra.cf
+        proxy:%{db_driver}:/etc/postfix/sql-sender-login-map.cf
 
 # Recipient restriction rules
 smtpd_recipient_restrictions =
