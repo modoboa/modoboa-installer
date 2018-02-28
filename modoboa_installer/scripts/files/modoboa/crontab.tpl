@@ -17,7 +17,7 @@ INSTANCE=%{instance_path}
 %{amavis_enabled}0       0       *       *       *       root    $PYTHON $INSTANCE/manage.py qcleanup
 
 # Notifications about pending release requests
-%{amavis_enabled}0       12      *       *       *       root    $PYTHON $INSTANCE/manage.py amnotify --baseurl='http://%{hostname}'
+%{amavis_enabled}0       12      *       *       *       root    $PYTHON $INSTANCE/manage.py amnotify
 
 # Logs parsing
 */5     *       *       *       *       root    $PYTHON $INSTANCE/manage.py logparser &> /dev/null
