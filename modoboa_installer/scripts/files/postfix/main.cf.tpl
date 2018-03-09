@@ -39,6 +39,7 @@ proxy_read_maps =
 #
 smtpd_use_tls = yes
 smtpd_tls_auth_only = no
+smtpd_tls_CApath = /etc/ssl/certs
 smtpd_tls_key_file = %tls_key_file
 smtpd_tls_cert_file = %tls_cert_file
 smtpd_tls_dh1024_param_file = ${config_directory}/dh2048.pem
@@ -58,6 +59,7 @@ smtpd_tls_exclude_ciphers = aNULL, MD5 , DES, ADH, RC4, PSD, SRP, 3DES, eNULL
 smtpd_tls_eecdh_grade = strong
 
 # Use TLS if this is supported by the remote SMTP server, otherwise use plaintext.
+smtp_tls_CApath = /etc/ssl/certs
 smtp_tls_security_level = may
 smtp_tls_loglevel = 1
 smtp_tls_exclude_ciphers = EXPORT, LOW
