@@ -59,9 +59,9 @@ class Automx(base.Installer):
             "python-dateutil", "configparser"
         ]
         if self.dbengine == "postgres":
-            packages.append("psycopg2")
+            packages.append("psycopg2-binary")
         else:
-            packages.append("MYSQL-Python")
+            packages.append("mysqlclient")
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
         target = "{}/master.zip".format(self.home_dir)
         if os.path.exists(target):

@@ -82,9 +82,9 @@ class Modoboa(base.Installer):
                 else:
                     packages.append(extension)
         if self.dbengine == "postgres":
-            packages.append("psycopg2")
+            packages.append("psycopg2-binary")
         else:
-            packages.append("MYSQL-Python")
+            packages.append("mysqlclient")
         if sys.version_info.major == 2 and sys.version_info.micro < 9:
             # Add extra packages to fix the SNI issue
             packages += ["pyOpenSSL"]
@@ -191,14 +191,6 @@ class Modoboa(base.Installer):
             "admin": {
                 "handle_mailboxes": True,
                 "account_auto_removal": True
-            },
-            # FIXME: since we rewrite all parameters, the secret key
-            # previously created will disappear. As a quick fix, we
-            # recreate a new one here but it will mess up opened
-            # sessions if the installer is used to upgrade an existing
-            # database...
-            "core": {
-                "secret_key": utils.random_key()
             },
             "modoboa_amavis": {
                 "am_pdp_mode": "inet",
