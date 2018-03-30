@@ -38,6 +38,8 @@ def install_packages(names, venv=None, upgrade=False, **kwargs):
 
 def install_package_from_repository(name, url, vcs="git", venv=None, **kwargs):
     """Install a Python package from its repository."""
+    if vcs == "git":
+        package.backend.install("git")
     cmd = "{} install -e {}+{}#egg={}".format(
         get_pip_path(venv), vcs, url, name)
     utils.exec_cmd(cmd, **kwargs)
@@ -48,15 +50,21 @@ def setup_virtualenv(path, sudo_user=None, python_version=2):
     if os.path.exists(path):
         return
     if python_version == 2:
+        python_binary = "python"
         packages = ["python-virtualenv"]
         if utils.dist_name() == "debian":
             packages.append("virtualenv")
     else:
-        packages = ["python3-venv"]
+        if utils.dist_name().startswith("centos"):
+            python_binary = "python36"
+            packages = ["python36"]
+        else:
+            python_binary = "python3"
+            packages = ["python3-venv"]
     package.backend.install_many(packages)
     with utils.settings(sudo_user=sudo_user):
         if python_version == 2:
             utils.exec_cmd("virtualenv {}".format(path))
         else:
-            utils.exec_cmd("python3 -m venv {}".format(path))
+            utils.exec_cmd("{} -m venv {}".format(python_binary, path))
         install_package("pip", venv=path, upgrade=True)

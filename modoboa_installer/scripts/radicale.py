@@ -3,6 +3,7 @@
 import os
 import stat
 
+from .. import package
 from .. import python
 from .. import utils
 
@@ -13,10 +14,7 @@ class Radicale(base.Installer):
     """Radicale installation."""
 
     appname = "radicale"
-    config_files = [
-        "config",
-        "supervisor=/etc/supervisor/conf.d/radicale.conf"
-    ]
+    config_files = ["config"]
     no_daemon = True
     packages = {
         "deb": ["supervisor"],
@@ -50,6 +48,16 @@ class Radicale(base.Installer):
         })
         return context
 
+    def get_config_files(self):
+        """Return appropriate path."""
+        config_files = super(Radicale, self).get_config_files()
+        if package.backend.FORMAT == "deb":
+            path = "supervisor=/etc/supervisor/conf.d/radicale.conf"
+        else:
+            path = "supervisor=/etc/supervisord.d/radicale.ini"
+        config_files.append(path)
+        return config_files
+
     def install_config_files(self):
         """Make sure config directory exists."""
         if not os.path.exists(self.config_dir):
@@ -64,4 +72,8 @@ class Radicale(base.Installer):
     def post_run(self):
         """Additional tasks."""
         self._setup_venv()
-        utils.exec_cmd("service supervisor start")
+        daemon_name = (
+            "supervisor" if package.backend.FORMAT == "deb" else "supervisord"
+        )
+        utils.exec_cmd("service {} stop".format(daemon_name))
+        utils.exec_cmd("service {} start".format(daemon_name))
