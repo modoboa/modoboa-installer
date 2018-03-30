@@ -77,7 +77,8 @@ class Dovecot(base.Installer):
             "modoboa_dbuser": self.config.get("modoboa", "dbuser"),
             "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
             "protocols": protocols,
-            "ssl_protocols": ssl_protocols
+            "ssl_protocols": ssl_protocols,
+            "radicale_user": self.config.get("radicale", "user")
         })
         return context
 

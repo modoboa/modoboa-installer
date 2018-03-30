@@ -158,7 +158,9 @@ ConfigDictTemplate = [
                 "default": (
                     "modoboa-amavis modoboa-pdfcredentials "
                     "modoboa-postfix-autoreply modoboa-sievefilters "
-                    "modoboa-stats modoboa-webmail modoboa-contacts"),
+                    "modoboa-stats modoboa-webmail modoboa-contacts "
+                    "modoboa-radicale"
+                ),
             },
             {
                 "option": "devmode",
@@ -270,6 +272,10 @@ ConfigDictTemplate = [
                 "option": "postmaster_address",
                 "default": "postmaster@%(domain)s",
             },
+            {
+                "option": "radicale_auth_socket_path",
+                "default": "/var/run/dovecot/auth-radicale"
+            },
         ]
     },
     {
@@ -370,6 +376,31 @@ ConfigDictTemplate = [
                 "option": "nb_processes",
                 "default": "2",
             },
+        ]
+    },
+    {
+        "name": "radicale",
+        "values": [
+            {
+                "option": "enabled",
+                "default": "true",
+            },
+            {
+                "option": "user",
+                "default": "radicale",
+            },
+            {
+                "option": "config_dir",
+                "default": "/etc/radicale",
+            },
+            {
+                "option": "home_dir",
+                "default": "/srv/radicale",
+            },
+            {
+                "option": "venv_path",
+                "default": "%(home_dir)s/env",
+            }
         ]
     },
 ]

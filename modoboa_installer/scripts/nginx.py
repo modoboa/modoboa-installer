@@ -72,6 +72,15 @@ class Nginx(base.Installer):
         uwsgi_pass automx;
     }
 """
+        if self.config.get("radicale", "enabled"):
+            extra_modoboa_config += """
+    location /radicale/ {
+        proxy_pass http://localhost:5232/; # The / is important!
+        proxy_set_header X-Script-Name /radicale;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_pass_header Authorization;
+    }
+"""
         self._setup_config(
             "modoboa", extra_config=extra_modoboa_config)
 
