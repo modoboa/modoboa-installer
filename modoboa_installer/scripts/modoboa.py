@@ -50,6 +50,9 @@ class Modoboa(base.Installer):
                 self.amavis_enabled = True
             else:
                 self.extensions.remove("modoboa-amavis")
+        if "modoboa-radicale" in self.extensions:
+            if not self.config.getboolean("radicale", "enabled"):
+                self.extensions.remove("modoboa-radicale")
 
     def is_extension_ok_for_version(self, extension, version):
         """Check if extension can be installed with this modo version."""
@@ -200,6 +203,12 @@ class Modoboa(base.Installer):
             },
             "modoboa_pdfcredentials": {
                 "storage_dir": pdf_storage_dir
+            },
+            "modoboa_radicale": {
+                "server_location": "https://{}/radicale/".format(
+                    self.config.get("general", "hostname")),
+                "rights_file_path": "{}/rights".format(
+                    self.config.get("radicale", "config_dir"))
             }
         }
         for path in ["/var/log/maillog", "/var/log/mail.log"]:

@@ -93,6 +93,7 @@ def main(input_args):
     scripts.install("amavis", config)
     scripts.install("modoboa", config)
     scripts.install("automx", config)
+    scripts.install("radicale", config)
     scripts.install("uwsgi", config)
     scripts.install("nginx", config)
     scripts.install("postfix", config)
