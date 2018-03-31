@@ -65,6 +65,26 @@ a previous one using the ``--version`` option::
 If you want more information about the installation process, add the
 ``--debug`` option to your command line.
 
+Change the generated hostname
+-----------------------------
+
+By default, the installer will setup your email server using the
+following hostname: ``mail.<your domain>``. If you want a different
+value, generate the configuration file like this::
+
+  $ ./run.py --stop-after-configfile-check <your domain>
+
+Then edit ``installer.cfg`` and look for the following section::
+
+  [general]
+  hostname = mail.%(domain)s
+
+Replace ``mail`` by the value you want to use and save your
+modifications.
+
+Finally, run the installer without the
+``--stop-after-configfile-check`` option.
+
 Let's Encrypt certificate
 -------------------------
 
