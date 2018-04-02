@@ -403,4 +403,40 @@ ConfigDictTemplate = [
             }
         ]
     },
+    {
+        "name": "opendkim",
+        "values": [
+            {
+                "option": "enabled",
+                "default": "true",
+            },
+            {
+                "option": "user",
+                "default": "opendkim",
+            },
+            {
+                "option": "config_dir",
+                "default": "/etc",
+            },
+            {
+                "option": "port",
+                "default": "12345"
+            },
+            {
+                "option": "keys_storage_dir",
+                "default": "/var/lib/dkim"
+            },
+            {
+                "option": "dbuser",
+                "default": "opendkim",
+            },
+            {
+                "option": "dbpassword",
+                "default": make_password,
+                "customizable": True,
+                "question": "Please enter OpenDKIM db password"
+            },
+
+        ]
+    },
 ]

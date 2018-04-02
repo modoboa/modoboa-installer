@@ -33,4 +33,4 @@ INSTANCE=%{instance_path}
 0       *       *       *       *       root    $PYTHON $INSTANCE/manage.py communicate_with_public_api
 
 # Generate DKIM keys (they will belong to the user running this job)
-*       *       *       *       *       root    $PYTHON $INSTANCE/manage.py modo manage_dkim_keys
+%{opendkim_enabled}*       *       *       *       *       %{opendkim_user}    $PYTHON $INSTANCE/manage.py modo manage_dkim_keys

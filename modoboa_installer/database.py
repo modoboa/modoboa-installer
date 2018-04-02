@@ -60,9 +60,11 @@ class PostgreSQL(Database):
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a postgresql query."""
         cmd = "psql"
-        if dbname and dbuser:
-            self._setup_pgpass(dbname, dbuser, dbpassword)
-            cmd += " -h {} -d {} -U {} -w".format(self.dbhost, dbname, dbuser)
+        if dbname:
+            cmd += " -d {}".format(dbname)
+            if dbuser:
+                self._setup_pgpass(dbname, dbuser, dbpassword)
+                cmd += " -h {} -U {} -w".format(self.dbhost, dbuser)
         query = query.replace("'", "'\"'\"'")
         cmd = "{} -c '{}' ".format(cmd, query)
         utils.exec_cmd(cmd, sudo_user=self.dbuser)
@@ -94,6 +96,12 @@ class PostgreSQL(Database):
         query = "GRANT ALL ON DATABASE {} TO {}".format(dbname, user)
         self._exec_query(query)
 
+    def grant_right_on_table(self, dbname, table, user, right):
+        """Grant specific right to user on table."""
+        query = "GRANT {} ON {} TO {}".format(
+            right.upper(), table, user)
+        self._exec_query(query, dbname=dbname)
+
     def _setup_pgpass(self, dbname, dbuser, dbpasswd):
         """Setup .pgpass file."""
         if self._pgpass_done:
@@ -114,10 +122,9 @@ class PostgreSQL(Database):
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""
         self._setup_pgpass(dbname, dbuser, dbpassword)
-        utils.exec_cmd(
-            "psql -h {} -d {} -U {} -w < {}".format(
-                self.dbhost, dbname, dbuser, path),
-            sudo_user=self.dbuser)
+        cmd = "psql -h {} -d {} -U {} -w < {}".format(
+            self.dbhost, dbname, dbuser, path)
+        utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
 
 class MySQL(Database):
@@ -199,6 +206,12 @@ class MySQL(Database):
         self._exec_query(
             "GRANT ALL PRIVILEGES ON {}.* to '{}'@'localhost'"
             .format(dbname, user))
+
+    def grant_right_on_table(self, dbname, table, user, right):
+        """Grant specific right to user on table."""
+        query = "GRANT {} ON {}.{} TO '{}'@'%'".format(
+            right.upper(), dbname, table, user)
+        self._exec_query(query)
 
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""

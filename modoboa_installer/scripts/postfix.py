@@ -60,6 +60,8 @@ class Postfix(base.Installer):
                 "modoboa", "venv_path"),
             "modoboa_instance_path": self.config.get(
                 "modoboa", "instance_path"),
+            "opendkim_port": self.config.get(
+                "opendkim", "port")
         })
         return context
 
