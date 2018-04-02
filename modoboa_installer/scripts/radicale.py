@@ -44,7 +44,7 @@ class Radicale(base.Installer):
         radicale_auth_socket_path = self.config.get(
             "dovecot", "radicale_auth_socket_path")
         context.update({
-            "radicale_auth_socket_path": radicale_auth_socket_path
+            "auth_socket_path": radicale_auth_socket_path
         })
         return context
 

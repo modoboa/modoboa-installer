@@ -85,7 +85,7 @@ type = radicale_dovecot_auth
 # Incorrect authentication delay (seconds)
 #delay = 1
 
-auth_socket = %{radicale_auth_socket_path}
+auth_socket = %{auth_socket_path}
 
 
 [rights]

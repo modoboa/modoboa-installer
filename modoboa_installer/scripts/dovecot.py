@@ -1,6 +1,7 @@
 """Dovecot related tools."""
 
 import glob
+import os
 import pwd
 
 from .. import database
@@ -78,7 +79,9 @@ class Dovecot(base.Installer):
             "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
             "protocols": protocols,
             "ssl_protocols": ssl_protocols,
-            "radicale_user": self.config.get("radicale", "user")
+            "radicale_user": self.config.get("radicale", "user"),
+            "radicale_auth_socket_path": os.path.basename(
+                self.config.get("dovecot", "radicale_auth_socket_path"))
         })
         return context
 
