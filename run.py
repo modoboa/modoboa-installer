@@ -96,6 +96,7 @@ def main(input_args):
     scripts.install("radicale", config)
     scripts.install("uwsgi", config)
     scripts.install("nginx", config)
+    scripts.install("opendkim", config)
     scripts.install("postfix", config)
     scripts.install("dovecot", config)
     utils.printcolor(

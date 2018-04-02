@@ -22,6 +22,8 @@ class Installer(object):
     def __init__(self, config):
         """Get configuration."""
         self.config = config
+        if self.config.has_section(self.appname):
+            self.app_config = dict(self.config.items(self.appname))
         self.dbengine = self.config.get("database", "engine")
         # Used to install system packages
         self.db_driver = (

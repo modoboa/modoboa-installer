@@ -111,6 +111,12 @@ strict_rfc821_envelopes = yes
 %{dovecot_enabled}    $lmtp_sasl_auth_cache_name
 %{dovecot_enabled}    $address_verify_map
 
+# OpenDKIM setup
+%{opendkim_enabled}smtpd_milters = inet:127.0.0.1:%{opendkim_port}
+%{opendkim_enabled}non_smtpd_milters = inet:127.0.0.1:%{opendkim_port}
+%{opendkim_enabled}milter_default_action = accept
+%{opendkim_enabled}milter_content_timeout = 30s
+
 # List of authorized senders
 smtpd_sender_login_maps =
         proxy:%{db_driver}:/etc/postfix/sql-sender-login-map.cf

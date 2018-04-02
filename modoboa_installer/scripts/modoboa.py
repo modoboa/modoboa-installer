@@ -177,7 +177,9 @@ class Modoboa(base.Installer):
             ),
             "dovecot_mailboxes_owner": (
                 self.config.get("dovecot", "mailboxes_owner")),
-            "radicale_enabled": "" if "modoboa-radicale" in extensions else "#"
+            "radicale_enabled": (
+                "" if "modoboa-radicale" in extensions else "#"),
+            "opendkim_user": self.config.get("opendkim", "user"),
         })
         return context
 
@@ -214,6 +216,9 @@ class Modoboa(base.Installer):
         for path in ["/var/log/maillog", "/var/log/mail.log"]:
             if os.path.exists(path):
                 settings["modoboa_stats"]["logfile"] = path
+        if self.config.getboolean("opendkim", "enabled"):
+            settings["admin"]["dkim_keys_storage_dir"] = (
+                self.config.get("opendkim", "keys_storage_dir"))
         settings = json.dumps(settings)
         query = (
             "UPDATE core_localconfig SET _parameters='{}'"
