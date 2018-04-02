@@ -132,7 +132,7 @@ class MySQL(Database):
     """MySQL backend."""
 
     packages = {
-        "deb": ["mariadb-server", "libmysqlclient-dev"],
+        "deb": ["mariadb-server"],
         "rpm": ["mariadb", "mariadb-devel", "mariadb-server"],
     }
     service = "mariadb"
@@ -147,6 +147,8 @@ class MySQL(Database):
         if name == "debian":
             mysql_name = "mysql" if version.startswith("8") else "mariadb"
             self.packages["deb"].append("lib{}client-dev".format(mysql_name))
+        elif name == "ubuntu":
+            self.packages["deb"].append("libmysqlclient-dev")
         super(MySQL, self).install_package()
         if name == "debian" and version.startswith("8"):
             package.backend.preconfigure(
