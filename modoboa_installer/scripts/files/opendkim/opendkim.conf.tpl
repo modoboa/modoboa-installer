@@ -4,8 +4,10 @@
 
 # Log to syslog
 Syslog			yes
-LogWhy			Yes
 SyslogSuccess   	Yes
+LogWhy			Yes
+LogResults  Yes
+
 # Required to use local socket with MTAs that access the socket as a non-
 # privileged user (e.g. Postfix)
 UMask			007
