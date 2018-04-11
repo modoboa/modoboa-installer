@@ -22,10 +22,14 @@ def get_pip_path(venv):
     return binpath
 
 
-def install_package(name, venv=None, upgrade=False, **kwargs):
+def install_package(name, venv=None, upgrade=False, binary=True, **kwargs):
     """Install a Python package using pip."""
-    cmd = "{} install {}{}".format(
-        get_pip_path(venv), " -U " if upgrade else "", name)
+    cmd = "{} install{}{} {}".format(
+        get_pip_path(venv),
+        " -U" if upgrade else "",
+        " --no-binary :all:" if not binary else "",
+        name
+    )
     utils.exec_cmd(cmd, **kwargs)
 
 
@@ -67,4 +71,4 @@ def setup_virtualenv(path, sudo_user=None, python_version=2):
             utils.exec_cmd("virtualenv {}".format(path))
         else:
             utils.exec_cmd("{} -m venv {}".format(python_binary, path))
-        install_package("pip", venv=path, upgrade=True)
+        install_packages(["pip", "setuptools"], venv=path, upgrade=True)

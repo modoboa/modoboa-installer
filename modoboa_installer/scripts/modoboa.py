@@ -69,10 +69,11 @@ class Modoboa(base.Installer):
         packages = ["rrdtool"]
         version = self.config.get("modoboa", "version")
         if version == "latest":
-            packages += ["modoboa"] + self.extensions
+            modoboa_package = "modoboa"
+            packages += self.extensions
         else:
             matrix = compatibility_matrix.COMPATIBILITY_MATRIX[version]
-            packages.append("modoboa=={}".format(version))
+            modoboa_package = "modoboa=={}".format(version)
             for extension in list(self.extensions):
                 if not self.is_extension_ok_for_version(extension, version):
                     self.extensions.remove(extension)
@@ -84,6 +85,9 @@ class Modoboa(base.Installer):
                     packages.append("{}{}".format(extension, req_version))
                 else:
                     packages.append(extension)
+        # Temp fix for https://github.com/modoboa/modoboa-installer/issues/197
+        python.install_package(
+            modoboa_package, self.venv_path, binary=False, sudo_user=self.user)
         if self.dbengine == "postgres":
             packages.append("psycopg2-binary")
         else:
