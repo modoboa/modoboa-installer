@@ -144,6 +144,7 @@ class MySQL(Database):
     def install_package(self):
         """Preseed package installation."""
         name, version, _id = platform.linux_distribution()
+        name = name.lower()
         if name == "debian":
             mysql_name = "mysql" if version.startswith("8") else "mariadb"
             self.packages["deb"].append("lib{}client-dev".format(mysql_name))
