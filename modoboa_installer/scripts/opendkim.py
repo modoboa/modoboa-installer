@@ -76,3 +76,18 @@ class Opendkim(base.Installer):
         )
         self.backend.grant_right_on_table(
             dbname, "dkim", self.app_config["dbuser"], "SELECT")
+
+    def post_run(self):
+        """Addtional tasks."""
+        if package.backend.FORMAT != "deb":
+            return
+        pattern = (
+            "s/^SOCKET=local:\$RUNDIR\/opendkim\.sock/"
+            "#SOCKET=local:\$RUNDIR\/opendkim\.sock/"
+        )
+        utils.exec_cmd("perl -pi -e '{}' /etc/default/opendkim".format(pattern))
+        pattern = (
+            "s/^#SOCKET=inet:12345\@localhost$/"
+            "SOCKET=inet:12345\@localhost/"
+        )
+        utils.exec_cmd("perl -pi -e '{}' /etc/default/opendkim".format(pattern))
