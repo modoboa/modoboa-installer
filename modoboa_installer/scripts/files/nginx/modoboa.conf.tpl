@@ -4,12 +4,14 @@ upstream modoboa {
 
 server {
     listen 80;
+    listen [::]:80;
     server_name %hostname;
     rewrite ^ https://$server_name$request_uri? permanent;
 }
 
 server {
     listen 443 ssl;
+    listen [::]:443 ssl;
     server_name %hostname;
     root %app_instance_path;
 

@@ -4,6 +4,7 @@ upstream automx {
 
 server {
     listen 80;
+    listen [::]:80;
     server_name %hostname;
 
     access_log /var/log/nginx/%{hostname}-access.log;
