@@ -22,10 +22,14 @@ def get_pip_path(venv):
     return binpath
 
 
-def install_package(name, venv=None, upgrade=False, **kwargs):
+def install_package(name, venv=None, upgrade=False, binary=True, **kwargs):
     """Install a Python package using pip."""
-    cmd = "{} install {}{}".format(
-        get_pip_path(venv), " -U " if upgrade else "", name)
+    cmd = "{} install{}{} {}".format(
+        get_pip_path(venv),
+        " -U" if upgrade else "",
+        " --no-binary :all:" if not binary else "",
+        name
+    )
     utils.exec_cmd(cmd, **kwargs)
 
 
@@ -36,14 +40,35 @@ def install_packages(names, venv=None, upgrade=False, **kwargs):
     utils.exec_cmd(cmd, **kwargs)
 
 
-def setup_virtualenv(path, sudo_user=None):
+def install_package_from_repository(name, url, vcs="git", venv=None, **kwargs):
+    """Install a Python package from its repository."""
+    if vcs == "git":
+        package.backend.install("git")
+    cmd = "{} install -e {}+{}#egg={}".format(
+        get_pip_path(venv), vcs, url, name)
+    utils.exec_cmd(cmd, **kwargs)
+
+
+def setup_virtualenv(path, sudo_user=None, python_version=2):
     """Install a virtualenv if needed."""
     if os.path.exists(path):
         return
-    packages = ["python-virtualenv"]
-    if utils.dist_name() == "debian":
-        packages.append("virtualenv")
+    if python_version == 2:
+        python_binary = "python"
+        packages = ["python-virtualenv"]
+        if utils.dist_name() == "debian":
+            packages.append("virtualenv")
+    else:
+        if utils.dist_name().startswith("centos"):
+            python_binary = "python36"
+            packages = ["python36"]
+        else:
+            python_binary = "python3"
+            packages = ["python3-venv"]
     package.backend.install_many(packages)
     with utils.settings(sudo_user=sudo_user):
-        utils.exec_cmd("virtualenv {}".format(path))
-        install_package("pip", venv=path, upgrade=True)
+        if python_version == 2:
+            utils.exec_cmd("virtualenv {}".format(path))
+        else:
+            utils.exec_cmd("{} -m venv {}".format(python_binary, path))
+        install_packages(["pip", "setuptools"], venv=path, upgrade=True)

@@ -71,11 +71,22 @@ service imap {
 
   # Max. number of IMAP processes (connections)
   #process_limit = 1024
+
+  executable = imap postlogin
 }
 
 service pop3 {
   # Max. number of POP3 processes (connections)
   #process_limit = 1024
+
+  executable = pop3 postlogin
+}
+
+service postlogin {
+  executable = script-login /usr/local/bin/postlogin.sh
+  user = %modoboa_user
+  unix_listener postlogin {
+  }
 }
 
 service auth {
@@ -104,6 +115,13 @@ service auth {
     user = postfix
     group = postfix
   }
+
+  # Radicale auth
+  %{radicale_enabled}unix_listener %{radicale_auth_socket_path} {
+  %{radicale_enabled}  mode = 0666
+  %{radicale_enabled}  user = %{radicale_user}
+  %{radicale_enabled}  group = %{radicale_user}
+  %{radicale_enabled}}
 
   # Auth process is run as this user.
   #user = $default_internal_user

@@ -7,16 +7,21 @@ try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
+import sys
 
-from modoboa_installer import scripts
-from modoboa_installer import utils
+from modoboa_installer import compatibility_matrix
 from modoboa_installer import package
+from modoboa_installer import scripts
 from modoboa_installer import ssl
+from modoboa_installer import utils
 
 
-def main():
+def main(input_args):
     """Install process."""
     parser = argparse.ArgumentParser()
+    versions = (
+        ["latest"] + list(compatibility_matrix.COMPATIBILITY_MATRIX.keys())
+    )
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Enable debug output")
     parser.add_argument("--force", action="store_true", default=False,
@@ -24,16 +29,22 @@ def main():
     parser.add_argument("--configfile", default="installer.cfg",
                         help="Configuration file to use")
     parser.add_argument(
+        "--version", default="latest", choices=versions,
+        help="Modoboa version to install")
+    parser.add_argument(
         "--stop-after-configfile-check", action="store_true", default=False,
         help="Check configuration, generate it if needed and exit")
+    parser.add_argument(
+        "--interactive", action="store_true", default=False,
+        help="Generate configuration file with user interaction")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
-    args = parser.parse_args()
+    args = parser.parse_args(input_args)
 
     if args.debug:
         utils.ENV["debug"] = True
-    utils.printcolor("Welcome to Modoboa installer!", utils.GREEN)
-    utils.check_config_file(args.configfile)
+    utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
+    utils.check_config_file(args.configfile, args.interactive)
     if args.stop_after_configfile_check:
         return
     config = configparser.SafeConfigParser()
@@ -42,6 +53,17 @@ def main():
     if not config.has_section("general"):
         config.add_section("general")
     config.set("general", "domain", args.domain)
+    config.set("dovecot", "domain", args.domain)
+    config.set("modoboa", "version", args.version)
+    utils.printcolor(
+        "Warning:\n"
+        "Before you start the installation, please make sure the following "
+        "DNS records exist for domain '{}':\n"
+        "  mail IN A   <IP ADDRESS OF YOUR SERVER>\n"
+        "       IN MX  {}.\n".format(
+            args.domain, config.get("general", "hostname")),
+        utils.CYAN
+    )
     utils.printcolor(
         "Your mail server will be installed with the following components:",
         utils.BLUE)
@@ -71,8 +93,10 @@ def main():
     scripts.install("amavis", config)
     scripts.install("modoboa", config)
     scripts.install("automx", config)
+    scripts.install("radicale", config)
     scripts.install("uwsgi", config)
     scripts.install("nginx", config)
+    scripts.install("opendkim", config)
     scripts.install("postfix", config)
     scripts.install("dovecot", config)
     utils.printcolor(
@@ -80,5 +104,6 @@ def main():
         .format(config.get("general", "hostname")),
         utils.GREEN)
 
+
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

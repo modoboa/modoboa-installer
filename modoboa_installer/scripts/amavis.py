@@ -1,5 +1,7 @@
 """Amavis related functions."""
 
+import platform
+
 from .. import package
 from .. import utils
 
@@ -13,8 +15,15 @@ class Amavis(base.Installer):
 
     appname = "amavis"
     packages = {
-        "deb": ["libdbi-perl", "amavisd-new"],
-        "rpm": ["amavisd-new"],
+        "deb": [
+            "libdbi-perl", "amavisd-new", "arc", "arj", "cabextract",
+            "liblz4-tool", "lrzip", "lzop", "p7zip-full", "rpm2cpio",
+            "unrar-free", "ripole"
+        ],
+        "rpm": [
+            "amavisd-new", "arj", "cabextract", "lz4", "lrzip",
+            "lzop", "p7zip", "unar", "unzoo"
+        ],
     }
     with_db = True
 
@@ -43,6 +52,9 @@ class Amavis(base.Installer):
         """Additional packages."""
         packages = super(Amavis, self).get_packages()
         if package.backend.FORMAT == "deb":
+            if platform.linux_distribution()[2] != "bionic":
+                # Quick fix
+                packages.append("zoo")
             db_driver = "pg" if self.db_driver == "pgsql" else self.db_driver
             return packages + ["libdbd-{}-perl".format(db_driver)]
         if self.db_driver == "pgsql":

@@ -10,6 +10,12 @@ import shutil
 import string
 import subprocess
 import sys
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
+from . import config_dict_template
 
 
 ENV = {}
@@ -139,23 +145,14 @@ def copy_from_template(template, dest, context):
         fp.write(ConfigFileTemplate(buf).substitute(context))
 
 
-def check_config_file(dest):
+def check_config_file(dest, interactive=False):
     """Create a new installer config file if needed."""
     if os.path.exists(dest):
         return
     printcolor(
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)
-    with open("installer.cfg.template") as fp:
-        buf = fp.read()
-    context = {
-        "mysql_password": make_password(),
-        "modoboa_password": make_password(),
-        "amavis_password": make_password(),
-        "sa_password": make_password()
-    }
-    with open(dest, "w") as fp:
-        fp.write(string.Template(buf).substitute(context))
+    gen_config(dest, interactive)
 
 
 def has_colours(stream):
@@ -171,6 +168,8 @@ def has_colours(stream):
     except:
         # guess false in case of error
         return False
+
+
 has_colours = has_colours(sys.stdout)
 
 
@@ -179,3 +178,109 @@ def printcolor(message, color):
     if has_colours:
         message = "\x1b[1;{}m{}\x1b[0m".format(30 + color, message)
     print(message)
+
+
+def convert_version_to_int(version):
+    """Convert a version string to an integer."""
+    number_bits = (8, 8, 16)
+
+    numbers = [int(number_string) for number_string in version.split(".")]
+    if len(numbers) > len(number_bits):
+        raise NotImplementedError(
+            "Versions with more than {0} decimal places are not supported"
+            .format(len(number_bits) - 1)
+        )
+    # add 0s for missing numbers
+    numbers.extend([0] * (len(number_bits) - len(numbers)))
+    # convert to single int and return
+    number = 0
+    total_bits = 0
+    for num, bits in reversed(list(zip(numbers, number_bits))):
+        max_num = (bits + 1) - 1
+        if num >= 1 << max_num:
+            raise ValueError(
+                "Number {0} cannot be stored with only {1} bits. Max is {2}"
+                .format(num, bits, max_num)
+            )
+        number += num << total_bits
+        total_bits += bits
+    return number
+
+
+def random_key(l=16):
+    """Generate a random key.
+
+    :param integer l: the key's length
+    :return: a string
+    """
+    punctuation = """!#$%&()*+,-./:;<=>?@[]^_`{|}~"""
+    population = string.digits + string.ascii_letters + punctuation
+    while True:
+        key = "".join(random.sample(population * l, l))
+        if len(key) == l:
+            return key
+
+
+def validate(value, config_entry):
+    if value is None:
+        return False
+    if "values" not in config_entry and "validators" not in config_entry:
+        return True
+    if "values" in config_entry:
+        try:
+            value = int(value)
+        except ValueError:
+            return False
+        return value >= 0 and value < len(config_entry["values"])
+    if "validators" in config_entry:
+        for validator in config_entry["validators"]:
+            valide, message = validator(value)
+            if not valide:
+                printcolor(message, MAGENTA)
+                return False
+        return True
+
+
+def get_entry_value(entry, interactive):
+    if callable(entry["default"]):
+        default_value = entry["default"]()
+    else:
+        default_value = entry["default"]
+    user_value = None
+    if entry.get("customizable") and interactive:
+        while (user_value != '' and not validate(user_value, entry)):
+            question = entry.get("question")
+            if entry.get("values"):
+                question += " from the list"
+                values = entry.get("values")
+                for index, value in enumerate(values):
+                    question += "\n{}   {}".format(index, value)
+            print(question)
+            print("default is <{}>".format(default_value))
+            user_value = user_input("-> ")
+
+        if entry.get("values") and user_value != "":
+            user_value = values[int(user_value)]
+    return user_value if user_value else default_value
+
+
+def gen_config(dest, interactive=False):
+    """Create config file from dict template"""
+    tpl_dict = config_dict_template.ConfigDictTemplate
+    config = configparser.ConfigParser()
+    # only ask about options we need, else still generate default
+    for section in tpl_dict:
+        if "if" in section:
+            config_key, value = section.get("if").split("=")
+            section_name, option = config_key.split(".")
+            interactive_section = (
+                config.get(section_name, option) == value and interactive)
+        else:
+            interactive_section = interactive
+        config.add_section(section["name"])
+        for config_entry in section["values"]:
+            value = get_entry_value(config_entry, interactive_section)
+            config.set(section["name"], config_entry["option"], value)
+
+    with open(dest, "w") as configfile:
+        config.write(configfile)

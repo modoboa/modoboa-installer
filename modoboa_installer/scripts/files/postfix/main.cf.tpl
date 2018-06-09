@@ -2,7 +2,7 @@ inet_interfaces = all
 inet_protocols = ipv4
 myhostname = %hostname
 myorigin = $myhostname
-mydestination =
+mydestination = $myhostname
 mynetworks = 127.0.0.0/8
 smtpd_banner = $myhostname ESMTP
 biff = no
@@ -28,20 +28,18 @@ proxy_read_maps =
         proxy:%{db_driver}:/etc/postfix/sql-domain-aliases.cf
         proxy:%{db_driver}:/etc/postfix/sql-aliases.cf
         proxy:%{db_driver}:/etc/postfix/sql-relaydomains.cf
-        proxy:%{db_driver}:/etc/postfix/sql-relaydomains-transport.cf
-        proxy:%{db_driver}:/etc/postfix/sql-relaydomain-aliases-transport.cf
         proxy:%{db_driver}:/etc/postfix/sql-autoreplies-transport.cf
         proxy:%{db_driver}:/etc/postfix/sql-maintain.cf
         proxy:%{db_driver}:/etc/postfix/sql-relay-recipient-verification.cf
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes.cf
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-aliases.cf
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes-extra.cf
+        proxy:%{db_driver}:/etc/postfix/sql-sender-login-map.cf
         proxy:%{db_driver}:/etc/postfix/sql-spliteddomains-transport.cf
+        proxy:%{db_driver}:/etc/postfix/sql-transport.cf
 
 ## TLS settings
 #
 smtpd_use_tls = yes
 smtpd_tls_auth_only = no
+smtpd_tls_CApath = /etc/ssl/certs
 smtpd_tls_key_file = %tls_key_file
 smtpd_tls_cert_file = %tls_cert_file
 smtpd_tls_dh1024_param_file = ${config_directory}/dh2048.pem
@@ -61,6 +59,7 @@ smtpd_tls_exclude_ciphers = aNULL, MD5 , DES, ADH, RC4, PSD, SRP, 3DES, eNULL
 smtpd_tls_eecdh_grade = strong
 
 # Use TLS if this is supported by the remote SMTP server, otherwise use plaintext.
+smtp_tls_CApath = /etc/ssl/certs
 smtp_tls_security_level = may
 smtp_tls_loglevel = 1
 smtp_tls_exclude_ciphers = EXPORT, LOW
@@ -79,8 +78,8 @@ virtual_alias_maps =
 relay_domains =
         proxy:%{db_driver}:/etc/postfix/sql-relaydomains.cf
 transport_maps =
+	proxy:%{db_driver}:/etc/postfix/sql-transport.cf
         proxy:%{db_driver}:/etc/postfix/sql-spliteddomains-transport.cf
-	proxy:%{db_driver}:/etc/postfix/sql-relaydomains-transport.cf 
         proxy:%{db_driver}:/etc/postfix/sql-autoreplies-transport.cf
 
 ## SASL authentication through Dovecot
@@ -112,11 +111,15 @@ strict_rfc821_envelopes = yes
 %{dovecot_enabled}    $lmtp_sasl_auth_cache_name
 %{dovecot_enabled}    $address_verify_map
 
+# OpenDKIM setup
+%{opendkim_enabled}smtpd_milters = inet:127.0.0.1:%{opendkim_port}
+%{opendkim_enabled}non_smtpd_milters = inet:127.0.0.1:%{opendkim_port}
+%{opendkim_enabled}milter_default_action = accept
+%{opendkim_enabled}milter_content_timeout = 30s
+
 # List of authorized senders
 smtpd_sender_login_maps =
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes.cf
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-aliases.cf
-        proxy:%{db_driver}:/etc/postfix/sql-sender-login-mailboxes-extra.cf
+        proxy:%{db_driver}:/etc/postfix/sql-sender-login-map.cf
 
 # Recipient restriction rules
 smtpd_recipient_restrictions =
@@ -135,6 +138,7 @@ smtpd_recipient_restrictions =
 #
 postscreen_access_list =
        permit_mynetworks
+       cidr:/etc/postfix/postscreen_spf_whitelist.cidr
 postscreen_blacklist_action = enforce 
 
 # Use some DNSBL

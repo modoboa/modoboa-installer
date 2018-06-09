@@ -123,7 +123,7 @@ connect = host=%dbhost dbname=%modoboa_dbname user=%modoboa_dbuser password=%mod
 #user_query = \
 #  SELECT home, uid, gid \
 #  FROM users WHERE username = '%%n' AND domain = '%%d'
-user_query = SELECT '%{home_dir}/%%d/%%n' AS home, %mailboxes_owner_uid as uid, %mailboxes_owner_gid as gid, '*:bytes=' || mb.quota || 'M' AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id INNER JOIN core_user u ON u.id=mb.user_id WHERE mb.address='%%n' AND dom.name='%%d' AND u.is_active AND dom.enabled
+user_query = SELECT '%{home_dir}/%%d/%%n' AS home, %mailboxes_owner_uid as uid, %mailboxes_owner_gid as gid, '*:bytes=' || mb.quota || 'M' AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id INNER JOIN core_user u ON u.id=mb.user_id WHERE mb.address='%%n' AND dom.name='%%d'
 
 # If you wish to avoid two SQL lookups (passdb + userdb), you can use
 # userdb prefetch instead of userdb sql in dovecot.conf. In that case you'll

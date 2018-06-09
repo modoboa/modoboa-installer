@@ -75,7 +75,3 @@ loadplugin Mail::SpamAssassin::Plugin::MIMEHeader
 # ReplaceTags
 #
 loadplugin Mail::SpamAssassin::Plugin::ReplaceTags
-
-# DCC - perform DCC message checks.
-#
-loadplugin Mail::SpamAssassin::Plugin::DCC

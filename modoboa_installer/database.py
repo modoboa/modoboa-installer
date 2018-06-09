@@ -1,6 +1,7 @@
 """Database related tools."""
 
 import os
+import platform
 import pwd
 import stat
 
@@ -59,9 +60,11 @@ class PostgreSQL(Database):
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a postgresql query."""
         cmd = "psql"
-        if dbname and dbuser:
-            self._setup_pgpass(dbname, dbuser, dbpassword)
-            cmd += " -h {} -d {} -U {} -w".format(self.dbhost, dbname, dbuser)
+        if dbname:
+            cmd += " -d {}".format(dbname)
+            if dbuser:
+                self._setup_pgpass(dbname, dbuser, dbpassword)
+                cmd += " -h {} -U {} -w".format(self.dbhost, dbuser)
         query = query.replace("'", "'\"'\"'")
         cmd = "{} -c '{}' ".format(cmd, query)
         utils.exec_cmd(cmd, sudo_user=self.dbuser)
@@ -93,6 +96,12 @@ class PostgreSQL(Database):
         query = "GRANT ALL ON DATABASE {} TO {}".format(dbname, user)
         self._exec_query(query)
 
+    def grant_right_on_table(self, dbname, table, user, right):
+        """Grant specific right to user on table."""
+        query = "GRANT {} ON {} TO {}".format(
+            right.upper(), table, user)
+        self._exec_query(query, dbname=dbname)
+
     def _setup_pgpass(self, dbname, dbuser, dbpasswd):
         """Setup .pgpass file."""
         if self._pgpass_done:
@@ -113,10 +122,9 @@ class PostgreSQL(Database):
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""
         self._setup_pgpass(dbname, dbuser, dbpassword)
-        utils.exec_cmd(
-            "psql -h {} -d {} -U {} -w < {}".format(
-                self.dbhost, dbname, dbuser, path),
-            sudo_user=self.dbuser)
+        cmd = "psql -h {} -d {} -U {} -w < {}".format(
+            self.dbhost, dbname, dbuser, path)
+        utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
 
 class MySQL(Database):
@@ -124,32 +132,54 @@ class MySQL(Database):
     """MySQL backend."""
 
     packages = {
-        "deb": ["mysql-server", "libmysqlclient-dev"],
+        "deb": ["mariadb-server"],
         "rpm": ["mariadb", "mariadb-devel", "mariadb-server"],
     }
-    service = "mariadb" if package.backend.FORMAT == "rpm" else "mysql"
+    service = "mariadb"
+
+    def _escape(self, query):
+        """Replace special characters."""
+        return query.replace("'", "'\"'\"'")
 
     def install_package(self):
         """Preseed package installation."""
-        package.backend.preconfigure(
-            "mysql-server", "root_password", "password", self.dbpassword)
-        package.backend.preconfigure(
-            "mysql-server", "root_password_again", "password", self.dbpassword)
+        name, version, _id = platform.linux_distribution()
+        name = name.lower()
+        if name == "debian":
+            mysql_name = "mysql" if version.startswith("8") else "mariadb"
+            self.packages["deb"].append("lib{}client-dev".format(mysql_name))
+        elif name == "ubuntu":
+            self.packages["deb"].append("libmysqlclient-dev")
         super(MySQL, self).install_package()
-        if package.backend.FORMAT == "rpm":
-            utils.exec_cmd("mysqladmin -u root password '{}'".format(
-                self.dbpassword))
+        if name == "debian" and version.startswith("8"):
+            package.backend.preconfigure(
+                "mariadb-server", "root_password", "password",
+                self.dbpassword)
+            package.backend.preconfigure(
+                "mariadb-server", "root_password_again", "password",
+                self.dbpassword)
+        else:
+            queries = [
+                "UPDATE user SET plugin='' WHERE user='root'",
+                "UPDATE user SET password=PASSWORD('{}') WHERE USER='root'"
+                .format(self.dbpassword),
+                "flush privileges"
+            ]
+            for query in queries:
+                utils.exec_cmd(
+                    "mysql -D mysql -e '{}'".format(self._escape(query)))
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a mysql query."""
         if dbuser is None and dbpassword is None:
             dbuser = self.dbuser
             dbpassword = self.dbpassword
-        cmd = "mysql -h {} -u {} -p{}".format(self.dbhost, dbuser, dbpassword)
+        cmd = "mysql -h {} -u {}".format(self.dbhost, dbuser)
+        if dbpassword:
+            cmd += " -p{}".format(dbpassword)
         if dbname:
             cmd += " -D {}".format(dbname)
-        query = query.replace("'", "'\"'\"'")
-        utils.exec_cmd(cmd + """ -e '{}' """.format(query))
+        utils.exec_cmd(cmd + """ -e '{}' """.format(self._escape(query)))
 
     def create_user(self, name, password):
         """Create a user."""
@@ -179,6 +209,12 @@ class MySQL(Database):
         self._exec_query(
             "GRANT ALL PRIVILEGES ON {}.* to '{}'@'localhost'"
             .format(dbname, user))
+
+    def grant_right_on_table(self, dbname, table, user, right):
+        """Grant specific right to user on table."""
+        query = "GRANT {} ON {}.{} TO '{}'@'%'".format(
+            right.upper(), dbname, table, user)
+        self._exec_query(query)
 
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""

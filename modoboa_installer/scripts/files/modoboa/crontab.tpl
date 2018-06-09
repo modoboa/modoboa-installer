@@ -17,10 +17,11 @@ INSTANCE=%{instance_path}
 %{amavis_enabled}0       0       *       *       *       root    $PYTHON $INSTANCE/manage.py qcleanup
 
 # Notifications about pending release requests
-%{amavis_enabled}0       12      *       *       *       root    $PYTHON $INSTANCE/manage.py amnotify --baseurl='http://%{hostname}'
+%{amavis_enabled}0       12      *       *       *       root    $PYTHON $INSTANCE/manage.py amnotify
 
 # Logs parsing
 */5     *       *       *       *       root    $PYTHON $INSTANCE/manage.py logparser &> /dev/null
+0       *       *       *       *       root    $PYTHON $INSTANCE/manage.py update_statistics
 
 # Radicale rights file
 %{radicale_enabled}*/2    *       *       *       *        root    $PYTHON $INSTANCE/manage.py generate_rights
@@ -30,3 +31,6 @@ INSTANCE=%{instance_path}
 
 # Public API communication
 0       *       *       *       *       root    $PYTHON $INSTANCE/manage.py communicate_with_public_api
+
+# Generate DKIM keys (they will belong to the user running this job)
+%{opendkim_enabled}*       *       *       *       *       %{opendkim_user}    $PYTHON $INSTANCE/manage.py modo manage_dkim_keys
