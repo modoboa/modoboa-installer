@@ -91,3 +91,9 @@ class Opendkim(base.Installer):
             "SOCKET=inet:12345\@localhost/"
         )
         utils.exec_cmd("perl -pi -e '{}' /etc/default/opendkim".format(pattern))
+
+        # Make sure opendkim is started after postgres
+        pattern = (
+            "s/^After=(.*)$/After=\1 postgresql.service/"
+        )
+        utils.exec_cmd("perl -pi -e '{}' /lib/systemd/system/opendkim.service".format(pattern))
