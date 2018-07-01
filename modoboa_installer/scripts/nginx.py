@@ -63,7 +63,7 @@ class Nginx(base.Installer):
                 self.config.get("general", "domain"))
             self._setup_config("automx", hostname)
             extra_modoboa_config = """
-    location /autodiscover/autodiscover.xml {
+    location ~* ^/autodiscover/autodiscover.xml {
         include uwsgi_params;
         uwsgi_pass automx;
     }
