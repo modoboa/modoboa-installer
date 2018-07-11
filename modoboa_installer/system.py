@@ -57,3 +57,8 @@ def enable_and_start_service(name):
     code, output = utils.exec_cmd("service {} status".format(name))
     action = "start" if code else "restart"
     utils.exec_cmd("service {} {}".format(name, action))
+
+
+def restart_service(name):
+    """Restart a service."""
+    utils.exec_cmd("service {} restart".format(name))

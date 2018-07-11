@@ -13,6 +13,7 @@ from modoboa_installer import compatibility_matrix
 from modoboa_installer import package
 from modoboa_installer import scripts
 from modoboa_installer import ssl
+from modoboa_installer import system
 from modoboa_installer import utils
 
 
@@ -99,6 +100,7 @@ def main(input_args):
     scripts.install("opendkim", config)
     scripts.install("postfix", config)
     scripts.install("dovecot", config)
+    system.restart_service("cron")
     utils.printcolor(
         "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
         .format(config.get("general", "hostname")),
