@@ -78,16 +78,16 @@ class Opendkim(base.Installer):
             dbname, "dkim", self.app_config["dbuser"], "SELECT")
 
     def post_run(self):
-        """Addtional tasks."""
+        """Additional tasks."""
         if package.backend.FORMAT != "deb":
             return
-        pattern = (
-            "s/^SOCKET=local:\$RUNDIR\/opendkim\.sock/"
-            "#SOCKET=local:\$RUNDIR\/opendkim\.sock/"
-        )
-        utils.exec_cmd("perl -pi -e '{}' /etc/default/opendkim".format(pattern))
-        pattern = (
-            "s/^#SOCKET=inet:12345\@localhost$/"
-            "SOCKET=inet:12345\@localhost/"
-        )
-        utils.exec_cmd("perl -pi -e '{}' /etc/default/opendkim".format(pattern))
+        params_file = "/etc/default/opendkim"
+        pattern = r"s/^(SOCKET=.*)/#\1/"
+        utils.exec_cmd(
+            "perl -pi -e '{}' {}".format(pattern, params_file))
+        with open(params_file, "a") as f:
+          f.write('\n'.join([
+              "",
+              'SOCKET="inet:12345@localhost"',
+          ]))
+
