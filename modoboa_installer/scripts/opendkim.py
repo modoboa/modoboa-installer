@@ -86,8 +86,7 @@ class Opendkim(base.Installer):
         utils.exec_cmd(
             "perl -pi -e '{}' {}".format(pattern, params_file))
         with open(params_file, "a") as f:
-          f.write('\n'.join([
-              "",
-              'SOCKET="inet:12345@localhost"',
-          ]))
-
+            f.write('\n'.join([
+                "",
+                'SOCKET="inet:12345@localhost"',
+            ]))
