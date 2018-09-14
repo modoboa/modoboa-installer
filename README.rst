@@ -19,9 +19,10 @@ An installer which deploy a complete mail server based on Modoboa.
 
 .. note::
 
-   The server (physical or virtual) running Modoboa needs at least 1GB
+   The server (physical or virtual) running Modoboa needs at least 2GB
    of RAM in order to compile the required dependencies during the
-   installation process.
+   installation process. Passwords should not contain any special characters
+   as they may cause the installation to fail
 
 Usage::
 
