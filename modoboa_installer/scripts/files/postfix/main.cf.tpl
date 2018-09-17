@@ -132,7 +132,6 @@ smtpd_recipient_restrictions =
       reject_unauth_destination
       reject_non_fqdn_sender
       reject_non_fqdn_recipient
-      reject_non_fqdn_helo_hostname
 
 ## Postcreen settings
 #
