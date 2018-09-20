@@ -79,11 +79,7 @@ class LetsEncryptCertificate(CertificateBackend):
             "/etc/letsencrypt/live/{}/privkey.pem".format(hostname)))
         with open("/etc/cron.d/letsencrypt", "w") as fp:
             fp.write("0 */12 * * * root /opt/certbot-auto renew "
-                     "--quiet --no-self-upgrade --force-renewal "
-                     "--pre-hook 'service nginx stop' "
-                     "--post-hook 'service nginx start && "
-                     "service postfix reload && "
-                     "service dovecot reload'\n")
+                     "--quiet --no-self-upgrade --force-renewal\n")
         cfg_file = "/etc/letsencrypt/renewal/{}.conf".format(hostname)
         pattern = "s/authenticator = standalone/authenticator = nginx/"
         utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfg_file))
