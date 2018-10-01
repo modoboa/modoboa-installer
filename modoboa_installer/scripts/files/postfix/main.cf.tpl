@@ -28,7 +28,6 @@ proxy_read_maps =
         proxy:%{db_driver}:/etc/postfix/sql-domain-aliases.cf
         proxy:%{db_driver}:/etc/postfix/sql-aliases.cf
         proxy:%{db_driver}:/etc/postfix/sql-relaydomains.cf
-        proxy:%{db_driver}:/etc/postfix/sql-autoreplies-transport.cf
         proxy:%{db_driver}:/etc/postfix/sql-maintain.cf
         proxy:%{db_driver}:/etc/postfix/sql-relay-recipient-verification.cf
         proxy:%{db_driver}:/etc/postfix/sql-sender-login-map.cf
@@ -80,7 +79,6 @@ relay_domains =
 transport_maps =
 	proxy:%{db_driver}:/etc/postfix/sql-transport.cf
         proxy:%{db_driver}:/etc/postfix/sql-spliteddomains-transport.cf
-        proxy:%{db_driver}:/etc/postfix/sql-autoreplies-transport.cf
 
 ## SASL authentication through Dovecot
 #
