@@ -56,13 +56,17 @@ def main(input_args):
     config.set("general", "domain", args.domain)
     config.set("dovecot", "domain", args.domain)
     config.set("modoboa", "version", args.version)
+    hostname = config.get("general", "hostname")
     utils.printcolor(
         "Warning:\n"
         "Before you start the installation, please make sure the following "
         "DNS records exist for domain '{}':\n"
-        "  mail IN A   <IP ADDRESS OF YOUR SERVER>\n"
+        "  {} IN A   <IP ADDRESS OF YOUR SERVER>\n"
         "       IN MX  {}.\n".format(
-            args.domain, config.get("general", "hostname")),
+            args.domain,
+            hostname.replace(".{}".format(args.domain), ""),
+            hostname
+        ),
         utils.CYAN
     )
     utils.printcolor(
