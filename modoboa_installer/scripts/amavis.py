@@ -1,5 +1,6 @@
 """Amavis related functions."""
 
+import os
 import platform
 
 from .. import package
@@ -70,8 +71,15 @@ class Amavis(base.Installer):
         version = package.backend.get_installed_version("amavisd-new")
         if version is None:
             raise utils.FatalError("Amavis is not installed")
-        return self.get_file_path(
+        path = self.get_file_path(
             "amavis_{}_{}.sql".format(self.dbengine, version))
+        if not os.path.exists(path):
+            version = ".".join(version.split(".")[:-1]) + ".X"
+            path = self.get_file_path(
+                "amavis_{}_{}.sql".format(self.dbengine, version))
+            if not os.path.exists(path):
+               raise utils.FatalError("Failed to find amavis database schema")
+        return path
 
     def post_run(self):
         """Additional tasks."""
