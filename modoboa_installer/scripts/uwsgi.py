@@ -1,6 +1,8 @@
 """uWSGI related tools."""
 
 import os
+import pwd
+import stat
 
 from .. import package
 from .. import system
@@ -97,6 +99,15 @@ class Uwsgi(base.Installer):
 
     def restart_daemon(self):
         """Restart daemon process."""
+        # Temp. fix for CentOS
+        if utils.dist_name().startswith("centos"):
+            pw = pwd.getpwnam("uwsgi")
+            utils.mkdir(
+                "/run/uwsgi",
+                stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
+                stat.S_IROTH | stat.S_IXOTH,
+                pw[2], pw[3]
+            )
         code, output = utils.exec_cmd("service uwsgi status")
         action = "start" if code else "restart"
         utils.exec_cmd("service uwsgi {}".format(action))
