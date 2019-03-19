@@ -36,13 +36,13 @@ class Modoboa(base.Installer):
     with_db = True
     with_user = True
 
-    def __init__(self, config):
+    def __init__(self, *args, **kwargs):
         """Get configuration."""
-        super(Modoboa, self).__init__(config)
-        self.venv_path = config.get("modoboa", "venv_path")
-        self.instance_path = config.get("modoboa", "instance_path")
-        self.extensions = config.get("modoboa", "extensions").split()
-        self.devmode = config.getboolean("modoboa", "devmode")
+        super(Modoboa, self).__init__(*args, **kwargs)
+        self.venv_path = self.config.get("modoboa", "venv_path")
+        self.instance_path = self.config.get("modoboa", "instance_path")
+        self.extensions = self.config.get("modoboa", "extensions").split()
+        self.devmode = self.config.getboolean("modoboa", "devmode")
         # Sanity check for amavis
         self.amavis_enabled = False
         if "modoboa-amavis" in self.extensions:
@@ -87,7 +87,8 @@ class Modoboa(base.Installer):
                     packages.append(extension)
         # Temp fix for https://github.com/modoboa/modoboa-installer/issues/197
         python.install_package(
-            modoboa_package, self.venv_path, binary=False, sudo_user=self.user)
+            modoboa_package, self.venv_path,
+            upgrade=self.upgrade, binary=False, sudo_user=self.user)
         if self.dbengine == "postgres":
             packages.append("psycopg2-binary")
         else:
@@ -99,18 +100,23 @@ class Modoboa(base.Installer):
             # Temp. fix
             packages += [
                 "https://github.com/modoboa/caldav/tarball/master#egg=caldav"]
-        python.install_packages(packages, self.venv_path, sudo_user=self.user)
+        python.install_packages(
+            packages, self.venv_path, upgrade=self.upgrade, sudo_user=self.user)
         if self.devmode:
             # FIXME: use dev-requirements instead
             python.install_packages(
                 ["django-bower", "django-debug-toolbar"], self.venv_path,
-                sudo_user=self.user)
+                upgrade=self.upgrade, sudo_user=self.user)
 
     def _deploy_instance(self):
         """Deploy Modoboa."""
         target = os.path.join(self.home_dir, "instance")
         if os.path.exists(target):
-            if not self.config.getboolean("general", "force"):
+            condition = (
+                not self.upgrade and
+                not self.config.getboolean("general", "force")
+            )
+            if condition:
                 utils.printcolor(
                     "Target directory for Modoboa deployment ({}) already "
                     "exists. If you choose to continue, it will be removed."
@@ -239,4 +245,5 @@ class Modoboa(base.Installer):
         """Additional tasks."""
         self._setup_venv()
         self._deploy_instance()
-        self.apply_settings()
+        if not self.upgrade:
+            self.apply_settings()

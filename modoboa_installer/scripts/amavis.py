@@ -77,5 +77,5 @@ class Amavis(base.Installer):
         """Additional tasks."""
         with open("/etc/mailname", "w") as fp:
             fp.write("{}\n".format(self.config.get("general", "hostname")))
-        install("spamassassin", self.config)
-        install("clamav", self.config)
+        install("spamassassin", self.config, self.upgrade)
+        install("clamav", self.config, self.upgrade)
