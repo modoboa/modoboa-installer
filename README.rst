@@ -42,6 +42,8 @@ The following components are installed by the installer:
 * Dovecot
 * Amavis (with SpamAssassin and ClamAV)
 * automx (autoconfiguration service)
+* OpenDKIM
+* Radicale (CalDAV and CardDAV server)
 
 If you want to customize configuration before running the installer,
 run the following command::
@@ -65,6 +67,22 @@ a previous one using the ``--version`` option::
 
 If you want more information about the installation process, add the
 ``--debug`` option to your command line.
+
+Upgrade mode
+------------
+
+An experimental upgrade mode is available.
+
+.. note::
+
+   You must keep the original configuration file, ie the one used for
+   the installation. Otherwise, you won't be able to use this mode.
+
+You can activate it as follows::
+
+  $ sudo ./run.py --upgrade <your domain>
+
+It will automatically install latest versions of modoboa and its plugins.
 
 Change the generated hostname
 -----------------------------

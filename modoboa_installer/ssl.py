@@ -43,7 +43,7 @@ class SelfSignedCertificate(CertificateBackend):
                 return
         raise RuntimeError("Cannot find a directory to store certificate")
 
-    def create(self):
+    def generate_cert(self):
         """Create a certificate."""
         if not self.overwrite_existing_certificate():
             return
@@ -61,26 +61,30 @@ class SelfSignedCertificate(CertificateBackend):
 class LetsEncryptCertificate(CertificateBackend):
     """Create a certificate using letsencrypt."""
 
-    def create(self):
+    def __init__(self, *args, **kwargs):
+        """Update config."""
+        super(LetsEncryptCertificate, self).__init__(*args, **kwargs)
+        self.hostname = self.config.get("general", "hostname")
+        self.config.set("general", "tls_cert_file", (
+            "/etc/letsencrypt/live/{}/fullchain.pem".format(self.hostname)))
+        self.config.set("general", "tls_key_file", (
+            "/etc/letsencrypt/live/{}/privkey.pem".format(self.hostname)))
+
+    def generate_cert(self):
         """Create a certificate."""
         utils.printcolor(
             "Generating new certificate using letsencrypt", utils.YELLOW)
-        hostname = self.config.get("general", "hostname")
         utils.exec_cmd(
             "wget https://dl.eff.org/certbot-auto; chmod a+x certbot-auto",
             cwd="/opt")
         utils.exec_cmd(
             "/opt/certbot-auto certonly -n --standalone -d {} "
             "-m {} --agree-tos".format(
-                hostname, self.config.get("letsencrypt", "email")))
-        self.config.set("general", "tls_cert_file", (
-            "/etc/letsencrypt/live/{}/fullchain.pem".format(hostname)))
-        self.config.set("general", "tls_key_file", (
-            "/etc/letsencrypt/live/{}/privkey.pem".format(hostname)))
+                self.hostname, self.config.get("letsencrypt", "email")))
         with open("/etc/cron.d/letsencrypt", "w") as fp:
             fp.write("0 */12 * * * root /opt/certbot-auto renew "
                      "--quiet --no-self-upgrade --force-renewal\n")
-        cfg_file = "/etc/letsencrypt/renewal/{}.conf".format(hostname)
+        cfg_file = "/etc/letsencrypt/renewal/{}.conf".format(self.hostname)
         pattern = "s/authenticator = standalone/authenticator = nginx/"
         utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfg_file))
 

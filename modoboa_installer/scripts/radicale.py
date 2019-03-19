@@ -22,10 +22,10 @@ class Radicale(base.Installer):
     }
     with_user = True
 
-    def __init__(self, config):
+    def __init__(self, *args, **kwargs):
         """Get configuration."""
-        super(Radicale, self).__init__(config)
-        self.venv_path = config.get("radicale", "venv_path")
+        super(Radicale, self).__init__(*args, **kwargs)
+        self.venv_path = self.config.get("radicale", "venv_path")
 
     def _setup_venv(self):
         """Prepare a dedicated virtualenv."""

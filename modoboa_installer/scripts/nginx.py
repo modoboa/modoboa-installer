@@ -25,7 +25,8 @@ class Nginx(base.Installer):
         context.update({
             "app_instance_path": (
                 self.config.get(app, "instance_path")),
-            "uwsgi_socket_path": Uwsgi(self.config).get_socket_path(app)
+            "uwsgi_socket_path": (
+                Uwsgi(self.config, self.upgrade).get_socket_path(app))
         })
         return context
 

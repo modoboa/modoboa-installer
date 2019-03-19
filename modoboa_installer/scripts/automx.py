@@ -24,11 +24,11 @@ class Automx(base.Installer):
     }
     with_user = True
 
-    def __init__(self, config):
+    def __init__(self, *args, **kwargs):
         """Get configuration."""
-        super(Automx, self).__init__(config)
-        self.venv_path = config.get("automx", "venv_path")
-        self.instance_path = config.get("automx", "instance_path")
+        super(Automx, self).__init__(*args, **kwargs)
+        self.venv_path = self.config.get("automx", "venv_path")
+        self.instance_path = self.config.get("automx", "instance_path")
 
     def get_template_context(self):
         """Additional variables."""

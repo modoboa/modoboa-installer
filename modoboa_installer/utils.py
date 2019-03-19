@@ -145,10 +145,15 @@ def copy_from_template(template, dest, context):
         fp.write(ConfigFileTemplate(buf).substitute(context))
 
 
-def check_config_file(dest, interactive=False):
+def check_config_file(dest, interactive=False, upgrade=False):
     """Create a new installer config file if needed."""
     if os.path.exists(dest):
         return
+    if upgrade:
+        printcolor(
+            "You cannot upgrade an existing installation without a "
+            "configuration file.", RED)
+        sys.exit(1)
     printcolor(
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)
