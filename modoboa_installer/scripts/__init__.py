@@ -6,7 +6,7 @@ import sys
 from .. import utils
 
 
-def install(appname, config):
+def install(appname, config, upgrade):
     """Install an application."""
     if (config.has_option(appname, "enabled") and
             not config.getboolean(appname, "enabled")):
@@ -19,7 +19,7 @@ def install(appname, config):
         print("Unknown application {}".format(appname))
         sys.exit(1)
     try:
-        getattr(script, appname.capitalize())(config).run()
+        getattr(script, appname.capitalize())(config, upgrade).run()
     except utils.FatalError as inst:
         utils.printcolor(u"{}".format(inst), utils.RED)
         sys.exit(1)

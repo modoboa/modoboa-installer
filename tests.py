@@ -30,6 +30,8 @@ class ConfigFileTestCase(unittest.TestCase):
 
     def test_configfile_generation(self):
         """Check simple case."""
+        out = StringIO()
+        sys.stdout = out
         run.main([
             "--stop-after-configfile-check",
             "--configfile", self.cfgfile,
@@ -89,6 +91,45 @@ class ConfigFileTestCase(unittest.TestCase):
             "modoboa automx amavis clamav dovecot nginx razor postfix"
             " postwhite spamassassin uwsgi",
             out.getvalue()
+        )
+
+    @patch("modoboa_installer.utils.user_input")
+    def test_upgrade_mode(self, mock_user_input):
+        """Test upgrade mode launch."""
+        mock_user_input.side_effect = ["no"]
+        # 1. Generate a config file
+        with open(os.devnull, "w") as fp:
+            sys.stdout = fp
+            run.main([
+                "--stop-after-configfile-check",
+                "--configfile", self.cfgfile,
+                "example.test"])
+        # 2. Run upgrade
+        out = StringIO()
+        sys.stdout = out
+        run.main([
+            "--configfile", self.cfgfile,
+            "--upgrade",
+            "example.test"])
+        self.assertIn(
+            "Your mail server is about to be upgraded and the following "
+            "components will be impacted:",
+            out.getvalue()
+        )
+
+    def test_upgrade_no_config_file(self):
+        """Check config file existence check."""
+        out = StringIO()
+        sys.stdout = out
+        with self.assertRaises(SystemExit):
+            run.main([
+                "--configfile", self.cfgfile,
+                "--upgrade",
+                "example.test"
+            ])
+        self.assertIn(
+            "You cannot upgrade an existing installation without a "
+            "configuration file.", out.getvalue()
         )
 
 

@@ -17,6 +17,34 @@ from modoboa_installer import system
 from modoboa_installer import utils
 
 
+def installation_disclaimer(args, config):
+    """Display installation disclaimer."""
+    hostname = config.get("general", "hostname")
+    utils.printcolor(
+        "Warning:\n"
+        "Before you start the installation, please make sure the following "
+        "DNS records exist for domain '{}':\n"
+        "  {} IN A   <IP ADDRESS OF YOUR SERVER>\n"
+        "       IN MX  {}.\n".format(
+            args.domain,
+            hostname.replace(".{}".format(args.domain), ""),
+            hostname
+        ),
+        utils.CYAN
+    )
+    utils.printcolor(
+        "Your mail server will be installed with the following components:",
+        utils.BLUE)
+
+
+def upgrade_disclaimer(config):
+    """Display upgrade disclaimer."""
+    utils.printcolor(
+        "Your mail server is about to be upgraded and the following components"
+        " will be impacted:", utils.BLUE
+    )
+
+
 def main(input_args):
     """Install process."""
     parser = argparse.ArgumentParser()
@@ -38,6 +66,9 @@ def main(input_args):
     parser.add_argument(
         "--interactive", action="store_true", default=False,
         help="Generate configuration file with user interaction")
+    parser.add_argument(
+        "--upgrade", action="store_true", default=False,
+        help="Run the installer in upgrade mode")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args(input_args)
@@ -45,7 +76,7 @@ def main(input_args):
     if args.debug:
         utils.ENV["debug"] = True
     utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
-    utils.check_config_file(args.configfile, args.interactive)
+    utils.check_config_file(args.configfile, args.interactive, args.upgrade)
     if args.stop_after_configfile_check:
         return
     config = configparser.SafeConfigParser()
@@ -56,22 +87,12 @@ def main(input_args):
     config.set("general", "domain", args.domain)
     config.set("dovecot", "domain", args.domain)
     config.set("modoboa", "version", args.version)
-    hostname = config.get("general", "hostname")
-    utils.printcolor(
-        "Warning:\n"
-        "Before you start the installation, please make sure the following "
-        "DNS records exist for domain '{}':\n"
-        "  {} IN A   <IP ADDRESS OF YOUR SERVER>\n"
-        "       IN MX  {}.\n".format(
-            args.domain,
-            hostname.replace(".{}".format(args.domain), ""),
-            hostname
-        ),
-        utils.CYAN
-    )
-    utils.printcolor(
-        "Your mail server will be installed with the following components:",
-        utils.BLUE)
+    # Display disclaimer
+    if not args.upgrade:
+        installation_disclaimer(args, config)
+    else:
+        upgrade_disclaimer(config)
+    # Show concerned components
     components = []
     for section in config.sections():
         if section in ["general", "database", "mysql", "postgres",
@@ -93,17 +114,17 @@ def main(input_args):
     utils.printcolor("Starting...", utils.GREEN)
     package.backend.install_many(["sudo", "wget"])
     ssl_backend = ssl.get_backend(config)
-    if ssl_backend:
-        ssl_backend.create()
-    scripts.install("amavis", config)
-    scripts.install("modoboa", config)
-    scripts.install("automx", config)
-    scripts.install("radicale", config)
-    scripts.install("uwsgi", config)
-    scripts.install("nginx", config)
-    scripts.install("opendkim", config)
-    scripts.install("postfix", config)
-    scripts.install("dovecot", config)
+    if ssl_backend and not args.upgrade:
+        ssl_backend.generate_cert()
+    scripts.install("amavis", config, args.upgrade)
+    scripts.install("modoboa", config, args.upgrade)
+    scripts.install("automx", config, args.upgrade)
+    scripts.install("radicale", config, args.upgrade)
+    scripts.install("uwsgi", config, args.upgrade)
+    scripts.install("nginx", config, args.upgrade)
+    scripts.install("opendkim", config, args.upgrade)
+    scripts.install("postfix", config, args.upgrade)
+    scripts.install("dovecot", config, args.upgrade)
     system.restart_service("cron")
     utils.printcolor(
         "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"

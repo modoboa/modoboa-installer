@@ -19,9 +19,10 @@ class Installer(object):
     with_db = False
     config_files = []
 
-    def __init__(self, config):
+    def __init__(self, config, upgrade):
         """Get configuration."""
         self.config = config
+        self.upgrade = upgrade
         if self.config.has_section(self.appname):
             self.app_config = dict(self.config.items(self.appname))
         self.dbengine = self.config.get("database", "engine")
@@ -67,8 +68,8 @@ class Installer(object):
             self.backend.load_sql_file(
                 self.dbname, self.dbuser, self.dbpasswd, schema)
 
-    def create_user(self):
-        """Create a system user."""
+    def setup_user(self):
+        """Setup a system user."""
         if not self.with_user:
             return
         self.user = self.config.get(self.appname, "user")
@@ -143,8 +144,9 @@ class Installer(object):
     def run(self):
         """Run the installer."""
         self.install_packages()
-        self.create_user()
-        self.setup_database()
+        self.setup_user()
+        if not self.upgrade:
+            self.setup_database()
         self.install_config_files()
         self.post_run()
         self.restart_daemon()
