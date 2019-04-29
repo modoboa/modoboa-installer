@@ -41,12 +41,14 @@ class Automx(base.Installer):
             self.config.get("modoboa", "dbname"))
         if self.db_driver == "pgsql":
             sql_query = (
-                "SELECT first_name || ' ' || last_name AS display_name, email "
+                "SELECT first_name || ' ' || last_name AS display_name, email"
+                ", SPLIT_PART(email, '@', 2) AS domain "
                 "FROM core_user WHERE email='%s' AND is_active")
         else:
             sql_query = (
                 "SELECT concat(first_name, ' ', last_name) AS display_name, "
-                "email FROM core_user WHERE email='%s' AND is_active=1"
+                "email, SUBSTRING_INDEX(email, '@', -1) AS domain "
+                "FROM core_user WHERE email='%s' AND is_active=1"
             )
         context.update({"sql_dsn": sql_dsn, "sql_query": sql_query})
         return context
