@@ -91,9 +91,13 @@ class Opendkim(base.Installer):
                 'SOCKET="inet:12345@localhost"',
             ]))
         # Make sure opendkim is started after postgresql and mysql, respectively
-        dbservice = "postgresql.service" if self.dbengine == "postgres" else "mysql.service"
+        if self.dbengine == "postgres":
+          dbservice = "postgresql.service"
+        elif "centos" in utils.dist_name():
+          dbservice = "mysqld.service"
+        else:
+          dbservice = "mysql.service"
         pattern = (
-            "s/^After=(.*)$/After=$1 {}/".format(dbservice)
-        )
+            "s/^After=(.*)$/After=$1 {}/".format(dbservice))
         utils.exec_cmd(
             "perl -pi -e '{}' /lib/systemd/system/opendkim.service".format(pattern))
