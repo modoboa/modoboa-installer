@@ -23,7 +23,9 @@ class Modoboa(base.Installer):
     packages = {
         "deb": [
             "build-essential", "python-dev", "libxml2-dev", "libxslt-dev",
-            "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron"],
+            "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron",
+            "libssl-dev"
+        ],
         "rpm": [
             "gcc", "gcc-c++", "python-devel", "libxml2-devel", "libxslt-devel",
             "libjpeg-turbo-devel", "rrdtool-devel", "rrdtool", "libffi-devel",
