@@ -46,7 +46,7 @@ class DEBPackage(Package):
     def install_many(self, names):
         """Install many packages."""
         self.update()
-        utils.exec_cmd("apt-get install --quiet --assume-yes {}".format(
+        return utils.exec_cmd("apt-get install --quiet --assume-yes {}".format(
             " ".join(names)))
 
     def get_installed_version(self, name):
@@ -76,7 +76,7 @@ class RPMPackage(Package):
 
     def install_many(self, names):
         """Install many packages."""
-        utils.exec_cmd("yum install -y --quiet {}".format(" ".join(names)))
+        return utils.exec_cmd("yum install -y --quiet {}".format(" ".join(names)))
 
     def get_installed_version(self, name):
         """Get installed package version."""

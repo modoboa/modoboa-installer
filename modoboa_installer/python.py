@@ -60,8 +60,8 @@ def setup_virtualenv(path, sudo_user=None, python_version=2):
             packages.append("virtualenv")
     else:
         if utils.dist_name().startswith("centos"):
-            python_binary = "python36"
-            packages = ["python36"]
+            python_binary = "python3"
+            packages = ["python3"]
         else:
             python_binary = "python3"
             packages = ["python3-venv"]

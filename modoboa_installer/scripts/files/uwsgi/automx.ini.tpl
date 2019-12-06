@@ -1,7 +1,7 @@
 [uwsgi]
 uid = %app_user
 gid = %app_user
-plugins = python
+plugins = %uwsgi_plugin
 home = %app_venv_path
 chdir = %app_instance_path
 module = automx_wsgi

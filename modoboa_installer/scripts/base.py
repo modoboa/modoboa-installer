@@ -1,6 +1,7 @@
 """Base classes."""
 
 import os
+import sys
 
 from .. import database
 from .. import package
@@ -107,7 +108,10 @@ class Installer(object):
         packages = self.get_packages()
         if not packages:
             return
-        package.backend.install_many(packages)
+        exitcode, output = package.backend.install_many(packages)
+        if exitcode:
+            utils.printcolor("Failed to install dependencies", utils.RED)
+            sys.exit(1)
 
     def get_config_files(self):
         """Return the list of configuration files to copy."""

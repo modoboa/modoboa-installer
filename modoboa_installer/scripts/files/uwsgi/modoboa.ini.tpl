@@ -1,7 +1,7 @@
 [uwsgi]
 uid = %app_user
 gid = %app_user
-plugins = python
+plugins = %uwsgi_plugin
 home = %app_venv_path
 chdir = %app_instance_path
 module = instance.wsgi:application
@@ -12,3 +12,4 @@ no-default-app = true
 socket = %uwsgi_socket_path
 chmod-socket = 660
 vacuum = true
+single-interpreter = True

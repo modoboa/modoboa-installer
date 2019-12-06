@@ -16,8 +16,8 @@ class Uwsgi(base.Installer):
 
     appname = "uwsgi"
     packages = {
-        "deb": ["uwsgi", "uwsgi-plugin-python"],
-        "rpm": ["uwsgi", "uwsgi-plugin-python2"],
+        "deb": ["uwsgi", "uwsgi-plugin-python3"],
+        "rpm": ["uwsgi", "uwsgi-plugin-python36"],
     }
 
     def get_socket_path(self, app):
@@ -29,12 +29,17 @@ class Uwsgi(base.Installer):
     def get_template_context(self, app):
         """Additionnal variables."""
         context = super(Uwsgi, self).get_template_context()
+        if package.backend.FORMAT == "deb":
+            uwsgi_plugin = "python3"
+        else:
+            uwsgi_plugin = "python36"
         context.update({
             "app_user": self.config.get(app, "user"),
             "app_venv_path": self.config.get(app, "venv_path"),
             "app_instance_path": (
                 self.config.get(app, "instance_path")),
             "uwsgi_socket_path": self.get_socket_path(app),
+            "uwsgi_plugin": uwsgi_plugin,
         })
         return context
 

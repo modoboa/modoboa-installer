@@ -22,12 +22,12 @@ class Modoboa(base.Installer):
     no_daemon = True
     packages = {
         "deb": [
-            "build-essential", "python-dev", "libxml2-dev", "libxslt-dev",
+            "build-essential", "python3-dev", "libxml2-dev", "libxslt-dev",
             "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron",
             "libssl-dev"
         ],
         "rpm": [
-            "gcc", "gcc-c++", "python-devel", "libxml2-devel", "libxslt-devel",
+            "gcc", "gcc-c++", "python3-devel", "libxml2-devel", "libxslt-devel",
             "libjpeg-turbo-devel", "rrdtool-devel", "rrdtool", "libffi-devel",
         ]
     }
@@ -67,7 +67,8 @@ class Modoboa(base.Installer):
 
     def _setup_venv(self):
         """Prepare a dedicated virtualenv."""
-        python.setup_virtualenv(self.venv_path, sudo_user=self.user)
+        python.setup_virtualenv(
+            self.venv_path, sudo_user=self.user, python_version=3)
         packages = ["rrdtool"]
         version = self.config.get("modoboa", "version")
         if version == "latest":
