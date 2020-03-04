@@ -5,7 +5,7 @@ PYTHON=%{venv_path}/bin/python
 INSTANCE=%{instance_path}
 
 # Operations on mailboxes
-*       *       *       *       *       %{dovecot_mailboxes_owner}   $PYTHON $INSTANCE/manage.py handle_mailbox_operations
+%{dovecot_enabled}*       *       *       *       *       %{dovecot_mailboxes_owner}   $PYTHON $INSTANCE/manage.py handle_mailbox_operations
 
 # Sessions table cleanup
 0       0       *       *       *       root    $PYTHON $INSTANCE/manage.py clearsessions

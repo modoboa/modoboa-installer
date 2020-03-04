@@ -55,6 +55,7 @@ class Modoboa(base.Installer):
         if "modoboa-radicale" in self.extensions:
             if not self.config.getboolean("radicale", "enabled"):
                 self.extensions.remove("modoboa-radicale")
+        self.dovecot_enabled = self.config.getboolean("dovecot", "enabled")
 
     def is_extension_ok_for_version(self, extension, version):
         """Check if extension can be installed with this modo version."""
@@ -104,7 +105,9 @@ class Modoboa(base.Installer):
             packages += [
                 "https://github.com/modoboa/caldav/tarball/master#egg=caldav"]
         python.install_packages(
-            packages, self.venv_path, upgrade=self.upgrade, sudo_user=self.user)
+            packages, self.venv_path, upgrade=self.upgrade,
+            sudo_user=self.user
+        )
         if self.devmode:
             # FIXME: use dev-requirements instead
             python.install_packages(
