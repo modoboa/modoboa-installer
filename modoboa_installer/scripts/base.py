@@ -147,6 +147,7 @@ class Installer(object):
 
     def run(self):
         """Run the installer."""
+        self.pre_run()
         self.install_packages()
         self.setup_user()
         if not self.upgrade:
@@ -154,6 +155,10 @@ class Installer(object):
         self.install_config_files()
         self.post_run()
         self.restart_daemon()
+
+    def pre_run(self):
+        """Tasks to execute before the installer starts."""
+        pass
 
     def post_run(self):
         """Additionnal tasks."""

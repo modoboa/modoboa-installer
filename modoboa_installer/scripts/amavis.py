@@ -78,9 +78,12 @@ class Amavis(base.Installer):
                raise utils.FatalError("Failed to find amavis database schema")
         return path
 
-    def post_run(self):
-        """Additional tasks."""
+    def pre_run(self):
+        """Tasks to run first."""
         with open("/etc/mailname", "w") as fp:
             fp.write("{}\n".format(self.config.get("general", "hostname")))
+
+    def post_run(self):
+        """Additional tasks."""
         install("spamassassin", self.config, self.upgrade)
         install("clamav", self.config, self.upgrade)
