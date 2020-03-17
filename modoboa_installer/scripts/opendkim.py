@@ -78,10 +78,16 @@ class Opendkim(base.Installer):
             dbname, "dkim", self.app_config["dbuser"], "SELECT")
 
     def post_run(self):
-        """Additional tasks."""
-        if package.backend.FORMAT != "deb":
-            return
-        params_file = "/etc/default/opendkim"
+        """Additional tasks.
+        Check linux distribution (package deb, rpm), to adapt
+        to config file location and syntax.
+        - update opendkim isocket port config
+        - make sure opendkim starts after db service started
+        """
+        if package.backend.FORMAT == "deb":
+            params_file = "/etc/default/opendkim"
+        else:
+            params_file = "/etc/opendkim.conf"
         pattern = r"s/^(SOCKET=.*)/#\1/"
         utils.exec_cmd(
             "perl -pi -e '{}' {}".format(pattern, params_file))
@@ -90,3 +96,15 @@ class Opendkim(base.Installer):
                 "",
                 'SOCKET="inet:12345@localhost"',
             ]))
+
+        """ Make sure opendkim is started after postgresql and mysql, respectively. """
+        if (self.dbengine != "postgres" and package.backend.FORMAT == "deb"):
+            dbservice = "mysql.service"
+        elif (self.dbengine != "postgres" and package.backend.FORMAT != "deb"):
+            dbservice = "mysqld.service"
+        else:
+            dbservice = "postgresql.service"
+        pattern = (
+            "s/^After=(.*)$/After=$1 {}/".format(dbservice))
+        utils.exec_cmd(
+            "perl -pi -e '{}' /lib/systemd/system/opendkim.service".format(pattern))
