@@ -79,7 +79,7 @@ def dist_name():
         # Python 3.8 and up way
         import distro
         name, version, _id = distro.linux_distribution()
-    except ModuleNotFoundError as e:
+    except ImportError as e:
         # Python 3.7 and down way
         import platform
         name, version, _id = platform.linux_distribution()
