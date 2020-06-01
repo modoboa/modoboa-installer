@@ -76,11 +76,11 @@ def exec_cmd(cmd, sudo_user=None, pinput=None, login=True, **kwargs):
 def dist_name():
     """Try to guess the distribution name."""
     try:
-        # Python 3.7 and up way
+        # Python 3.8 and up way
         import distro
         name, version, _id = distro.linux_distribution()
     except ModuleNotFoundError as e:
-        # Python 3.6 and down way
+        # Python 3.7 and down way
         import platform
         name, version, _id = platform.linux_distribution()
     return "unknown" if not name else name.lower()
