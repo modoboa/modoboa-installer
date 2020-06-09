@@ -102,8 +102,8 @@ file = %{config_dir}/rights
 
 # Storage backend
 # Value: multifilesystem
-type = radicale_storage_by_index
-radicale_storage_by_index_fields = dtstart, dtend, uid, summary
+# type = radicale_storage_by_index
+# radicale_storage_by_index_fields = dtstart, dtend, uid, summary
 
 # Folder for storing local collections, created if not present
 filesystem_folder = %{home_dir}/collections

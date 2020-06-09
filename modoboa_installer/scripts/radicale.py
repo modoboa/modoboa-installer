@@ -33,10 +33,10 @@ class Radicale(base.Installer):
             self.venv_path, sudo_user=self.user, python_version=3)
         packages = ["Radicale<3", "radicale-dovecot-auth", "pytz"]
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
-        python.install_package_from_repository(
-            "radicale-storage-by-index",
-            "https://github.com/tonioo/RadicaleStorageByIndex",
-            venv=self.venv_path, sudo_user=self.user)
+        # python.install_package_from_repository(
+        #     "radicale-storage-by-index",
+        #     "https://github.com/tonioo/RadicaleStorageByIndex",
+        #     venv=self.venv_path, sudo_user=self.user)
 
     def get_template_context(self):
         """Additional variables."""
