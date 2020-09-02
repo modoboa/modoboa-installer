@@ -1,7 +1,7 @@
 """Database related tools."""
 
 import os
-import platform
+import distro
 import pwd
 import stat
 
@@ -143,7 +143,7 @@ class MySQL(Database):
 
     def install_package(self):
         """Preseed package installation."""
-        name, version, _id = platform.linux_distribution()
+        name, version, _id = distro.linux_distribution()
         name = name.lower()
         if name == "debian":
             mysql_name = "mysql" if version.startswith("8") else "mariadb"
