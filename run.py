@@ -79,9 +79,9 @@ def main(input_args):
     utils.check_config_file(args.configfile, args.interactive, args.upgrade)
     if args.stop_after_configfile_check:
         return
-    config = configparser.SafeConfigParser()
+    config = configparser.ConfigParser()
     with open(args.configfile) as fp:
-        config.readfp(fp)
+        config.read_file(fp)
     if not config.has_section("general"):
         config.add_section("general")
     config.set("general", "domain", args.domain)

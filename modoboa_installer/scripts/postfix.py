@@ -35,9 +35,9 @@ class Postfix(base.Installer):
     def install_packages(self):
         """Preconfigure postfix package installation."""
         if "centos" in utils.dist_name():
-            config = configparser.SafeConfigParser()
+            config = configparser.ConfigParser()
             with open("/etc/yum.repos.d/CentOS-Base.repo") as fp:
-                config.readfp(fp)
+                config.read_file(fp)
             config.set("centosplus", "enabled", "1")
             config.set("centosplus", "includepkgs", "postfix-*")
             config.set("base", "exclude", "postfix-*")
