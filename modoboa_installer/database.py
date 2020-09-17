@@ -48,12 +48,28 @@ class PostgreSQL(Database):
 
     def install_package(self):
         """Install database if required."""
-        package.backend.install_many(self.packages[package.backend.FORMAT])
-        if package.backend.FORMAT == "rpm":
-            utils.exec_cmd("postgresql-setup initdb")
+        name, version, _id = utils.dist_info()
+        if "CentOS" in name:
+            if version.startswith("7"):
+                # Install newer version of postgres in this case
+                package.backend.install(
+                    "https://download.postgresql.org/pub/repos/yum/"
+                    "reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+                )
+                self.packages["rpm"] = [
+                    "postgresql10-server", "postgresql10-devel"]
+                self.service = "postgresql-10"
+                initdb_cmd = "/usr/pgsql-10/bin/postgresql-10-setup initdb"
+                cfgfile = "/var/lib/pgsql/10/data/pg_hba.conf"
+            else:
+                initdb_cmd = "postgresql-setup initdb"
+                cfgfile = "/var/lib/pgsql/data/pg_hba.conf"
+            package.backend.install_many(self.packages[package.backend.FORMAT])
+            utils.exec_cmd(initdb_cmd)
             pattern = "s/^host(.+)ident$/host$1md5/"
-            cfgfile = "/var/lib/pgsql/data/pg_hba.conf"
             utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfgfile))
+        else:
+            package.backend.install_many(self.packages[package.backend.FORMAT])
         system.enable_and_start_service(self.service)
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
