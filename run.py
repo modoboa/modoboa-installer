@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """An installer for Modoboa."""
 
@@ -87,7 +87,7 @@ def main(input_args):
     config.set("general", "domain", args.domain)
     config.set("dovecot", "domain", args.domain)
     config.set("modoboa", "version", args.version)
-    # Display disclaimer
+    # Display disclaimerpython 3 linux distribution
     if not args.upgrade:
         installation_disclaimer(args, config)
     else:

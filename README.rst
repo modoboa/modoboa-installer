@@ -28,18 +28,7 @@ Usage::
 
   $ git clone https://github.com/modoboa/modoboa-installer
   $ cd modoboa-installer
-  $ sudo ./run.py <your domain>
-
-.. note::
-
-   On some systems (Ubuntu 20.04 for example), you might encounter the
-   following issue::
-
-     /usr/bin/env: 'python': No such file or directory
-
-   If so, try to run the command like this::
-
-     $ sudo python3 run.py <your domain>
+  $ sudo python3 run.py <your domain>
 
 A configuration file will be automatically generated the first time
 you run the installer, please don't copy the
