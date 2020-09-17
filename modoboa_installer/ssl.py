@@ -1,7 +1,9 @@
 """SSL tools."""
 
 import os
+import sys
 
+from . import package
 from . import utils
 
 
@@ -70,19 +72,37 @@ class LetsEncryptCertificate(CertificateBackend):
         self.config.set("general", "tls_key_file", (
             "/etc/letsencrypt/live/{}/privkey.pem".format(self.hostname)))
 
+    def install_certbot(self):
+        """Install certbot script to generate cert."""
+        name, version, _id = utils.dist_info()
+        if name == "Ubuntu":
+            package.backend.update()
+            package.backend.install("software-properties-common")
+            utils.exec_cmd("add-apt-repository -y universe")
+            if version == "18.04":
+                utils.exec_cmd("add-apt-repository -y ppa:certbot/certbot")
+            package.backend.update()
+            package.backend.install("certbot")
+        elif name == "Debian":
+            package.backend.update()
+            package.backend.install("certbot")
+        elif "CentOS" in name:
+            package.backend.install("certbot")
+        else:
+            utils.printcolor("Failed to install certbot, aborting.", utils.RED)
+            sys.exit(1)
+
     def generate_cert(self):
         """Create a certificate."""
         utils.printcolor(
             "Generating new certificate using letsencrypt", utils.YELLOW)
+        self.install_certbot()
         utils.exec_cmd(
-            "wget https://dl.eff.org/certbot-auto; chmod a+x certbot-auto",
-            cwd="/opt")
-        utils.exec_cmd(
-            "/opt/certbot-auto certonly -n --standalone -d {} "
-            "-m {} --agree-tos".format(
+            "certbot certonly -n --standalone -d {} -m {} --agree-tos"
+            .format(
                 self.hostname, self.config.get("letsencrypt", "email")))
         with open("/etc/cron.d/letsencrypt", "w") as fp:
-            fp.write("0 */12 * * * root /opt/certbot-auto renew "
+            fp.write("0 */12 * * * root certbot renew "
                      "--quiet --no-self-upgrade --force-renewal\n")
         cfg_file = "/etc/letsencrypt/renewal/{}.conf".format(self.hostname)
         pattern = "s/authenticator = standalone/authenticator = nginx/"
