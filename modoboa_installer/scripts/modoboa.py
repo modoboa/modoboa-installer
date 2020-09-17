@@ -100,10 +100,6 @@ class Modoboa(base.Installer):
         if sys.version_info.major == 2 and sys.version_info.micro < 9:
             # Add extra packages to fix the SNI issue
             packages += ["pyOpenSSL"]
-        if "modoboa-radicale" in self.extensions:
-            # Temp. fix
-            packages += [
-                "https://github.com/modoboa/caldav/tarball/master#egg=caldav"]
         python.install_packages(
             packages, self.venv_path, upgrade=self.upgrade,
             sudo_user=self.user

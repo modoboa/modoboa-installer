@@ -102,8 +102,8 @@ file = %{config_dir}/rights
 
 # Storage backend
 # Value: multifilesystem
-# type = radicale_storage_by_index
-# radicale_storage_by_index_fields = dtstart, dtend, uid, summary
+type = radicale_storage_by_index
+radicale_storage_by_index_fields = dtstart, dtend, uid, summary
 
 # Folder for storing local collections, created if not present
 filesystem_folder = %{home_dir}/collections
@@ -144,9 +144,6 @@ type = none
 # For more information about the syntax of the configuration file, see:
 # http://docs.python.org/library/logging.config.html
 #config = /etc/radicale/logging
-
-# Set the default logging level to debug
-debug = False 
 
 # Store all environment variables (including those set in the shell)
 #full_environment = False
