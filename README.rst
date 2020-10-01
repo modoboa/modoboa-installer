@@ -22,7 +22,8 @@ An installer which deploy a complete mail server based on Modoboa.
    The server (physical or virtual) running Modoboa needs at least 2GB
    of RAM in order to compile the required dependencies during the
    installation process. Passwords should not contain any special characters
-   as they may cause the installation to fail
+   as they may cause the installation to fail. It's important to set a [FQDN](https://linuxconfig.org/how-to-change-fqdn-domain-name-on-ubuntu-20-04-focal-fossa-linux)
+   before, otherwise the installaion will break.
 
 Usage::
 
