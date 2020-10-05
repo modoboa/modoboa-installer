@@ -10,6 +10,7 @@ import sys
 from .. import compatibility_matrix
 from .. import package
 from .. import python
+from .. import system
 from .. import utils
 
 from . import base
@@ -24,11 +25,12 @@ class Modoboa(base.Installer):
         "deb": [
             "build-essential", "python3-dev", "libxml2-dev", "libxslt-dev",
             "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron",
-            "libssl-dev"
+            "libssl-dev", "redis-server", "supervisor"
         ],
         "rpm": [
             "gcc", "gcc-c++", "python3-devel", "libxml2-devel", "libxslt-devel",
             "libjpeg-turbo-devel", "rrdtool-devel", "rrdtool", "libffi-devel",
+            "supervisor", "redis"
         ]
     }
     config_files = [
@@ -182,6 +184,16 @@ class Modoboa(base.Installer):
             packages += ["openssl-devel"]
         return packages
 
+    def get_config_files(self):
+        """Return appropriate path."""
+        config_files = super().get_config_files()
+        if package.backend.FORMAT == "deb":
+            path = "supervisor=/etc/supervisor/conf.d/policyd.conf"
+        else:
+            path = "supervisor=/etc/supervisord.d/policyd.ini"
+        config_files.append(path)
+        return config_files
+
     def get_template_context(self):
         """Additional variables."""
         context = super(Modoboa, self).get_template_context()
@@ -216,7 +228,7 @@ class Modoboa(base.Installer):
             "modoboa_amavis": {
                 "am_pdp_mode": "inet",
             },
-            "modoboa_stats": {
+            "maillog": {
                 "rrd_rootdir": rrd_root_dir,
             },
             "modoboa_pdfcredentials": {
@@ -231,7 +243,7 @@ class Modoboa(base.Installer):
         }
         for path in ["/var/log/maillog", "/var/log/mail.log"]:
             if os.path.exists(path):
-                settings["modoboa_stats"]["logfile"] = path
+                settings["maillog"]["logfile"] = path
         if self.config.getboolean("opendkim", "enabled"):
             settings["admin"]["dkim_keys_storage_dir"] = (
                 self.config.get("opendkim", "keys_storage_dir"))
@@ -249,3 +261,13 @@ class Modoboa(base.Installer):
         self._deploy_instance()
         if not self.upgrade:
             self.apply_settings()
+
+        if 'centos' in utils.dist_name():
+            supervisor = "supervisord"
+            system.enable_and_start_service("redis")
+        else:
+            supervisor = "supervisor"
+        # Restart supervisor
+        system.enable_service(supervisor)
+        utils.exec_cmd("service {} stop".format(supervisor))
+        utils.exec_cmd("service {} start".format(supervisor))

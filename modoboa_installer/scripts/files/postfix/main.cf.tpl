@@ -121,6 +121,7 @@ smtpd_sender_login_maps =
 
 # Recipient restriction rules
 smtpd_recipient_restrictions =
+      check_policy_service inet:127.0.0.1:9999
       permit_mynetworks
       permit_sasl_authenticated
       check_recipient_access

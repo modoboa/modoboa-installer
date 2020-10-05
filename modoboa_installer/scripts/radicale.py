@@ -5,6 +5,7 @@ import stat
 
 from .. import package
 from .. import python
+from .. import system
 from .. import utils
 
 from . import base
@@ -77,5 +78,6 @@ class Radicale(base.Installer):
         daemon_name = (
             "supervisor" if package.backend.FORMAT == "deb" else "supervisord"
         )
+        system.enable_service(daemon_name)
         utils.exec_cmd("service {} stop".format(daemon_name))
         utils.exec_cmd("service {} start".format(daemon_name))
