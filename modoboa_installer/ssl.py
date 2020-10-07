@@ -83,7 +83,7 @@ class LetsEncryptCertificate(CertificateBackend):
                 utils.exec_cmd("add-apt-repository -y ppa:certbot/certbot")
             package.backend.update()
             package.backend.install("certbot")
-        elif name == "Debian":
+        elif name == "Debian" or name == "debian":
             package.backend.update()
             package.backend.install("certbot")
         elif "CentOS" in name:
