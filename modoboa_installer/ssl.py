@@ -75,7 +75,8 @@ class LetsEncryptCertificate(CertificateBackend):
     def install_certbot(self):
         """Install certbot script to generate cert."""
         name, version, _id = utils.dist_info()
-        if name == "Ubuntu":
+        name = name.lower()
+        if name == "ubuntu":
             package.backend.update()
             package.backend.install("software-properties-common")
             utils.exec_cmd("add-apt-repository -y universe")
@@ -83,10 +84,10 @@ class LetsEncryptCertificate(CertificateBackend):
                 utils.exec_cmd("add-apt-repository -y ppa:certbot/certbot")
             package.backend.update()
             package.backend.install("certbot")
-        elif name == "Debian":
+        elif name == "debian":
             package.backend.update()
             package.backend.install("certbot")
-        elif "CentOS" in name:
+        elif "centos" in name:
             package.backend.install("certbot")
         else:
             utils.printcolor("Failed to install certbot, aborting.", utils.RED)
