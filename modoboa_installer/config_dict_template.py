@@ -158,7 +158,7 @@ ConfigDictTemplate = [
                 "default": (
                     "modoboa-amavis modoboa-pdfcredentials "
                     "modoboa-postfix-autoreply modoboa-sievefilters "
-                    "modoboa-stats modoboa-webmail modoboa-contacts "
+                    "modoboa-webmail modoboa-contacts "
                     "modoboa-radicale"
                 ),
             },
