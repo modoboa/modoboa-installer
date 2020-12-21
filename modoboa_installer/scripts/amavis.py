@@ -22,7 +22,7 @@ class Amavis(base.Installer):
             "unrar-free",
         ],
         "rpm": [
-            "amavisd-new", "arj", "cabextract", "lz4", "lrzip",
+            "amavisd", "arj", "cabextract", "lz4", "lrzip",
             "lzop", "p7zip", "unar", "unzoo"
         ],
     }
@@ -65,7 +65,7 @@ class Amavis(base.Installer):
 
     def get_sql_schema_path(self):
         """Return schema path."""
-        version = package.backend.get_installed_version("amavisd-new")
+        version = package.backend.get_installed_version("amavisd")
         if version is None:
             raise utils.FatalError("Amavis is not installed")
         path = self.get_file_path(
