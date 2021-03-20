@@ -112,6 +112,7 @@ def main(input_args):
         "The process can be long, feel free to take a coffee "
         "and come back later ;)", utils.BLUE)
     utils.printcolor("Starting...", utils.GREEN)
+    package.backend.prepare_system()
     package.backend.install_many(["sudo", "wget"])
     ssl_backend = ssl.get_backend(config)
     if ssl_backend and not args.upgrade:
@@ -126,6 +127,7 @@ def main(input_args):
     scripts.install("postfix", config, args.upgrade)
     scripts.install("dovecot", config, args.upgrade)
     system.restart_service("cron")
+    package.backend.restore_system()
     utils.printcolor(
         "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
         .format(config.get("general", "hostname")),
