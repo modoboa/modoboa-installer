@@ -148,5 +148,5 @@ autoreply unix        -       n       n       -       -       pipe
 %{amavis_enabled}        -o smtpd_hard_error_limit=1000 
 %{amavis_enabled}        -o smtpd_client_connection_count_limit=0 
 %{amavis_enabled}        -o smtpd_client_connection_rate_limit=0 
-%{amavis_enabled}        -o receive_override_options=no_header_body_checks,no_unknown_recipient_checks 
+%{amavis_enabled}        -o receive_override_options=no_header_body_checks,no_unknown_recipient_checks,no_milters
 %{amavis_enabled}        -o local_header_rewrite_clients=
