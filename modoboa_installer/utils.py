@@ -92,7 +92,7 @@ def dist_info():
 def dist_name():
     """Try to guess the distribution name."""
     name, version, _id = dist_info()
-    return name.lower()
+    return name.lower().split(' ')[0]
 
 
 def mkdir(path, mode, uid, gid):
