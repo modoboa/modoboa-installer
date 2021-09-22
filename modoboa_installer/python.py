@@ -76,4 +76,4 @@ def setup_virtualenv(path, sudo_user=None, python_version=2):
             utils.exec_cmd("virtualenv {}".format(path))
         else:
             utils.exec_cmd("{} -m venv {}".format(python_binary, path))
-        install_packages(["pip", "setuptools"], venv=path, upgrade=True)
+        install_packages(["pip", "setuptools\<58.0.0"], venv=path, upgrade=True)
