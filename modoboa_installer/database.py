@@ -48,7 +48,7 @@ class PostgreSQL(Database):
 
     def install_package(self):
         """Install database if required."""
-        name, version, _id = utils.dist_info()
+        name, version = utils.dist_info()
         if "CentOS" in name:
             if version.startswith("7"):
                 # Install newer version of postgres in this case
@@ -158,31 +158,44 @@ class MySQL(Database):
 
     def install_package(self):
         """Preseed package installation."""
-        name, version, _id = utils.dist_info()
+        name, version = utils.dist_info()
         name = name.lower()
-        if name == "debian":
-            mysql_name = "mysql" if version.startswith("8") else "mariadb"
-            self.packages["deb"].append("lib{}client-dev".format(mysql_name))
+        if name.startswith("debian"):
+            if version.startswith("8"):
+                self.packages["deb"].append("libmysqlclient-dev")
+            elif version.startswith("11"):
+                self.packages["deb"].append("libmariadb-dev")
+            else:
+                self.packages["deb"].append("libmariadbclient-dev")
         elif name == "ubuntu":
             self.packages["deb"].append("libmysqlclient-dev")
         super(MySQL, self).install_package()
-        if name == "debian" and version.startswith("8"):
-            package.backend.preconfigure(
-                "mariadb-server", "root_password", "password",
-                self.dbpassword)
-            package.backend.preconfigure(
-                "mariadb-server", "root_password_again", "password",
-                self.dbpassword)
-        else:
+        queries = []
+        if name.startswith("debian"):
+            if version.startswith("8"):
+                package.backend.preconfigure(
+                    "mariadb-server", "root_password", "password",
+                    self.dbpassword)
+                package.backend.preconfigure(
+                    "mariadb-server", "root_password_again", "password",
+                    self.dbpassword)
+                return
+            if version.startswith("11"):
+                queries = [
+                    "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}')"
+                    .format(self.dbpassword),
+                    "flush privileges"
+                ]
+        if not queries:
             queries = [
                 "UPDATE user SET plugin='' WHERE user='root'",
                 "UPDATE user SET password=PASSWORD('{}') WHERE USER='root'"
                 .format(self.dbpassword),
                 "flush privileges"
             ]
-            for query in queries:
-                utils.exec_cmd(
-                    "mysql -D mysql -e '{}'".format(self._escape(query)))
+        for query in queries:
+            utils.exec_cmd(
+                "mysql -D mysql -e '{}'".format(self._escape(query)))
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a mysql query."""

@@ -9,7 +9,7 @@ An installer which deploy a complete mail server based on Modoboa.
 
    This tool is still in beta stage, it has been tested on:
 
-   * Debian Jessie (8) / Stretch (9) / Buster (10)
+   * Debian Jessie (8) / Stretch (9) / Buster (10) / Bullseye (11)
    * Ubuntu Trusty (14.04) and upper
    * CentOS 7
 
@@ -68,6 +68,10 @@ a previous one using the ``--version`` option::
 .. note::
 
    Version selection is available only for Modoboa >= 1.8.1.
+
+You can also install beta releases using the ``--beta`` flag::
+
+  $ sudo ./run.py --beta <your domain>
 
 If you want more information about the installation process, add the
 ``--debug`` option to your command line.

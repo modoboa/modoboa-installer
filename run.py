@@ -69,6 +69,9 @@ def main(input_args):
     parser.add_argument(
         "--upgrade", action="store_true", default=False,
         help="Run the installer in upgrade mode")
+    parser.add_argument(
+        "--beta", action="store_true", default=False,
+        help="Install latest beta release of Modoboa instead of the stable one")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args(input_args)
@@ -87,6 +90,7 @@ def main(input_args):
     config.set("general", "domain", args.domain)
     config.set("dovecot", "domain", args.domain)
     config.set("modoboa", "version", args.version)
+    config.set("modoboa", "install_beta", str(args.beta))
     # Display disclaimerpython 3 linux distribution
     if not args.upgrade:
         installation_disclaimer(args, config)

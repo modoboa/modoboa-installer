@@ -75,14 +75,19 @@ def exec_cmd(cmd, sudo_user=None, pinput=None, login=True, **kwargs):
 
 def dist_info():
     """Try to return information about the system we're running on."""
-    try:
-        # Python 3.8 and up way
-        import distro
-        return distro.linux_distribution()
-    except ImportError:
-        # Python 3.7 and down way
-        import platform
-        return platform.linux_distribution()
+    path = "/etc/os-release"
+    if os.path.exists(path):
+        info = {}
+        with open(path) as fp:
+            while True:
+                l = fp.readline()
+                if not l:
+                    break
+                key, value = l.split("=")
+                value = value.rstrip('"\n')
+                value = value.strip('"')
+                info[key] = value
+        return info["NAME"], info["VERSION_ID"]
     printcolor(
         "Failed to retrieve information about your system, aborting.",
         RED)
@@ -91,8 +96,7 @@ def dist_info():
 
 def dist_name():
     """Try to guess the distribution name."""
-    name, version, _id = dist_info()
-    return name.lower()
+    return dist_info()[0].lower()
 
 
 def mkdir(path, mode, uid, gid):

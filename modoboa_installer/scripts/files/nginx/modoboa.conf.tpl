@@ -37,6 +37,17 @@ server {
         try_files $uri $uri/ =404;
     }
 
+    location ^~ /new-admin {
+        alias  %{app_instance_path}/frontend/;
+        index  index.html;
+
+        expires -1;
+        add_header Pragma "no-cache";
+        add_header Cache-Control "no-store, no-cache, must-revalidate, post-check=0, pre-check=0";
+
+        try_files $uri $uri/ /index.html = 404;
+    }
+
     location / {
         include uwsgi_params;
         uwsgi_param UWSGI_SCRIPT instance.wsgi:application;

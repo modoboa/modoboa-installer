@@ -25,7 +25,7 @@ class Modoboa(base.Installer):
         "deb": [
             "build-essential", "python3-dev", "libxml2-dev", "libxslt-dev",
             "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron",
-            "libssl-dev", "redis-server", "supervisor"
+            "libssl-dev", "redis-server", "supervisor", "rustc"
         ],
         "rpm": [
             "gcc", "gcc-c++", "python3-devel", "libxml2-devel", "libxslt-devel",
@@ -75,11 +75,10 @@ class Modoboa(base.Installer):
         packages = ["rrdtool"]
         version = self.config.get("modoboa", "version")
         if version == "latest":
-            modoboa_package = "modoboa"
-            packages += self.extensions
+            packages += ["modoboa"] + self.extensions
         else:
             matrix = compatibility_matrix.COMPATIBILITY_MATRIX[version]
-            modoboa_package = "modoboa=={}".format(version)
+            packages.append("modoboa=={}".format(version))
             for extension in list(self.extensions):
                 if not self.is_extension_ok_for_version(extension, version):
                     self.extensions.remove(extension)
@@ -91,12 +90,13 @@ class Modoboa(base.Installer):
                     packages.append("{}{}".format(extension, req_version))
                 else:
                     packages.append(extension)
-        # Temp fix for https://github.com/modoboa/modoboa-installer/issues/197
+        # Temp fix for django-braces
         python.install_package(
-            modoboa_package, self.venv_path,
-            upgrade=self.upgrade, binary=False, sudo_user=self.user)
+            "django-braces", self.venv_path, upgrade=self.upgrade,
+            sudo_user=self.user
+        )
         if self.dbengine == "postgres":
-            packages.append("psycopg2-binary")
+            packages.append("psycopg2-binary\<2.9")
         else:
             packages.append("mysqlclient")
         if sys.version_info.major == 2 and sys.version_info.micro < 9:
@@ -105,8 +105,10 @@ class Modoboa(base.Installer):
         # Temp fix for https://github.com/modoboa/modoboa/issues/2247
         packages.append("django-webpack-loader==0.7.0")
         python.install_packages(
-            packages, self.venv_path, upgrade=self.upgrade,
-            sudo_user=self.user
+            packages, self.venv_path,
+            upgrade=self.upgrade,
+            sudo_user=self.user,
+            beta=self.config.getboolean("modoboa", "install_beta")
         )
         if self.devmode:
             # FIXME: use dev-requirements instead
