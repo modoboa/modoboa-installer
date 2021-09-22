@@ -9,8 +9,8 @@ An installer which deploy a complete mail server based on Modoboa.
 
    This tool is still in beta stage, it has been tested on:
 
-   * Debian Jessie (8) / Stretch (9) / Buster (10) / Bullseye (11)
-   * Ubuntu Trusty (14.04) and upper
+   * Debian Buster (10) / Bullseye (11)
+   * Ubuntu Bionic Beaver (18.04) and upper
    * CentOS 7
 
 .. warning::
