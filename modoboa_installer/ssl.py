@@ -74,7 +74,7 @@ class LetsEncryptCertificate(CertificateBackend):
 
     def install_certbot(self):
         """Install certbot script to generate cert."""
-        name, version, _id = utils.dist_info()
+        name, version = utils.dist_info()
         name = name.lower()
         if name == "ubuntu":
             package.backend.update()
@@ -84,7 +84,7 @@ class LetsEncryptCertificate(CertificateBackend):
                 utils.exec_cmd("add-apt-repository -y ppa:certbot/certbot")
             package.backend.update()
             package.backend.install("certbot")
-        elif name == "debian":
+        elif name.startswith("debian"):
             package.backend.update()
             package.backend.install("certbot")
         elif "centos" in name:
