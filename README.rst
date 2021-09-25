@@ -32,7 +32,7 @@ Usage::
   $ sudo python3 run.py <your domain>
 
 
-If ``python3`` if not installed on your system, please install it.
+If ``python3`` is not installed on your system, please install it.
 
 A configuration file will be automatically generated the first time
 you run the installer, please don't copy the
