@@ -1,5 +1,5 @@
 inet_interfaces = all
-inet_protocols = ipv4
+inet_protocols = all
 myhostname = %hostname
 myorigin = $myhostname
 mydestination = $myhostname
