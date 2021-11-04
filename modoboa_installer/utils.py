@@ -79,11 +79,10 @@ def dist_info():
     if os.path.exists(path):
         info = {}
         with open(path) as fp:
-            while True:
-                l = fp.readline()
-                if not l:
-                    break
-                key, value = l.split("=")
+            for line in fp.readlines():
+                if line == '\n':
+                    continue
+                key, value = line.split("=")
                 value = value.rstrip('"\n')
                 value = value.strip('"')
                 info[key] = value
