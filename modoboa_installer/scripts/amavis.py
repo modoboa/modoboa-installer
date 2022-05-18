@@ -22,8 +22,7 @@ class Amavis(base.Installer):
             "unrar-free",
         ],
         "rpm": [
-            "amavisd-new", "arj", "cabextract", "lz4", "lrzip",
-            "lzop", "p7zip", "unar", "unzoo"
+            "amavisd-new", "arj", "lz4", "lzop", "p7zip",
         ],
     }
     with_db = True
@@ -61,13 +60,22 @@ class Amavis(base.Installer):
             db_driver = "MySQL"
         else:
             raise NotImplementedError("DB driver not supported")
-        return packages + ["perl-DBD-{}".format(db_driver)]
+        packages += ["perl-DBD-{}".format(db_driver)]
+        name, version = utils.dist_info()
+        if version.startswith('7'):
+            packages += ["cabextract", "lrzip", "unar", "unzoo"]
+        elif version.startswith('8'):
+            packages += ["perl-IO-stringy"]
+        return packages
 
     def get_sql_schema_path(self):
         """Return schema path."""
         version = package.backend.get_installed_version("amavisd-new")
         if version is None:
-            raise utils.FatalError("Amavis is not installed")
+            # Fallback to amavis...
+            version = package.backend.get_installed_version("amavis")
+            if version is None:
+                raise utils.FatalError("Amavis is not installed")
         path = self.get_file_path(
             "amavis_{}_{}.sql".format(self.dbengine, version))
         if not os.path.exists(path):
