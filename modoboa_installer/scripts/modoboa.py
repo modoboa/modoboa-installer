@@ -271,6 +271,7 @@ class Modoboa(base.Installer):
             system.enable_and_start_service("redis")
         else:
             supervisor = "supervisor"
+            system.enable_and_start_service("redis-server")
         # Restart supervisor
         system.enable_service(supervisor)
         utils.exec_cmd("service {} stop".format(supervisor))
