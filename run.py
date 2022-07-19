@@ -44,6 +44,13 @@ def upgrade_disclaimer(config):
         " will be impacted:", utils.BLUE
     )
 
+def backup_disclamer():
+    """Display backup disclamer. """
+    utils.printcolor(
+        "Your mail server will be backed up (messages and databases) locally."
+        " !! You should really transfer the backup somewhere else..."
+        " Custom configuration (like to postfix) won't be saved.", utils.BLUE)
+
 
 def main(input_args):
     """Install process."""
@@ -51,6 +58,8 @@ def main(input_args):
     versions = (
         ["latest"] + list(compatibility_matrix.COMPATIBILITY_MATRIX.keys())
     )
+    parser.add_argument("--backup", action="store_true", default=False,
+                        help="Backing up previously installed instance")
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Enable debug output")
     parser.add_argument("--force", action="store_true", default=False,
@@ -79,8 +88,8 @@ def main(input_args):
     if args.debug:
         utils.ENV["debug"] = True
     utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
-    utils.check_config_file(args.configfile, args.interactive, args.upgrade)
-    if args.stop_after_configfile_check:
+    wasConfigFileAlreadyThere = utils.check_config_file(args.configfile, args.interactive, args.upgrade, args.backup)
+    if args.stop_after_configfile_check or (not wasConfigFileAlreadyThere and args.backup):
         return
     config = configparser.ConfigParser()
     with open(args.configfile) as fp:
@@ -91,11 +100,14 @@ def main(input_args):
     config.set("dovecot", "domain", args.domain)
     config.set("modoboa", "version", args.version)
     config.set("modoboa", "install_beta", str(args.beta))
-    # Display disclaimerpython 3 linux distribution
-    if not args.upgrade:
-        installation_disclaimer(args, config)
-    else:
+    # Display disclaimer python 3 linux distribution
+    if args.upgrade:
         upgrade_disclaimer(config)
+    elif args.backup:
+        backup_disclamer()
+    else:
+        installation_disclaimer(args, config)
+        
     # Show concerned components
     components = []
     for section in config.sections():
