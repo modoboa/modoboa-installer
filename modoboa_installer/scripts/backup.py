@@ -4,6 +4,7 @@ import os
 import pwd
 import shutil
 import stat
+import datetime
 
 from .. import database
 from .. import utils
@@ -26,8 +27,9 @@ class Backup():
 #||--> mails
 #      |--> vmails
 
-    def __init__(self, config):
+    def __init__(self, config, isBash):
         self.config = config
+        self.isBash = isBash
         self.destinationPath = ""
         self.BACKUPDIRECTORY = ["mails/", "custom/", "databases/"]
 
@@ -49,17 +51,19 @@ class Backup():
             return False
 
         if not os.path.exists(path):
-            createDir = input(f"\"{path}\" doesn't exists, would you like to create it ? [Y/n]\n").lower()
+            if not self.isBash:
+                createDir = input(f"\"{path}\" doesn't exists, would you like to create it ? [Y/n]\n").lower()
 
-            if createDir == "y" or createDir == "yes":
+            if self.isBash or (not self.isBash and (createDir == "y" or createDir == "yes")):
                 pw = pwd.getpwnam("root")
                 utils.mkdir_safe(path, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
             else:
                 return False
 
         if len(os.listdir(path)) != 0:
-            delDir = input("Warning : backup folder is not empty, it will be purged if you continue... [Y/n]").lower()
-            if delDir == "y" or delDir == "yes":
+            if not self.isBash:
+                delDir = input("Warning : backup folder is not empty, it will be purged if you continue... [Y/n]\n").lower()
+            if self.isBash or (not self.isBash and (delDir == "y" or delDir == "yes")):
                 shutil.rmtree(path)
             else:
                 return False
@@ -75,11 +79,16 @@ class Backup():
 
     def setPath(self):
         """Setup backup directory"""
-        user_value = None
-        while (user_value == '' or user_value == None or not self.validatePath(user_value)):
-            print("Enter backup path, please provide an empty folder.")
-            print("CTRL+C to cancel")
-            user_value = utils.user_input("-> ")
+        if self.isBash:
+            date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M")
+            path = f"/modoboa_backup/backup_{date}/"
+            self.validatePath(path)
+        else:
+            user_value = None
+            while (user_value == '' or user_value == None or not self.validatePath(user_value)):
+                print("Enter backup path, please provide an empty folder.")
+                print("CTRL+C to cancel")
+                user_value = utils.user_input("-> ")
     
 
     def backupConfigFile(self):

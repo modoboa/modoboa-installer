@@ -80,6 +80,9 @@ def main(input_args):
     parser.add_argument(
         "--beta", action="store_true", default=False,
         help="Install latest beta release of Modoboa instead of the stable one")
+    parser.add_argument(
+        "--bash", action="store_true", default=False,
+        help="(backup only) - For script usage, No interaction will be required")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args(input_args)
@@ -104,7 +107,7 @@ def main(input_args):
         upgrade_disclaimer(config)
     elif args.backup:
         backup_disclamer()
-        scripts.backup(config)
+        scripts.backup(config, args.bash)
         return
     else:
         installation_disclaimer(args, config)
