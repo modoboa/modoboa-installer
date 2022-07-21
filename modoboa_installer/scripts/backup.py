@@ -48,15 +48,21 @@ class Backup():
 
     def validatePath(self, path):
         """Check basic condition for backup directory"""
-        try: 
-            if os.path.isfile(path):
-                print("Error, you provided a file instead of a directory!")
-                return False
+
+        if path[-1] != "/":
+            path += "/"
+
+        try :
+            pathExists = os.path.exists(path)
         except:
             print("Provided path is not recognized...")
             return False
+        
+        if pathExists and os.path.isfile(path):
+                print("Error, you provided a file instead of a directory!")
+                return False
 
-        if not os.path.exists(path):
+        if not pathExists:
             if not self.isBash:
                 createDir = input(f"\"{path}\" doesn't exists, would you like to create it ? [Y/n]\n").lower()
 
@@ -75,9 +81,6 @@ class Backup():
                 return False
 
         self.destinationPath = path
-
-        if self.destinationPath[-1] != "/":
-            self.destinationPath += "/"
 
         self.preparePath()
         return True
