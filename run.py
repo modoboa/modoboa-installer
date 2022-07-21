@@ -81,7 +81,7 @@ def main(input_args):
         "--beta", action="store_true", default=False,
         help="Install latest beta release of Modoboa instead of the stable one")
     parser.add_argument(
-        "--bash", type=str, nargs=1, metavar="path",
+        "--bash", type=str, metavar="path",
         help="(backup only) - For script usage, No interaction will be required, you must provide a path")
     parser.add_argument(
         "--sbash", action="store_true", default=False,
