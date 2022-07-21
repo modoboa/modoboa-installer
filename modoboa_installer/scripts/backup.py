@@ -1,7 +1,9 @@
 """Backup script for pre-installed instance"""
 
 import os
+import pwd
 import shutil
+import stat
 
 from .. import database
 from .. import utils
@@ -31,8 +33,9 @@ class Backup():
 
 
     def preparePath(self):
+        pw = pwd.getpwnam("root")
         for dir in self.BACKUPDIRECTORY:
-            utils.mkdir(self.destinationPath + dir)
+            utils.mkdir_safe(self.destinationPath + dir, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
 
 
     def validatePath(self, path):
@@ -49,7 +52,8 @@ class Backup():
             createDir = input(f"\"{path}\" doesn't exists, would you like to create it ? [Y/n]\n").lower()
 
             if createDir == "y" or createDir == "yes":
-                os.mkdir(path)
+                pw = pwd.getpwnam("root")
+                utils.mkdir_safe(path, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
             else:
                 return False
 
