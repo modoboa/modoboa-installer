@@ -32,14 +32,17 @@ class Backup():
 
     def preparePath(self):
         for dir in self.BACKUPDIRECTORY:
-            os.mkdir(self.destinationPath + dir)
+            utils.mkdir(self.destinationPath + dir)
 
 
     def validatePath(self, path):
         """Check basic condition for backup directory"""
-
-        if os.path.isfile(path):
-            print("Error, you provided a file instead of a directory!")
+        try: 
+            if os.path.isfile(path):
+                print("Error, you provided a file instead of a directory!")
+                return False
+        except:
+            print("Provided path is not recognized...")
             return False
 
         if not os.path.exists(path):
@@ -69,7 +72,7 @@ class Backup():
     def setPath(self):
         """Setup backup directory"""
         user_value = None
-        while (user_value != '' and not self.validatePath(user_value)):
+        while (user_value != '' and user_value != None and not self.validatePath(user_value)):
             print("Enter backup path, please provide an empty folder.")
             print("CTRL+C to cancel")
             user_value = utils.user_input("-> ")
