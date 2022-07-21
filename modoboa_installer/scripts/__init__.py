@@ -32,7 +32,7 @@ def backup(config):
     except ImportError:
         print("Error importing backup")
     try:
-        getattr(script, "BACKUP")(config).run()
+        getattr(script, "Backup")(config).run()
     except utils.FatalError as inst:
         utils.printcolor(u"{}".format(inst), utils.RED)
         sys.exit(1)
