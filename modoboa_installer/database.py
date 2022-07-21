@@ -143,6 +143,7 @@ class PostgreSQL(Database):
 
     def dumpDatabase(self, dbname, dbuser, dbpassword, path):
         """Dump DB to SQL file"""
+        self._pgpass_done = False #Reset pgpass since we backup multiple db (different secret set)
         self._setup_pgpass(dbname, dbuser, dbpassword)
         cmd = "pg_dump -h {} -d {} -U {} -O  -w > {}".format(
             self.dbhost, dbname, dbuser, path)
