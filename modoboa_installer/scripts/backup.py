@@ -144,7 +144,7 @@ class Backup():
 
         """Amavis"""
         if (self.config.has_option("amavis", "enabled") and
-            not self.config.getboolean("amavis", "enabled")):
+            self.config.getboolean("amavis", "enabled")):
             dbname = self.config.get("amavis", "dbname")
             dbuser = self.config.get("amavis", "dbuser")
             dbpasswd = self.config.get("amavis", "dbpassword")
@@ -152,7 +152,7 @@ class Backup():
 
         """SpamAssassin"""
         if (self.config.has_option("spamassassin", "enabled") and
-            not self.config.getboolean("spamassassin", "enabled")):
+            self.config.getboolean("spamassassin", "enabled")):
             dbname = self.config.get("spamassassin", "dbname")
             dbuser = self.config.get("spamassassin", "dbuser")
             dbpasswd = self.config.get("spamassassin", "dbpassword")
