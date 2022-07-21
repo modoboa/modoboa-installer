@@ -1,9 +1,10 @@
 """Backup script for pre-installed instance"""
 
-import shutil
-import utils
 import os
+import shutil
+
 from .. import database
+from .. import utils
 
 #TODO: have version of each modoboa componenents saved into the config file to restore the same version  
 

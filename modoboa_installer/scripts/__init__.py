@@ -23,3 +23,16 @@ def install(appname, config, upgrade):
     except utils.FatalError as inst:
         utils.printcolor(u"{}".format(inst), utils.RED)
         sys.exit(1)
+
+def backup(config):
+    """Backup instance"""
+    try:
+        script = importlib.import_module(
+                "modoboa_installer.scripts.backup")
+    except ImportError:
+        print("Error importing backup")
+    try:
+        getattr(script, "BACKUP"())(config).run()
+    except utils.FatalError as inst:
+        utils.printcolor(u"{}".format(inst), utils.RED)
+        sys.exit(1)
