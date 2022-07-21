@@ -3,16 +3,30 @@
 import shutil
 import utils
 import os
+from .. import database
 
-#TODO: have version of each modoboa componenent saved into the config file to restore the same version  
+#TODO: have version of each modoboa componenents saved into the config file to restore the same version  
 
 class Backup():
 
+#Backup structure ( {optional} ): 
+#{{backup_folder}}
+#||
+#||--> installer.cfg
+#||--> custom
+#      |--> { (copy of) /etc/amavis/conf.d/99-custom }
+#      |--> { (copy of) /etc/postfix/custom_whitelist.cidr }
+#||--> databases
+#      |--> modoboa.sql
+#      |--> { amavis.sql }
+#      |--> { spamassassin.sql }
+#||--> mails
+#      |--> vmails
 
     def __init__(self, config):
         self.config = config
         self.destinationPath = ""
-        self.BACKUPDIRECTORY = ["mails", "custom", "databases"]
+        self.BACKUPDIRECTORY = ["mails/", "custom/", "databases/"]
 
 
     def preparePath(self):
@@ -56,6 +70,7 @@ class Backup():
         user_value = None
         while (user_value != '' and not self.validatePath(user_value)):
             print("Enter backup path, please provide an empty folder.")
+            print("CTRL+C to cancel")
             user_value = utils.user_input("-> ")
     
 
@@ -74,7 +89,7 @@ class Backup():
             f" ({home_path}) seems not right...", utils.RED)
         
         else:
-            shutil.copytree(home_path, self.destinationPath+"mails/")
+            shutil.copytree(home_path, self.destinationPath + self.BACKUPDIRECTORY[0])
             utils.printcolor("Mail backup complete!", utils.GREEN)
 
 
@@ -85,7 +100,7 @@ class Backup():
         Feel free to suggest to add others!"""
         utils.printcolor("Backing up some custom configuration...", utils.MAGENTA)
 
-        custom_path = self.destinationPath+"custom/"
+        custom_path = self.destinationPath + self.BACKUPDIRECTORY[1]
 
         """AMAVIS"""
         amavis_custom = "/etc/amavis/conf.d/99-custom"
@@ -103,6 +118,36 @@ class Backup():
     def backupDBs(self):
         """Backing up databases"""
 
+        utils.printcolor("Backing up databases...", utils.MAGENTA)
+
+        dump_path = self.destinationPath + self.BACKUPDIRECTORY[2]
+        backend = database.get_backend(self.config)
+
+        """Modoboa"""
+        dbname = self.config.get("modoboa", "dbname")
+        dbuser = self.config.get("modoboa", "dbuser")
+        dbpasswd = self.config.get("modoboa", "dbpassword")
+        backend.dumpDatabase(dbname, dbuser, dbpasswd, dump_path+"modoboa.sql")
+
+        """Amavis"""
+        if (self.config.has_option("amavis", "enabled") and
+            not self.config.getboolean("amavis", "enabled")):
+            dbname = self.config.get("amavis", "dbname")
+            dbuser = self.config.get("amavis", "dbuser")
+            dbpasswd = self.config.get("amavis", "dbpassword")
+            backend.dumpDatabase(dbname, dbuser, dbpasswd, dump_path+"amavis.sql")
+
+        """SpamAssassin"""
+        if (self.config.has_option("spamassassin", "enabled") and
+            not self.config.getboolean("spamassassin", "enabled")):
+            dbname = self.config.get("spamassassin", "dbname")
+            dbuser = self.config.get("spamassassin", "dbuser")
+            dbpasswd = self.config.get("spamassassin", "dbpassword")
+            backend.dumpDatabase(dbname, dbuser, dbpasswd, dump_path+"spamassassin.sql")
+
+    def backupCompletion(self):
+        utils.printcolor("Backup process done, your backup is availible here:"
+                        f"--> {self.destinationPath}", utils.GREEN)
 
     def run(self):
         self.setPath()
@@ -110,5 +155,6 @@ class Backup():
         self.backupMails()
         self.backupCustomConfig()
         self.backupDBs()
+        self.backupCompletion()
 
         

@@ -92,6 +92,21 @@ You can activate it as follows::
 
 It will automatically install latest versions of modoboa and its plugins.
 
+Backup mode 
+------------
+
+An experimental backup mode is available.
+
+.. note::
+
+   You must keep the original configuration file, ie the one used for
+   the installation. Otherwise, you will need to recreate it manually with the right informations !.
+
+You can start the process as follows::
+  $ sudo ./run.py --backup <your domain>
+.. note::
+  Then follow the step on the console
+
 Change the generated hostname
 -----------------------------
 

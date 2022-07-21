@@ -14,7 +14,7 @@ def install(appname, config, upgrade, backup):
     if backup:
         utils.printcolor("Starting up backup...", utils.MAGENTA)
         script = importlib.import_module("modoboa_installer.backup")
-        getattr(script, Backup())(config).run()
+        getattr(script, "BACKUP"())(config).run()
         return
     utils.printcolor("Installing {}".format(appname), utils.MAGENTA)
     try:
