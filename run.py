@@ -15,7 +15,7 @@ from modoboa_installer import scripts
 from modoboa_installer import ssl
 from modoboa_installer import system
 from modoboa_installer import utils
-
+from modoboa_installer.scripts import backup
 
 def installation_disclaimer(args, config):
     """Display installation disclaimer."""
@@ -105,6 +105,9 @@ def main(input_args):
         upgrade_disclaimer(config)
     elif args.backup:
         backup_disclamer()
+        backupProcess = backup.Backup(config)
+        backupProcess.run()
+        return
     else:
         installation_disclaimer(args, config)
         

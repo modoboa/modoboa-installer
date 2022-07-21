@@ -6,15 +6,10 @@ import sys
 from .. import utils
 
 
-def install(appname, config, upgrade, backup):
+def install(appname, config, upgrade):
     """Install an application."""
     if (config.has_option(appname, "enabled") and
             not config.getboolean(appname, "enabled")):
-        return
-    if backup:
-        utils.printcolor("Starting up backup...", utils.MAGENTA)
-        script = importlib.import_module("modoboa_installer.backup")
-        getattr(script, "BACKUP"())(config).run()
         return
     utils.printcolor("Installing {}".format(appname), utils.MAGENTA)
     try:
