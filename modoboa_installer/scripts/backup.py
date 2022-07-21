@@ -97,7 +97,12 @@ class Backup():
             f" ({home_path}) seems not right...", utils.RED)
         
         else:
-            shutil.copytree(home_path, self.destinationPath + self.BACKUPDIRECTORY[0])
+            dst = self.destinationPath + self.BACKUPDIRECTORY[0] + "vmail/"
+
+            if os.path.exists(dst):
+                shutil.rmtree(dst)
+            
+            shutil.copytree(home_path, dst)
             utils.printcolor("Mail backup complete!", utils.GREEN)
 
 
