@@ -72,7 +72,7 @@ class Backup():
     def setPath(self):
         """Setup backup directory"""
         user_value = None
-        while (user_value != '' and user_value != None and not self.validatePath(user_value)):
+        while (user_value == '' or user_value == None or not self.validatePath(user_value)):
             print("Enter backup path, please provide an empty folder.")
             print("CTRL+C to cancel")
             user_value = utils.user_input("-> ")
