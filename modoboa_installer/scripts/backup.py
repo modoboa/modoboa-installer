@@ -5,6 +5,7 @@ import pwd
 import shutil
 import stat
 import datetime
+import sys
 
 from .. import database
 from .. import utils
@@ -27,11 +28,16 @@ class Backup():
 #||--> mails
 #      |--> vmails
 
-    def __init__(self, config, isBash):
+    def __init__(self, config, bashArg):
         self.config = config
-        self.isBash = isBash
         self.destinationPath = ""
         self.BACKUPDIRECTORY = ["mails/", "custom/", "databases/"]
+
+        self.isBash = False
+        self.bash = ""
+        if bashArg != "NOBASH":
+            self.isBash = True
+            self.bash = bashArg
 
 
     def preparePath(self):
@@ -80,9 +86,16 @@ class Backup():
     def setPath(self):
         """Setup backup directory"""
         if self.isBash:
-            date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M")
-            path = f"/modoboa_backup/backup_{date}/"
-            self.validatePath(path)
+            if self.bash == "TRUE":
+                date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M")
+                path = f"/modoboa_backup/backup_{date}/"
+                self.validatePath(path)
+            else :
+                validate = self.validatePath(self.bash)
+                if not validate:
+                    print("provided bash is not right, exiting...")
+                    print(f"Path provided : {self.bash}")
+                    sys.exit(1)
         else:
             user_value = None
             while (user_value == '' or user_value == None or not self.validatePath(user_value)):

@@ -81,18 +81,35 @@ def main(input_args):
         "--beta", action="store_true", default=False,
         help="Install latest beta release of Modoboa instead of the stable one")
     parser.add_argument(
-        "--bash", action="store_true", default=False,
-        help="(backup only) - For script usage, No interaction will be required")
+        "--bash", type=str, nargs=1, metavar="path",
+        help="(backup only) - For script usage, No interaction will be required, you must provide a path")
+    parser.add_argument(
+        "--sbash", action="store_true", default=False,
+        help="same as --bash but backup will be at /modoboa_backup/Backup_M_Y_d_H_M")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args(input_args)
 
     if args.debug:
         utils.ENV["debug"] = True
+
+    if not args.backup and (args.bash != None or args.sbash):
+        utils.printcolor("You provided --bash or --sbash without --backup, "
+                        "if you want to do a backup, please provide --backup!", utils.RED)
+        return
+    elif args.bash != None and args.sbash :
+        utils.printcolor("You provided --bash PATH and --sbash at the same time. "
+                        "Please provided only one!", utils.RED)
+        return
+    elif args.bash == "TRUE":
+        utils.printcolor("You can't pick *TRUE* as backup directory !", utils.RED)
+
     utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
     wasConfigFileAlreadyThere = utils.check_config_file(args.configfile, args.interactive, args.upgrade, args.backup)
+    
     if args.stop_after_configfile_check or (not wasConfigFileAlreadyThere and args.backup):
         return
+
     config = configparser.ConfigParser()
     with open(args.configfile) as fp:
         config.read_file(fp)
@@ -107,7 +124,12 @@ def main(input_args):
         upgrade_disclaimer(config)
     elif args.backup:
         backup_disclamer()
-        scripts.backup(config, args.bash)
+        bashArg = "NOBASH"
+        if args.bash != None:
+            bashArg = args.bash
+        elif args.sbash:
+            bashArg = "TRUE"
+        scripts.backup(config, bashArg)
         return
     else:
         installation_disclaimer(args, config)
