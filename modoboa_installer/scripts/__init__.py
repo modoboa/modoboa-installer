@@ -24,7 +24,7 @@ def install(appname, config, upgrade):
         utils.printcolor(u"{}".format(inst), utils.RED)
         sys.exit(1)
 
-def backup(config, bashArg):
+def backup(config, bashArg, nomail):
     """Backup instance"""
     try:
         script = importlib.import_module(
@@ -32,7 +32,7 @@ def backup(config, bashArg):
     except ImportError:
         print("Error importing backup")
     try:
-        getattr(script, "Backup")(config, bashArg).run()
+        getattr(script, "Backup")(config, bashArg, nomail).run()
     except utils.FatalError as inst:
         utils.printcolor(u"{}".format(inst), utils.RED)
         sys.exit(1)

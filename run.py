@@ -86,6 +86,9 @@ def main(input_args):
     parser.add_argument(
         "--sbash", action="store_true", default=False,
         help="same as --bash but backup will be at /modoboa_backup/Backup_M_Y_d_H_M")
+    parser.add_argument(
+        "--no-mail", action="store_true", default=False,
+        help="Disable mail backup (save space)")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args(input_args)
@@ -93,7 +96,7 @@ def main(input_args):
     if args.debug:
         utils.ENV["debug"] = True
 
-    if not args.backup and (args.bash != None or args.sbash):
+    if not args.backup and (args.bash != None or args.sbash or args.no_mail):
         utils.printcolor("You provided --bash or --sbash without --backup, "
                         "if you want to do a backup, please provide --backup!", utils.RED)
         return
@@ -129,7 +132,7 @@ def main(input_args):
             bashArg = args.bash
         elif args.sbash:
             bashArg = "TRUE"
-        scripts.backup(config, bashArg)
+        scripts.backup(config, bashArg, args.no_mail)
         return
     else:
         installation_disclaimer(args, config)

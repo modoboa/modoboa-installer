@@ -28,11 +28,11 @@ class Backup():
 #||--> mails
 #      |--> vmails
 
-    def __init__(self, config, bashArg):
+    def __init__(self, config, bashArg, nomail):
         self.config = config
         self.destinationPath = ""
         self.BACKUPDIRECTORY = ["mails/", "custom/", "databases/"]
-
+        self.nomail = nomail
         self.isBash = False
         self.bash = ""
         if bashArg != "NOBASH":
@@ -112,6 +112,10 @@ class Backup():
 
 
     def backupMails(self):
+
+        if self.nomail:
+            utils.printcolor("Skipping mail backup, no-mail argument provided", utils.MAGENTA)
+            return
 
         utils.printcolor("Backing up mails", utils.MAGENTA)
 

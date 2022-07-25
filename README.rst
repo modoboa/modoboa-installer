@@ -125,7 +125,14 @@ Command::
   $ sudo ./run.py --backup --batch /path/of/backup/directory <your domain>
 
 This mode is the same as silent batch mode, but you provide the path to the backup directory you want.
+
+
+If you want to disable mail backup::
+
+  $ sudo ./run.py --backup --no-mail <your domain>
  
+This can be useful for larger instance
+
 Change the generated hostname
 -----------------------------
 
