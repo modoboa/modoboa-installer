@@ -97,17 +97,35 @@ Backup mode
 
 An experimental backup mode is available.
 
-.. note::
+.. warning::
 
-   You must keep the original configuration file, ie the one used for
-   the installation. Otherwise, you will need to recreate it manually with the right informations !
+   You must keep the original configuration file, i.e. the one used for
+   the installation. Otherwise, you will need to recreate it manually with the right information !
 
 You can start the process as follows::
 
   $ sudo ./run.py --backup <your domain>
 
- Then follow the step on the console
+Then follow the step on the console.
 
+There are also two non-interactive mode:
+
+1. Silent batch mode
+
+Command::
+
+  $ sudo ./run.py --backup --sbatch <your domain>
+
+This mode is the silent batch mode, when executed, it will create /modoboa_backup/backup{time} and each time you execute it, it will create a new backup directory with current time.
+
+2. Path batch mode
+
+Command::
+
+  $ sudo ./run.py --backup --batch /path/of/backup/directory <your domain>
+
+This mode is the same as silent batch mode, but you provide the path to the backup directory you want.
+ 
 Change the generated hostname
 -----------------------------
 
