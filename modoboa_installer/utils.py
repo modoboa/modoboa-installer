@@ -168,7 +168,7 @@ def copy_from_template(template, dest, context):
         fp.write(ConfigFileTemplate(buf).substitute(context))
 
 
-def check_config_file(dest, interactive=False, upgrade=False, backup=False):
+def check_config_file(dest, interactive=False, upgrade=False, backup=False, restore=False):
     """Create a new installer config file if needed."""
     isPresent = True
     if os.path.exists(dest):
@@ -183,6 +183,12 @@ def check_config_file(dest, interactive=False, upgrade=False, backup=False):
         printcolor(
             "Your configuration file hasn't been found. A new one will be generated. "
             "Please edit it with correct password for the databases !", RED)
+    elif restore:
+        printcolor(
+            "You cannot restore an existing installation without a "
+            f"configuration file. (file : {dest} has not been found...", RED)
+        sys.exit(1)
+        
     printcolor(
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)

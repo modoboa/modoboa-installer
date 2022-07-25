@@ -3,6 +3,8 @@
 """An installer for Modoboa."""
 
 import argparse
+from ast import parse
+from ctypes import util
 try:
     import configparser
 except ImportError:
@@ -50,6 +52,12 @@ def backup_disclamer():
         " !! You should really transfer the backup somewhere else..."
         " Custom configuration (like to postfix) won't be saved.", utils.BLUE)
 
+def restore_disclamer(path):
+    """Display restore disclamer. """
+    utils.printcolor(
+        "You are about to restore a previous installation of Modoboa."
+        "Is a new version has been released in between, please update your database !",
+        utils.BLUE)
 
 def main(input_args):
     """Install process."""
@@ -89,6 +97,10 @@ def main(input_args):
     parser.add_argument(
         "--no-mail", action="store_true", default=False,
         help="Disable mail backup (save space)")
+    parser.add_argument(    
+        "--restore", type=str, metavar="path",
+        help="Restore a previously backup up modoboa instance on a NEW machine. You Must provide backup directory"
+    )
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args(input_args)
@@ -106,9 +118,17 @@ def main(input_args):
         return
     elif args.bash == "TRUE":
         utils.printcolor("You can't pick *TRUE* as backup directory !", utils.RED)
+    
+    #Restore prep
+    isRestoring = False
+    if args.restore != None:
+        isRestoring = True
+        if args.restore[-1] != "/":
+            args.restore += "/"
+        args.configfile = args.restore + "installer.cfg" 
 
     utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
-    wasConfigFileAlreadyThere = utils.check_config_file(args.configfile, args.interactive, args.upgrade, args.backup)
+    wasConfigFileAlreadyThere = utils.check_config_file(args.configfile, args.interactive, args.upgrade, args.backup, isRestoring)
     
     if args.stop_after_configfile_check or (not wasConfigFileAlreadyThere and args.backup):
         return
@@ -134,6 +154,8 @@ def main(input_args):
             bashArg = "TRUE"
         scripts.backup(config, bashArg, args.no_mail)
         return
+    elif args.restore:
+        restore_disclamer()
     else:
         installation_disclaimer(args, config)
         
@@ -162,22 +184,27 @@ def main(input_args):
     ssl_backend = ssl.get_backend(config)
     if ssl_backend and not args.upgrade:
         ssl_backend.generate_cert()
-    scripts.install("amavis", config, args.upgrade)
-    scripts.install("modoboa", config, args.upgrade)
-    scripts.install("automx", config, args.upgrade)
-    scripts.install("radicale", config, args.upgrade)
-    scripts.install("uwsgi", config, args.upgrade)
-    scripts.install("nginx", config, args.upgrade)
-    scripts.install("opendkim", config, args.upgrade)
-    scripts.install("postfix", config, args.upgrade)
-    scripts.install("dovecot", config, args.upgrade)
+    scripts.install("amavis", config, args.upgrade, args.restore)
+    scripts.install("modoboa", config, args.upgrade, args.restore)
+    scripts.install("automx", config, args.upgrade, args.restore)
+    scripts.install("radicale", config, args.upgrade, args.restore)
+    scripts.install("uwsgi", config, args.upgrade, args.restore)
+    scripts.install("nginx", config, args.upgrade, args.restore)
+    scripts.install("opendkim", config, args.upgrade, args.restore)
+    scripts.install("postfix", config, args.upgrade, args.restore)
+    scripts.install("dovecot", config, args.upgrade, args.restore)
     system.restart_service("cron")
     package.backend.restore_system()
-    utils.printcolor(
-        "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
-        .format(config.get("general", "hostname")),
-        utils.GREEN)
-
+    if not args.restore:
+        utils.printcolor(
+            "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
+            .format(config.get("general", "hostname")),
+            utils.GREEN)
+    else:
+        utils.printcolor(
+            "Resotre complete! You can enjoy Modoboa at https://{} (same credentials as before)"
+            .format(config.get("general", "hostname")),
+            utils.GREEN)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

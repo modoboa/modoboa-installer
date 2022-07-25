@@ -20,10 +20,11 @@ class Installer(object):
     with_db = False
     config_files = []
 
-    def __init__(self, config, upgrade):
+    def __init__(self, config, upgrade, restore):
         """Get configuration."""
         self.config = config
         self.upgrade = upgrade
+        self.restore = restore
         if self.config.has_section(self.appname):
             self.app_config = dict(self.config.items(self.appname))
         self.dbengine = self.config.get("database", "engine")
