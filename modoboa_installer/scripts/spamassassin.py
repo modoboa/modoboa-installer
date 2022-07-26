@@ -69,7 +69,7 @@ class Spamassassin(base.Installer):
             "pyzor --homedir {} discover".format(pw[5]),
             sudo_user=amavis_user, login=False
         )
-        install("razor", self.config, self.upgrade)
+        install("razor", self.config, self.upgrade, self.restore)
         if utils.dist_name() in ["debian", "ubuntu"]:
             utils.exec_cmd(
                 "perl -pi -e 's/^CRON=0/CRON=1/' /etc/cron.daily/spamassassin")

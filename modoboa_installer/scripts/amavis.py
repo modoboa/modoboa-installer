@@ -104,5 +104,5 @@ class Amavis(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        install("spamassassin", self.config, self.upgrade)
-        install("clamav", self.config, self.upgrade)
+        install("spamassassin", self.config, self.upgrade, self.restore)
+        install("clamav", self.config, self.upgrade, self.restore)
