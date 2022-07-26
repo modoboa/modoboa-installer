@@ -138,7 +138,7 @@ class Backup():
     def backupCustomConfig(self):
         """Custom config :
         - Amavis : /etc/amavis/conf.d/99-custom
-        - Postscreen : /etc/postfix/custom_whitelist.cidr
+        - Postwhite : /etc/postwhite.conf
         Feel free to suggest to add others!"""
         utils.printcolor("Backing up some custom configuration...", utils.MAGENTA)
 
@@ -150,11 +150,11 @@ class Backup():
             utils.copy_file(amavis_custom, custom_path)
             utils.printcolor("Amavis custom configuration saved!", utils.GREEN)
 
-        """POSTSCREEN"""
-        postscreen_custom = "/etc/postfix/custom_whitelist.cidr"
-        if os.path.isfile(postscreen_custom):
-            utils.copy_file(postscreen_custom, custom_path)
-            utils.printcolor("Postscreen whitelist custom configuration saved!", utils.GREEN)
+        """POSTWHITE"""
+        postswhite_custom = "/etc/postwhite.conf"
+        if os.path.isfile(postswhite_custom):
+            utils.copy_file(postswhite_custom, custom_path)
+            utils.printcolor("Postwhite configuration saved!", utils.GREEN)
 
 
     def backupDBs(self):
