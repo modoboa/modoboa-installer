@@ -1,7 +1,6 @@
 """Amavis related functions."""
 
 import os
-import platform
 
 from .. import package
 from .. import utils
@@ -43,6 +42,10 @@ class Amavis(base.Installer):
     def get_config_files(self):
         """Return appropriate config files."""
         if package.backend.FORMAT == "deb":
+            amavisCustomConf = self.restore + "custom/99-custom"
+            if self.restore and os.path.isfile(amavisCustomConf):
+                utils.printcolor("Restoring custom Amavis configuration", utils.MAGENTA)
+                utils.copy_file(amavisCustomConf, self.config_dir)
             return [
                 "conf.d/05-node_id", "conf.d/15-content_filter_mode",
                 "conf.d/50-user"]
@@ -70,6 +73,14 @@ class Amavis(base.Installer):
 
     def get_sql_schema_path(self):
         """Return schema path."""
+        if self.restore:
+            utils.printcolor("Trying to restore amavis database from backup", utils.MAGENTA)
+            amavisDbBackupPath = self.restore + "databases/amavis.sql"
+            if os.path.isfile(amavisDbBackupPath):
+                utils.printcolor("Amavis database backup found ! Restoring...", utils.GREEN)
+                return amavisDbBackupPath
+            utils.printcolor("Amavis database backup not found, creating empty database", utils.RED)
+
         version = package.backend.get_installed_version("amavisd-new")
         if version is None:
             # Fallback to amavis...

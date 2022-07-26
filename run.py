@@ -156,6 +156,7 @@ def main(input_args):
         return
     elif args.restore:
         restore_disclamer()
+        scripts.restore(restore)
     else:
         installation_disclaimer(args, config)
         

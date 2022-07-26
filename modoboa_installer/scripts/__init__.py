@@ -40,3 +40,16 @@ def backup(config, bashArg, nomail):
     except utils.FatalError as inst:
         utils.printcolor(u"{}".format(inst), utils.RED)
         sys.exit(1)
+
+def restore(restore):
+    """Restore instance"""
+    try:
+        script = importlib.import_module(
+            "modoboa_installer.scripts.restore")
+    except ImportError:
+        print("Error importing restore")
+    try:
+        getattr(script, "Restore")(restore)
+    except utils.FatalError as inst:
+        utils.printcolor(u"{}".format(inst), utils.RED)
+        sys.exit(1)

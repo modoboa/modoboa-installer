@@ -3,6 +3,7 @@
 import glob
 import os
 import pwd
+import shutil
 
 from .. import database
 from .. import package
@@ -87,6 +88,12 @@ class Dovecot(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
+        if self.restore and len(os.listdir(self.restore + "mails")) > 0:
+            utils.printcolor("Copying mail backup over dovecot directory", utils.MAGENTA)
+            shutil.copytree(self.restore+"mails/vmails", self.home_dir, dirs_exist_ok=True)
+        elif self.restore:
+            utils.printcolor("It seems that mails were not backed up, skipping mail restoration.", utils.MAGENTA)
+
         if self.dbengine == "postgres":
             dbname = self.config.get("modoboa", "dbname")
             dbuser = self.config.get("modoboa", "dbuser")

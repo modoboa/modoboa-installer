@@ -25,6 +25,14 @@ class Spamassassin(base.Installer):
 
     def get_sql_schema_path(self):
         """Return SQL schema."""
+        if self.restore:
+            utils.printcolor("Trying to restore spamassassin database from backup", utils.MAGENTA)
+            amavisDbBackupPath = self.restore + "databases/spamassassin.sql"
+            if os.path.isfile(amavisDbBackupPath):
+                utils.printcolor("Spamassassin database backup found ! Restoring...", utils.GREEN)
+                return amavisDbBackupPath
+            utils.printcolor("Spamassassin database backup not found, creating empty database", utils.RED)
+
         if self.dbengine == "postgres":
             fname = "bayes_pg.sql"
         else:
