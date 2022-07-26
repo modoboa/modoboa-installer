@@ -52,7 +52,7 @@ def backup_disclamer():
         " !! You should really transfer the backup somewhere else..."
         " Custom configuration (like to postfix) won't be saved.", utils.BLUE)
 
-def restore_disclamer(path):
+def restore_disclamer():
     """Display restore disclamer. """
     utils.printcolor(
         "You are about to restore a previous installation of Modoboa."
@@ -156,7 +156,7 @@ def main(input_args):
         return
     elif args.restore:
         restore_disclamer()
-        scripts.restore(restore)
+        scripts.restore(args.restore)
     else:
         installation_disclaimer(args, config)
         

@@ -1,4 +1,3 @@
-from ctypes import util
 import os
 import sys
 from .. import utils
