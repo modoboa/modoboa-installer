@@ -45,7 +45,7 @@ class Amavis(base.Installer):
             amavisCustomConf = self.restore + "custom/99-custom"
             if self.restore and os.path.isfile(amavisCustomConf):
                 utils.printcolor("Restoring custom Amavis configuration", utils.MAGENTA)
-                utils.copy_file(amavisCustomConf, self.config_dir)
+                utils.copy_file(amavisCustomConf, self.config_dir+"/conf.d")
             return [
                 "conf.d/05-node_id", "conf.d/15-content_filter_mode",
                 "conf.d/50-user"]
