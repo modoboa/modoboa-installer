@@ -133,6 +133,17 @@ If you want to disable mail backup::
  
 This can be useful for larger instance
 
+Restore mode
+------------
+
+An experimental restore mode is available.
+
+You can start the process as follows::
+
+  $ sudo ./run.py --restore /path/to/backup/directory/ <your domain>
+
+Then wait for the process to finish
+
 Change the generated hostname
 -----------------------------
 
