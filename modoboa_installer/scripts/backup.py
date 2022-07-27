@@ -31,7 +31,7 @@ class Backup():
     def __init__(self, config, bashArg, nomail):
         self.config = config
         self.destinationPath = ""
-        self.BACKUPDIRECTORY = ["mails/", "custom/", "databases/"]
+        self.BACKUPDIRECTORY = ["custom/", "databases/"]
         self.nomail = nomail
         self.isBash = False
         self.bash = ""
@@ -126,7 +126,7 @@ class Backup():
             f" ({home_path}) seems not right...", utils.RED)
         
         else:
-            dst = self.destinationPath + self.BACKUPDIRECTORY[0] + "vmail/"
+            dst = self.destinationPath + "mails/"
 
             if os.path.exists(dst):
                 shutil.rmtree(dst)
