@@ -11,8 +11,11 @@
 # ==========================================================================
 smtp      inet  n       -       -       -       1       postscreen
 smtpd     pass  -       -       -       -       -       smtpd
-%{amavis_enabled}  -o smtpd_proxy_filter=inet:[127.0.0.1]:10024 
-%{amavis_enabled}  -o smtpd_proxy_options=speed_adjust
+%{amavis_enabled}smtp-amavis unix    -       -       n        -      2     lmtp
+%{amavis_enabled}  -o lmtp_data_done_timeout=1200
+%{amavis_enabled}  -o lmtp_send_xforward_command=yes
+%{amavis_enabled}  -o disable_dns_lookups=yes
+%{amavis_enabled}  -o max_use=20
 dnsblog   unix  -       -       -       -       0       dnsblog
 
 tlsproxy  unix  -       -       -       -       0       tlsproxy

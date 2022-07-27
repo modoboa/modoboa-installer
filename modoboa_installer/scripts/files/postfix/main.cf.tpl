@@ -115,6 +115,9 @@ strict_rfc821_envelopes = yes
 %{opendkim_enabled}milter_default_action = accept
 %{opendkim_enabled}milter_content_timeout = 30s
 
+#Amavis setup
+%{amavis_enabled}content_filter = smtp-amavis:[127.0.0.1]:10024
+
 # List of authorized senders
 smtpd_sender_login_maps =
         proxy:%{db_driver}:/etc/postfix/sql-sender-login-map.cf
