@@ -142,7 +142,7 @@ class Backup():
         Feel free to suggest to add others!"""
         utils.printcolor("Backing up some custom configuration...", utils.MAGENTA)
 
-        custom_path = self.destinationPath + self.BACKUPDIRECTORY[1]
+        custom_path = self.destinationPath + self.BACKUPDIRECTORY[0]
 
         """AMAVIS"""
         amavis_custom = "/etc/amavis/conf.d/99-custom"
@@ -162,7 +162,7 @@ class Backup():
 
         utils.printcolor("Backing up databases...", utils.MAGENTA)
 
-        dump_path = self.destinationPath + self.BACKUPDIRECTORY[2]
+        dump_path = self.destinationPath + self.BACKUPDIRECTORY[1]
         backend = database.get_backend(self.config)
 
         """Modoboa"""
