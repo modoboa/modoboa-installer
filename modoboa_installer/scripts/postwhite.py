@@ -48,7 +48,7 @@ class Postwhite(base.Installer):
             POSTWHITE_REPOSITORY, install_dir)
         postwhiteBackupConf = self.restore+"custom/postwhite.conf"
         if self.restore and os.path.isfile(postwhiteBackupConf):
-            utils.printcolor("Restoring postwhite.conf backup.", utils.MAGENTA)
+            utils.printcolor("Restoring postwhite.conf backup.", utils.GREEN)
             utils.copy_file(postwhiteBackupConf, "/etc")
         else:
             utils.copy_file(os.path.join(postw_dir, "postwhite.conf"), "/etc")

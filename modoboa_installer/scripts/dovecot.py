@@ -89,7 +89,7 @@ class Dovecot(base.Installer):
     def post_run(self):
         """Additional tasks."""
         if self.restore and len(os.listdir(self.restore + "mails")) > 0:
-            utils.printcolor("Copying mail backup over dovecot directory", utils.MAGENTA)
+            utils.printcolor("Copying mail backup over dovecot directory", utils.GREEN)
             
             if os.path.exists(self.home_dir):
                 shutil.rmtree(self.home_dir)

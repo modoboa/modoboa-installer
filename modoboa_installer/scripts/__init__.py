@@ -12,10 +12,7 @@ def install(appname, config, upgrade, restore):
             not config.getboolean(appname, "enabled")):
         return
 
-    if not restore:
-        utils.printcolor("Installing {}".format(appname), utils.MAGENTA)
-    else:
-        utils.printcolor("Restoring {}".format(appname), utils.MAGENTA)
+    utils.printcolor("Installing {}".format(appname), utils.MAGENTA)
     try:
         script = importlib.import_module(
             "modoboa_installer.scripts.{}".format(appname))
