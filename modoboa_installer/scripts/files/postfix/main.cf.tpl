@@ -143,9 +143,9 @@ postscreen_blacklist_action = enforce
 # Use some DNSBL
 postscreen_dnsbl_sites = 
 	zen.spamhaus.org=127.0.0.[2..11]*3
-	bl.spameatingmonkey.net*2
-	bl.spamcop.net
-	dnsbl.sorbs.net
+	bl.spameatingmonkey.net=127.0.0.2*2
+	bl.spamcop.net=127.0.0.2
+	dnsbl.sorbs.net=127.0.0.[2..15]
 postscreen_dnsbl_threshold = 3 
 postscreen_dnsbl_action = enforce 
 
