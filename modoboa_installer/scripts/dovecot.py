@@ -104,6 +104,12 @@ class Dovecot(base.Installer):
             utils.copy_file(f, "{}/conf.d".format(self.config_dir))
         # Make postlogin script executable
         utils.exec_cmd("chmod +x /usr/local/bin/postlogin.sh")
+        # Add mailboxes user to dovecot group for modoboa mailbox commands.
+        # See https://github.com/modoboa/modoboa/issues/2157.
+        system.add_user_to_group(
+            self.config.get("dovecot", "mailboxes_owner"),
+            'dovecot'
+        )
 
     def restart_daemon(self):
         """Restart daemon process.
