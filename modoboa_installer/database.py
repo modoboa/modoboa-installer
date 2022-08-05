@@ -147,7 +147,7 @@ class MySQL(Database):
     """MySQL backend."""
 
     packages = {
-        "deb": ["mariadb-server"],
+        "deb": ["mariadb-server", "libmysqlclient-dev"],
         "rpm": ["mariadb", "mariadb-devel", "mariadb-server"],
     }
     service = "mariadb"
