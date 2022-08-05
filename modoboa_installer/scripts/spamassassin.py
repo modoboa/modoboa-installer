@@ -27,7 +27,7 @@ class Spamassassin(base.Installer):
         """Return SQL schema."""
         if self.restore:
             utils.printcolor("Trying to restore spamassassin database from backup", utils.MAGENTA)
-            amavisDbBackupPath = self.restore + "databases/spamassassin.sql"
+            amavisDbBackupPath = os.path.join(self.restore, "databases/spamassassin.sql")
             if os.path.isfile(amavisDbBackupPath):
                 utils.printcolor("Spamassassin database backup found ! Restoring...", utils.GREEN)
                 return amavisDbBackupPath

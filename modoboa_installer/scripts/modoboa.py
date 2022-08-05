@@ -1,6 +1,5 @@
 """Modoboa related tasks."""
 
-from genericpath import isfile
 import json
 import os
 import pwd
@@ -181,7 +180,7 @@ class Modoboa(base.Installer):
     def get_sql_schema_path(self):
         if self.restore:
             utils.printcolor("Trying to restore modoboa database from backup", utils.MAGENTA)
-            modoboaDbBackupPath = self.restore + "databases/modoboa.sql"
+            modoboaDbBackupPath = os.path.join(self.restore, "databases/modoboa.sql")
             if os.path.isfile(modoboaDbBackupPath):
                 utils.printcolor("Modoboa database backup found ! Restoring...", utils.GREEN)
                 return modoboaDbBackupPath

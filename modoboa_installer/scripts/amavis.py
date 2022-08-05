@@ -42,10 +42,10 @@ class Amavis(base.Installer):
     def get_config_files(self):
         """Return appropriate config files."""
         if package.backend.FORMAT == "deb":
-            amavisCustomConf = self.restore + "custom/99-custom"
+            amavisCustomConf = os.path.join(self.restore, "custom/99-custom")
             if self.restore and os.path.isfile(amavisCustomConf):
-                utils.printcolor("Restoring custom Amavis configuration", utils.MAGENTA)
-                utils.copy_file(amavisCustomConf, self.config_dir+"/conf.d")
+                utils.copy_file(amavisCustomConf, os.path.join(self.config_dir, "/conf.d"))
+                utils.printcolor("Custom amavis configuration restored", utils.GREEN)
             return [
                 "conf.d/05-node_id", "conf.d/15-content_filter_mode",
                 "conf.d/50-user"]
@@ -75,7 +75,7 @@ class Amavis(base.Installer):
         """Return schema path."""
         if self.restore:
             utils.printcolor("Trying to restore amavis database from backup", utils.MAGENTA)
-            amavisDbBackupPath = self.restore + "databases/amavis.sql"
+            amavisDbBackupPath = os.path.join(self.restore, "databases/amavis.sql")
             if os.path.isfile(amavisDbBackupPath):
                 utils.printcolor("Amavis database backup found ! Restoring...", utils.GREEN)
                 return amavisDbBackupPath

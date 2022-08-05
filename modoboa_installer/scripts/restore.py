@@ -18,11 +18,12 @@ class Restore:
             sys.exit(1)
 
         try:
-            if not os.path.isfile(restore+"databases/modoboa.sql"):
-                utils.printcolor(restore+"databases/modoboa.sql not found, please check your backup", utils.RED)
+            modobasql_file = os.path.join(restore, "databases/modoboa.sql")
+            if not os.path.isfile(modobasql_file):
+                utils.printcolor(modobasql_file +" not found, please check your backup", utils.RED)
                 sys.exit(1)
         except:
-            utils.printcolor(restore+"databases/modoboa.sql not found, please check your backup", utils.RED)
+            utils.printcolor(modobasql_file + " not found, please check your backup", utils.RED)
             sys.exit(1)
 
         #Everything seems allright here, proceding...

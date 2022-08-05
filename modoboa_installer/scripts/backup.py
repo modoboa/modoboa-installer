@@ -43,15 +43,12 @@ class Backup():
     def preparePath(self):
         pw = pwd.getpwnam("root")
         for dir in self.BACKUPDIRECTORY:
-            utils.mkdir_safe(self.destinationPath + dir, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
+            utils.mkdir_safe(os.path.join(self.destinationPath,dir), 
+            stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
 
 
     def validatePath(self, path):
         """Check basic condition for backup directory"""
-
-        if path[-1] != "/":
-            path += "/"
-
         try :
             pathExists = os.path.exists(path)
         except:
@@ -126,7 +123,7 @@ class Backup():
             f" ({home_path}) seems not right...", utils.RED)
         
         else:
-            dst = self.destinationPath + "mails/"
+            dst = os.path.join(self.destinationPath, "mails/")
 
             if os.path.exists(dst):
                 shutil.rmtree(dst)
@@ -142,7 +139,7 @@ class Backup():
         Feel free to suggest to add others!"""
         utils.printcolor("Backing up some custom configuration...", utils.MAGENTA)
 
-        custom_path = self.destinationPath + self.BACKUPDIRECTORY[0]
+        custom_path = os.path.join(self.destinationPath, self.BACKUPDIRECTORY[0])
 
         """AMAVIS"""
         amavis_custom = "/etc/amavis/conf.d/99-custom"
@@ -162,14 +159,14 @@ class Backup():
 
         utils.printcolor("Backing up databases...", utils.MAGENTA)
 
-        dump_path = self.destinationPath + self.BACKUPDIRECTORY[1]
+        dump_path = os.path.join(self.destinationPath, self.BACKUPDIRECTORY[1])
         backend = database.get_backend(self.config)
 
         """Modoboa"""
         dbname = self.config.get("modoboa", "dbname")
         dbuser = self.config.get("modoboa", "dbuser")
         dbpasswd = self.config.get("modoboa", "dbpassword")
-        backend.dumpDatabase(dbname, dbuser, dbpasswd, dump_path+"modoboa.sql")
+        backend.dumpDatabase(dbname, dbuser, dbpasswd, os.path.join(dump_path,"modoboa.sql"))
 
         """Amavis"""
         if (self.config.has_option("amavis", "enabled") and
@@ -177,7 +174,7 @@ class Backup():
             dbname = self.config.get("amavis", "dbname")
             dbuser = self.config.get("amavis", "dbuser")
             dbpasswd = self.config.get("amavis", "dbpassword")
-            backend.dumpDatabase(dbname, dbuser, dbpasswd, dump_path+"amavis.sql")
+            backend.dumpDatabase(dbname, dbuser, dbpasswd, os.path.join(dump_path,"amavis.sql"))
 
         """SpamAssassin"""
         if (self.config.has_option("spamassassin", "enabled") and
@@ -185,7 +182,7 @@ class Backup():
             dbname = self.config.get("spamassassin", "dbname")
             dbuser = self.config.get("spamassassin", "dbuser")
             dbpasswd = self.config.get("spamassassin", "dbpassword")
-            backend.dumpDatabase(dbname, dbuser, dbpasswd, dump_path+"spamassassin.sql")
+            backend.dumpDatabase(dbname, dbuser, dbpasswd, os.path.join(dump_path,"spamassassin.sql"))
 
     def backupCompletion(self):
         utils.printcolor("Backup process done, your backup is availible here:"

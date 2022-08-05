@@ -3,8 +3,7 @@
 """An installer for Modoboa."""
 
 import argparse
-from ast import parse
-from ctypes import util
+import os
 try:
     import configparser
 except ImportError:
@@ -56,7 +55,7 @@ def restore_disclamer():
     """Display restore disclamer. """
     utils.printcolor(
         "You are about to restore a previous installation of Modoboa."
-        "Is a new version has been released in between, please update your database !",
+        "If a new version has been released in between, please update your database !",
         utils.BLUE)
 
 def main(input_args):
@@ -123,10 +122,11 @@ def main(input_args):
     isRestoring = False
     if args.restore != None:
         isRestoring = True
-        if args.restore[-1] != "/":
-            args.restore += "/"
-        args.configfile = args.restore + "installer.cfg" 
-
+        args.configfile = os.path.join(args.restore, "installer.cfg")
+        if not os.path.exists(args.configfile):
+            utils.printcolor("installer.cfg from backup not found!", utils.RED)
+            sys.exit(1)
+            
     utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
     wasConfigFileAlreadyThere = utils.check_config_file(args.configfile, args.interactive, args.upgrade, args.backup, isRestoring)
     
