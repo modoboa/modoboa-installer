@@ -92,6 +92,12 @@ class LetsEncryptCertificate(CertificateBackend):
         else:
             utils.printcolor("Failed to install certbot, aborting.", utils.RED)
             sys.exit(1)
+        #Nginx plugin certbot
+        if (self.config.has_option("nginx", "enabled") and
+            self.config.getboolean("nginx", "enabled")):
+            package.backend.update()
+            package.backend.install("python3-certbot-nginx")
+            
 
     def generate_cert(self):
         """Create a certificate."""
