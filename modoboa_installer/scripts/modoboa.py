@@ -176,15 +176,18 @@ class Modoboa(base.Installer):
         self.backend.grant_access(
             self.config.get("amavis", "dbname"), self.dbuser)
 
-
     def get_sql_schema_path(self):
         if self.restore:
-            utils.printcolor("Trying to restore modoboa database from backup", utils.MAGENTA)
-            modoboaDbBackupPath = os.path.join(self.restore, "databases/modoboa.sql")
+            utils.printcolor(
+                "Trying to restore modoboa database from backup", utils.MAGENTA)
+            modoboaDbBackupPath = os.path.join(
+                self.restore, "databases/modoboa.sql")
             if os.path.isfile(modoboaDbBackupPath):
-                utils.printcolor("Modoboa database backup found ! Restoring...", utils.GREEN)
+                utils.printcolor(
+                    "Modoboa database backup found ! Restoring...", utils.GREEN)
                 return modoboaDbBackupPath
-            utils.printcolor("Modoboa database backup not found, creating empty database", utils.RED)
+            utils.printcolor(
+                "Modoboa database backup not found, creating empty database", utils.RED)
 
         return super().get_sql_schema_path()()
 

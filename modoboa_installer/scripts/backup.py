@@ -10,23 +10,24 @@ import sys
 from .. import database
 from .. import utils
 
-#TODO: have version of each modoboa componenents saved into the config file to restore the same version  
+# TODO: have version of each modoboa componenents saved into the config file to restore the same version
+
 
 class Backup():
 
-#Backup structure ( {optional} ): 
-#{{backup_folder}}
-#||
-#||--> installer.cfg
-#||--> custom
-#      |--> { (copy of) /etc/amavis/conf.d/99-custom }
-#      |--> { (copy of) /etc/postfix/custom_whitelist.cidr }
-#||--> databases
-#      |--> modoboa.sql
-#      |--> { amavis.sql }
-#      |--> { spamassassin.sql }
-#||--> mails
-#      |--> vmails
+    # Backup structure ( {optional} ):
+    # {{backup_folder}}
+    # ||
+    # ||--> installer.cfg
+    # ||--> custom
+    #      |--> { (copy of) /etc/amavis/conf.d/99-custom }
+    #      |--> { (copy of) /etc/postfix/custom_whitelist.cidr }
+    # ||--> databases
+    #      |--> modoboa.sql
+    #      |--> { amavis.sql }
+    #      |--> { spamassassin.sql }
+    # ||--> mails
+    #      |--> vmails
 
     def __init__(self, config, bashArg, nomail):
         self.config = config
@@ -39,39 +40,40 @@ class Backup():
             self.isBash = True
             self.bash = bashArg
 
-
     def preparePath(self):
         pw = pwd.getpwnam("root")
         for dir in self.BACKUPDIRECTORY:
-            utils.mkdir_safe(os.path.join(self.destinationPath,dir), 
-            stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
-
+            utils.mkdir_safe(os.path.join(self.destinationPath, dir),
+                             stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
 
     def validatePath(self, path):
         """Check basic condition for backup directory"""
-        try :
+        try:
             pathExists = os.path.exists(path)
         except:
             print("Provided path is not recognized...")
             return False
-        
+
         if pathExists and os.path.isfile(path):
-                print("Error, you provided a file instead of a directory!")
-                return False
+            print("Error, you provided a file instead of a directory!")
+            return False
 
         if not pathExists:
             if not self.isBash:
-                createDir = input(f"\"{path}\" doesn't exists, would you like to create it ? [Y/n]\n").lower()
+                createDir = input(
+                    f"\"{path}\" doesn't exists, would you like to create it ? [Y/n]\n").lower()
 
             if self.isBash or (not self.isBash and (createDir == "y" or createDir == "yes")):
                 pw = pwd.getpwnam("root")
-                utils.mkdir_safe(path, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
+                utils.mkdir_safe(path, stat.S_IRWXU |
+                                 stat.S_IRWXG, pw[2], pw[3])
             else:
                 return False
 
         if len(os.listdir(path)) != 0:
             if not self.isBash:
-                delDir = input("Warning : backup folder is not empty, it will be purged if you continue... [Y/n]\n").lower()
+                delDir = input(
+                    "Warning : backup folder is not empty, it will be purged if you continue... [Y/n]\n").lower()
             if self.isBash or (not self.isBash and (delDir == "y" or delDir == "yes")):
                 shutil.rmtree(path)
             else:
@@ -82,7 +84,6 @@ class Backup():
         self.preparePath()
         return True
 
-
     def setPath(self):
         """Setup backup directory"""
         if self.isBash:
@@ -90,7 +91,7 @@ class Backup():
                 date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M")
                 path = f"/modoboa_backup/backup_{date}/"
                 self.validatePath(path)
-            else :
+            else:
                 validate = self.validatePath(self.bash)
                 if not validate:
                     print("provided bash is not right, exiting...")
@@ -102,16 +103,15 @@ class Backup():
                 print("Enter backup path, please provide an empty folder.")
                 print("CTRL+C to cancel")
                 user_value = utils.user_input("-> ")
-    
 
     def backupConfigFile(self):
         utils.copy_file("installer.cfg", self.destinationPath)
 
-
     def backupMails(self):
 
         if self.nomail:
-            utils.printcolor("Skipping mail backup, no-mail argument provided", utils.MAGENTA)
+            utils.printcolor(
+                "Skipping mail backup, no-mail argument provided", utils.MAGENTA)
             return
 
         utils.printcolor("Backing up mails", utils.MAGENTA)
@@ -120,26 +120,27 @@ class Backup():
 
         if not os.path.exists(home_path) or os.path.isfile(home_path):
             utils.printcolor("Error backing up Email, provided path "
-            f" ({home_path}) seems not right...", utils.RED)
-        
+                             f" ({home_path}) seems not right...", utils.RED)
+
         else:
             dst = os.path.join(self.destinationPath, "mails/")
 
             if os.path.exists(dst):
                 shutil.rmtree(dst)
-            
+
             shutil.copytree(home_path, dst)
             utils.printcolor("Mail backup complete!", utils.GREEN)
-
 
     def backupCustomConfig(self):
         """Custom config :
         - Amavis : /etc/amavis/conf.d/99-custom
         - Postwhite : /etc/postwhite.conf
         Feel free to suggest to add others!"""
-        utils.printcolor("Backing up some custom configuration...", utils.MAGENTA)
+        utils.printcolor(
+            "Backing up some custom configuration...", utils.MAGENTA)
 
-        custom_path = os.path.join(self.destinationPath, self.BACKUPDIRECTORY[0])
+        custom_path = os.path.join(
+            self.destinationPath, self.BACKUPDIRECTORY[0])
 
         """AMAVIS"""
         amavis_custom = "/etc/amavis/conf.d/99-custom"
@@ -153,7 +154,6 @@ class Backup():
             utils.copy_file(postswhite_custom, custom_path)
             utils.printcolor("Postwhite configuration saved!", utils.GREEN)
 
-
     def backupDBs(self):
         """Backing up databases"""
 
@@ -166,27 +166,30 @@ class Backup():
         dbname = self.config.get("modoboa", "dbname")
         dbuser = self.config.get("modoboa", "dbuser")
         dbpasswd = self.config.get("modoboa", "dbpassword")
-        backend.dumpDatabase(dbname, dbuser, dbpasswd, os.path.join(dump_path,"modoboa.sql"))
+        backend.dumpDatabase(dbname, dbuser, dbpasswd,
+                             os.path.join(dump_path, "modoboa.sql"))
 
         """Amavis"""
         if (self.config.has_option("amavis", "enabled") and
-            self.config.getboolean("amavis", "enabled")):
+                self.config.getboolean("amavis", "enabled")):
             dbname = self.config.get("amavis", "dbname")
             dbuser = self.config.get("amavis", "dbuser")
             dbpasswd = self.config.get("amavis", "dbpassword")
-            backend.dumpDatabase(dbname, dbuser, dbpasswd, os.path.join(dump_path,"amavis.sql"))
+            backend.dumpDatabase(dbname, dbuser, dbpasswd,
+                                 os.path.join(dump_path, "amavis.sql"))
 
         """SpamAssassin"""
         if (self.config.has_option("spamassassin", "enabled") and
-            self.config.getboolean("spamassassin", "enabled")):
+                self.config.getboolean("spamassassin", "enabled")):
             dbname = self.config.get("spamassassin", "dbname")
             dbuser = self.config.get("spamassassin", "dbuser")
             dbpasswd = self.config.get("spamassassin", "dbpassword")
-            backend.dumpDatabase(dbname, dbuser, dbpasswd, os.path.join(dump_path,"spamassassin.sql"))
+            backend.dumpDatabase(dbname, dbuser, dbpasswd,
+                                 os.path.join(dump_path, "spamassassin.sql"))
 
     def backupCompletion(self):
         utils.printcolor("Backup process done, your backup is availible here:"
-                        f"--> {self.destinationPath}", utils.GREEN)
+                         f"--> {self.destinationPath}", utils.GREEN)
 
     def run(self):
         self.setPath()
@@ -195,5 +198,3 @@ class Backup():
         self.backupCustomConfig()
         self.backupDBs()
         self.backupCompletion()
-
-        

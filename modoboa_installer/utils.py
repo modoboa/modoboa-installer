@@ -106,11 +106,13 @@ def mkdir(path, mode, uid, gid):
         os.chmod(path, mode)
     os.chown(path, uid, gid)
 
+
 def mkdir_safe(path, mode, uid, gid):
     """Create a directory. Safe way (-p)"""
     if not os.path.exists(path):
         os.makedirs(os.path.abspath(path), mode)
     mkdir(path, mode, uid, gid)
+
 
 def make_password(length=16):
     """Create a random password."""
@@ -188,7 +190,7 @@ def check_config_file(dest, interactive=False, upgrade=False, backup=False, rest
             "You cannot restore an existing installation without a "
             f"configuration file. (file : {dest} has not been found...", RED)
         sys.exit(1)
-        
+
     printcolor(
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)

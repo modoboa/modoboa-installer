@@ -17,6 +17,7 @@ from modoboa_installer import ssl
 from modoboa_installer import system
 from modoboa_installer import utils
 
+
 def installation_disclaimer(args, config):
     """Display installation disclaimer."""
     hostname = config.get("general", "hostname")
@@ -44,6 +45,7 @@ def upgrade_disclaimer(config):
         " will be impacted:", utils.BLUE
     )
 
+
 def backup_disclamer():
     """Display backup disclamer. """
     utils.printcolor(
@@ -51,12 +53,14 @@ def backup_disclamer():
         " !! You should really transfer the backup somewhere else..."
         " Custom configuration (like to postfix) won't be saved.", utils.BLUE)
 
+
 def restore_disclamer():
     """Display restore disclamer. """
     utils.printcolor(
         "You are about to restore a previous installation of Modoboa."
         "If a new version has been released in between, please update your database !",
         utils.BLUE)
+
 
 def main(input_args):
     """Install process."""
@@ -96,7 +100,7 @@ def main(input_args):
     parser.add_argument(
         "--no-mail", action="store_true", default=False,
         help="Disable mail backup (save space)")
-    parser.add_argument(    
+    parser.add_argument(
         "--restore", type=str, metavar="path",
         help="Restore a previously backup up modoboa instance on a NEW machine. You Must provide backup directory"
     )
@@ -109,16 +113,17 @@ def main(input_args):
 
     if not args.backup and (args.bash != None or args.sbash or args.no_mail):
         utils.printcolor("You provided --bash or --sbash without --backup, "
-                        "if you want to do a backup, please provide --backup!", utils.RED)
+                         "if you want to do a backup, please provide --backup!", utils.RED)
         return
-    elif args.bash != None and args.sbash :
+    elif args.bash != None and args.sbash:
         utils.printcolor("You provided --bash PATH and --sbash at the same time. "
-                        "Please provided only one!", utils.RED)
+                         "Please provided only one!", utils.RED)
         return
     elif args.bash == "TRUE":
-        utils.printcolor("You can't pick *TRUE* as backup directory !", utils.RED)
-    
-    #Restore prep
+        utils.printcolor(
+            "You can't pick *TRUE* as backup directory !", utils.RED)
+
+    # Restore prep
     isRestoring = False
     if args.restore != None:
         isRestoring = True
@@ -126,10 +131,11 @@ def main(input_args):
         if not os.path.exists(args.configfile):
             utils.printcolor("installer.cfg from backup not found!", utils.RED)
             sys.exit(1)
-            
+
     utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
-    wasConfigFileAlreadyThere = utils.check_config_file(args.configfile, args.interactive, args.upgrade, args.backup, isRestoring)
-    
+    wasConfigFileAlreadyThere = utils.check_config_file(
+        args.configfile, args.interactive, args.upgrade, args.backup, isRestoring)
+
     if args.stop_after_configfile_check or (not wasConfigFileAlreadyThere and args.backup):
         return
 
@@ -159,7 +165,7 @@ def main(input_args):
         scripts.restore(args.restore)
     else:
         installation_disclaimer(args, config)
-        
+
     # Show concerned components
     components = []
     for section in config.sections():
@@ -206,6 +212,7 @@ def main(input_args):
             "Resotre complete! You can enjoy Modoboa at https://{} (same credentials as before)"
             .format(config.get("general", "hostname")),
             utils.GREEN)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -44,8 +44,10 @@ class Amavis(base.Installer):
         if package.backend.FORMAT == "deb":
             amavisCustomConf = os.path.join(self.restore, "custom/99-custom")
             if self.restore and os.path.isfile(amavisCustomConf):
-                utils.copy_file(amavisCustomConf, os.path.join(self.config_dir, "/conf.d"))
-                utils.printcolor("Custom amavis configuration restored", utils.GREEN)
+                utils.copy_file(amavisCustomConf, os.path.join(
+                    self.config_dir, "/conf.d"))
+                utils.printcolor(
+                    "Custom amavis configuration restored", utils.GREEN)
             return [
                 "conf.d/05-node_id", "conf.d/15-content_filter_mode",
                 "conf.d/50-user"]
@@ -74,12 +76,16 @@ class Amavis(base.Installer):
     def get_sql_schema_path(self):
         """Return schema path."""
         if self.restore:
-            utils.printcolor("Trying to restore amavis database from backup", utils.MAGENTA)
-            amavisDbBackupPath = os.path.join(self.restore, "databases/amavis.sql")
+            utils.printcolor(
+                "Trying to restore amavis database from backup", utils.MAGENTA)
+            amavisDbBackupPath = os.path.join(
+                self.restore, "databases/amavis.sql")
             if os.path.isfile(amavisDbBackupPath):
-                utils.printcolor("Amavis database backup found ! Restoring...", utils.GREEN)
+                utils.printcolor(
+                    "Amavis database backup found ! Restoring...", utils.GREEN)
                 return amavisDbBackupPath
-            utils.printcolor("Amavis database backup not found, creating empty database", utils.RED)
+            utils.printcolor(
+                "Amavis database backup not found, creating empty database", utils.RED)
 
         version = package.backend.get_installed_version("amavisd-new")
         if version is None:
@@ -94,7 +100,7 @@ class Amavis(base.Installer):
             path = self.get_file_path(
                 "amavis_{}_{}.sql".format(self.dbengine, version))
             if not os.path.exists(path):
-               raise utils.FatalError("Failed to find amavis database schema")
+                raise utils.FatalError("Failed to find amavis database schema")
         return path
 
     def pre_run(self):
