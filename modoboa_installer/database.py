@@ -13,6 +13,7 @@ class Database(object):
 
     """Common database backend."""
 
+    default_port = None
     packages = None
     service = None
 
@@ -21,6 +22,8 @@ class Database(object):
         self.config = config
         engine = self.config.get("database", "engine")
         self.dbhost = self.config.get("database", "host")
+        self.dbport = self.config.getint(
+            "database", "port", fallback=self.default_port)
         self.dbuser = config.get(engine, "user")
         self.dbpassword = config.get(engine, "password")
         if self.config.getboolean("database", "install"):
@@ -36,6 +39,7 @@ class PostgreSQL(Database):
 
     """Postgres."""
 
+    default_port = 5432
     packages = {
         "deb": ["postgresql", "postgresql-server-dev-all"],
         "rpm": ["postgresql-server", "postgresql-devel"]
@@ -43,7 +47,7 @@ class PostgreSQL(Database):
     service = "postgresql"
 
     def __init__(self, config):
-        super(PostgreSQL, self).__init__(config)
+        super().__init__(config)
         self._pgpass_done = False
 
     def install_package(self):
@@ -79,7 +83,8 @@ class PostgreSQL(Database):
             cmd += " -d {}".format(dbname)
             if dbuser:
                 self._setup_pgpass(dbname, dbuser, dbpassword)
-                cmd += " -h {} -U {} -w".format(self.dbhost, dbuser)
+                cmd += " -h {} -p {} -U {} -w".format(
+                    self.dbhost, self.dbport, dbuser)
         query = query.replace("'", "'\"'\"'")
         cmd = "{} -c '{}' ".format(cmd, query)
         utils.exec_cmd(cmd, sudo_user=self.dbuser)
@@ -137,8 +142,8 @@ class PostgreSQL(Database):
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""
         self._setup_pgpass(dbname, dbuser, dbpassword)
-        cmd = "psql -h {} -d {} -U {} -w < {}".format(
-            self.dbhost, dbname, dbuser, path)
+        cmd = "psql -h {} -p {} -d {} -U {} -w < {}".format(
+            self.dbhost, self.dbport, dbname, dbuser, path)
         utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
 
@@ -146,6 +151,7 @@ class MySQL(Database):
 
     """MySQL backend."""
 
+    default_port = 3306
     packages = {
         "deb": ["mariadb-server", "libmysqlclient-dev"],
         "rpm": ["mariadb", "mariadb-devel", "mariadb-server"],
@@ -202,7 +208,8 @@ class MySQL(Database):
         if dbuser is None and dbpassword is None:
             dbuser = self.dbuser
             dbpassword = self.dbpassword
-        cmd = "mysql -h {} -u {}".format(self.dbhost, dbuser)
+        cmd = "mysql -h {} -P {} -u {}".format(
+            self.dbhost, self.dbport, dbuser)
         if dbpassword:
             cmd += " -p{}".format(dbpassword)
         if dbname:
@@ -247,8 +254,8 @@ class MySQL(Database):
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""
         utils.exec_cmd(
-            "mysql -h {} -u {} -p{} {} < {}".format(
-                self.dbhost, dbuser, dbpassword, dbname, path)
+            "mysql -h {} -P {} -u {} -p{} {} < {}".format(
+                self.dbhost, self.dbport, dbuser, dbpassword, dbname, path)
         )
 
 
