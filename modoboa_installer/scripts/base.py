@@ -88,7 +88,7 @@ class Installer(object):
             "dbengine": (
                 "Pg" if self.dbengine == "postgres" else self.dbengine),
             "dbhost": self.dbhost,
-            "dbport", self.dbport,
+            "dbport": self.dbport,
         }
         for option, value in self.config.items("general"):
             context[option] = value
