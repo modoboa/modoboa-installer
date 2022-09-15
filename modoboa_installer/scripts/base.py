@@ -30,7 +30,10 @@ class Installer(object):
         # Used to install system packages
         self.db_driver = (
             "pgsql" if self.dbengine == "postgres" else self.dbengine)
+        self.backend = database.get_backend(self.config)
         self.dbhost = self.config.get("database", "host")
+        self.dbport = self.config.get(
+            "database", "port", fallback=self.backend.default_port)
         self._config_dir = None
         if not self.with_db:
             return
@@ -61,7 +64,6 @@ class Installer(object):
         """Setup a database."""
         if not self.with_db:
             return
-        self.backend = database.get_backend(self.config)
         self.backend.create_user(self.dbuser, self.dbpasswd)
         self.backend.create_database(self.dbname, self.dbuser)
         schema = self.get_sql_schema_path()
@@ -86,6 +88,7 @@ class Installer(object):
             "dbengine": (
                 "Pg" if self.dbengine == "postgres" else self.dbengine),
             "dbhost": self.dbhost,
+            "dbport", self.dbport,
         }
         for option, value in self.config.items("general"):
             context[option] = value

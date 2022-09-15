@@ -144,20 +144,22 @@ class Modoboa(base.Installer):
             "--domain", self.config.get("general", "hostname"),
             "--extensions", " ".join(self.extensions),
             "--dont-install-extensions",
-            "--dburl", "'default:{}://{}:{}@{}/{}'".format(
+            "--dburl", "'default:{}://{}:{}@{}:{}/{}'".format(
                 self.config.get("database", "engine"),
-                self.dbuser, self.dbpasswd, self.dbhost, self.dbname
+                self.dbuser, self.dbpasswd, self.dbhost, self.dbport,
+                self.dbname
             )
         ]
         if self.devmode:
             args = ["--devel"] + args
         if self.amavis_enabled:
             args += [
-                "'amavis:{}://{}:{}@{}/{}'".format(
+                "'amavis:{}://{}:{}@{}:{}/{}'".format(
                     self.config.get("database", "engine"),
                     self.config.get("amavis", "dbuser"),
                     self.config.get("amavis", "dbpassword"),
                     self.dbhost,
+                    self.dbport,
                     self.config.get("amavis", "dbname")
                 )
             ]

@@ -64,7 +64,7 @@ driver = %db_driver
 #   connect = /etc/dovecot/authdb.sqlite
 #
 #connect =
-connect = host=%dbhost dbname=%modoboa_dbname user=%modoboa_dbuser password=%modoboa_dbpassword
+connect = host=%dbhost port=%dbport dbname=%modoboa_dbname user=%modoboa_dbuser password=%modoboa_dbpassword
 
 # Default password scheme.
 #
