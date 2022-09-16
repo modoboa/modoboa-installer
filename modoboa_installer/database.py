@@ -153,7 +153,7 @@ class MySQL(Database):
 
     default_port = 3306
     packages = {
-        "deb": ["mariadb-server", "libmysqlclient-dev"],
+        "deb": ["mariadb-server"],
         "rpm": ["mariadb", "mariadb-devel", "mariadb-server"],
     }
     service = "mariadb"
