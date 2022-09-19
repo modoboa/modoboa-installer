@@ -141,9 +141,10 @@ class PostgreSQL(Database):
             self.dbhost, dbname, dbuser, path)
         utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
-    def dumpDatabase(self, dbname, dbuser, dbpassword, path):
-        """Dump DB to SQL file"""
-        self._pgpass_done = False #Reset pgpass since we backup multiple db (different secret set)
+    def dump_database(self, dbname, dbuser, dbpassword, path):
+        """Dump DB to SQL file."""
+        # Reset pgpass since we backup multiple db (different secret set)
+        self._pgpass_done = False
         self._setup_pgpass(dbname, dbuser, dbpassword)
         cmd = "pg_dump -h {} -d {} -U {} -O  -w > {}".format(
             self.dbhost, dbname, dbuser, path)
@@ -258,8 +259,9 @@ class MySQL(Database):
             "mysql -h {} -u {} -p{} {} < {}".format(
                 self.dbhost, dbuser, dbpassword, dbname, path)
         )
-    def dumpDatabase(self, dbname, dbuser, dbpassword, path):
-        """Dump DB to SQL file"""
+
+    def dump_database(self, dbname, dbuser, dbpassword, path):
+        """Dump DB to SQL file."""
         cmd = "mysqldump -h {} -u {} -p{} {} > {}".format(
             self.dbhost, dbuser, dbpassword, dbname, path)
         utils.exec_cmd(cmd, sudo_user=self.dbuser)

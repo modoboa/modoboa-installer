@@ -46,7 +46,7 @@ def upgrade_disclaimer(config):
     )
 
 
-def backup_disclamer():
+def backup_disclaimer():
     """Display backup disclamer. """
     utils.printcolor(
         "Your mail server will be backed up (messages and databases) locally."
@@ -54,7 +54,7 @@ def backup_disclamer():
         " Custom configuration (like to postfix) won't be saved.", utils.BLUE)
 
 
-def restore_disclamer():
+def restore_disclaimer():
     """Display restore disclamer. """
     utils.printcolor(
         "You are about to restore a previous installation of Modoboa."
@@ -69,7 +69,7 @@ def main(input_args):
         ["latest"] + list(compatibility_matrix.COMPATIBILITY_MATRIX.keys())
     )
     parser.add_argument("--backup", action="store_true", default=False,
-                        help="Backing up previously installed instance")
+                        help="Backing up interactively previously installed instance")
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Enable debug output")
     parser.add_argument("--force", action="store_true", default=False,
@@ -92,17 +92,19 @@ def main(input_args):
         "--beta", action="store_true", default=False,
         help="Install latest beta release of Modoboa instead of the stable one")
     parser.add_argument(
-        "--bash", type=str, metavar="path",
-        help="(backup only) - For script usage, No interaction will be required, you must provide a path")
+        "--backup-path", type=str, metavar="path",
+        help="To use with --silent-backup, you must provide a valid path")
     parser.add_argument(
-        "--sbash", action="store_true", default=False,
-        help="same as --bash but backup will be at /modoboa_backup/Backup_M_Y_d_H_M")
+        "--silent-backup", action="store_true", default=False,
+        help="For script usage, do not require user interaction "
+        "backup will be saved at ./modoboa_backup/Backup_M_Y_d_H_M if --backup-path is not provided")
     parser.add_argument(
-        "--no-mail", action="store_true", default=False,
+        "--no-mail-backup", action="store_true", default=False,
         help="Disable mail backup (save space)")
     parser.add_argument(
         "--restore", type=str, metavar="path",
-        help="Restore a previously backup up modoboa instance on a NEW machine. You Must provide backup directory"
+        help="Restore a previously backup up modoboa instance on a NEW machine. "
+        "You MUST provide backup directory"
     )
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
@@ -111,32 +113,24 @@ def main(input_args):
     if args.debug:
         utils.ENV["debug"] = True
 
-    if not args.backup and (args.bash != None or args.sbash or args.no_mail):
-        utils.printcolor("You provided --bash or --sbash without --backup, "
-                         "if you want to do a backup, please provide --backup!", utils.RED)
-        return
-    elif args.bash != None and args.sbash:
-        utils.printcolor("You provided --bash PATH and --sbash at the same time. "
-                         "Please provided only one!", utils.RED)
-        return
-    elif args.bash == "TRUE":
-        utils.printcolor(
-            "You can't pick *TRUE* as backup directory !", utils.RED)
-
     # Restore prep
-    isRestoring = False
-    if args.restore != None:
-        isRestoring = True
+    is_restoring = False
+    if args.restore is not None:
+        is_restoring = True
         args.configfile = os.path.join(args.restore, "installer.cfg")
         if not os.path.exists(args.configfile):
             utils.printcolor("installer.cfg from backup not found!", utils.RED)
             sys.exit(1)
 
     utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
-    wasConfigFileAlreadyThere = utils.check_config_file(
-        args.configfile, args.interactive, args.upgrade, args.backup, isRestoring)
+    is_config_file_availible = utils.check_config_file(
+        args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
 
-    if args.stop_after_configfile_check or (not wasConfigFileAlreadyThere and args.backup):
+    if is_config_file_availible and args.backup:
+        utils.printcolor("No config file found,", utils.RED)
+        return
+
+    if args.stop_after_configfile_check:
         return
 
     config = configparser.ConfigParser()
@@ -151,18 +145,14 @@ def main(input_args):
     # Display disclaimer python 3 linux distribution
     if args.upgrade:
         upgrade_disclaimer(config)
-    elif args.backup:
-        backup_disclamer()
-        bashArg = "NOBASH"
-        if args.bash != None:
-            bashArg = args.bash
-        elif args.sbash:
-            bashArg = "TRUE"
-        scripts.backup(config, bashArg, args.no_mail)
+    elif args.backup or args.silent_backup:
+        backup_disclaimer()
+        scripts.backup(config, args.silent_backup,
+                       args.backup_path, args.no_mail)
         return
     elif args.restore:
-        restore_disclamer()
-        scripts.restore(args.restore)
+        restore_disclaimer()
+        scripts.restore_prep(args.restore)
     else:
         installation_disclaimer(args, config)
 
@@ -209,7 +199,7 @@ def main(input_args):
             utils.GREEN)
     else:
         utils.printcolor(
-            "Resotre complete! You can enjoy Modoboa at https://{} (same credentials as before)"
+            "Restore complete! You can enjoy Modoboa at https://{} (same credentials as before)"
             .format(config.get("general", "hostname")),
             utils.GREEN)
 

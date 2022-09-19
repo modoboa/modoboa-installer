@@ -78,12 +78,12 @@ class Amavis(base.Installer):
         if self.restore:
             utils.printcolor(
                 "Trying to restore amavis database from backup", utils.MAGENTA)
-            amavisDbBackupPath = os.path.join(
+            amavis_db_backup_path = os.path.join(
                 self.restore, "databases/amavis.sql")
-            if os.path.isfile(amavisDbBackupPath):
+            if os.path.isfile(amavis_db_backup_path):
                 utils.printcolor(
                     "Amavis database backup found ! Restoring...", utils.GREEN)
-                return amavisDbBackupPath
+                return amavis_db_backup_path
             utils.printcolor(
                 "Amavis database backup not found, creating empty database", utils.RED)
 

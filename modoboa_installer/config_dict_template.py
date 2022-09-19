@@ -439,4 +439,13 @@ ConfigDictTemplate = [
 
         ]
     },
+    {
+        "name": "backup",
+        "values": [ 
+            {
+                "option": "default_path",
+                "default": "./modoboa_backup/"
+            }
+        ]
+    }
 ]
