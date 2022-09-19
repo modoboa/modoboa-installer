@@ -91,7 +91,7 @@ class Dovecot(base.Installer):
         mail_dir = os.path.join(self.restore, "mails/")
         if self.restore and len(os.listdir(mail_dir)) > 0:
             utils.printcolor(
-                "Copying mail backup over dovecot directory", utils.GREEN)
+                "Copying mail backup over dovecot directory.", utils.GREEN)
 
             if os.path.exists(self.home_dir):
                 shutil.rmtree(self.home_dir)

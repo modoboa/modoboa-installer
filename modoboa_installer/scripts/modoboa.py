@@ -179,15 +179,15 @@ class Modoboa(base.Installer):
     def get_sql_schema_path(self):
         if self.restore:
             utils.printcolor(
-                "Trying to restore modoboa database from backup", utils.MAGENTA)
-            modoboaDbBackupPath = os.path.join(
+                "Trying to restore modoboa database from backup.", utils.MAGENTA)
+            modoboa_database_backup_path = os.path.join(
                 self.restore, "databases/modoboa.sql")
-            if os.path.isfile(modoboaDbBackupPath):
+            if os.path.isfile(modoboa_database_backup_path):
                 utils.printcolor(
                     "Modoboa database backup found ! Restoring...", utils.GREEN)
-                return modoboaDbBackupPath
+                return modoboa_database_backup_path
             utils.printcolor(
-                "Modoboa database backup not found, creating empty database", utils.RED)
+                "Modoboa database backup not found, creating empty database.", utils.RED)
 
         return super().get_sql_schema_path()()
 

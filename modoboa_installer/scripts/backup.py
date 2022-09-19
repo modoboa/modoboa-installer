@@ -30,17 +30,11 @@ class Backup:
 
     def __init__(self, config, silent_backup, backup_path, nomail):
         self.config = config
-        self.destinationPath = backup_path
+        self.backup_path = backup_path
         self.nomail = nomail
         self.silent_backup = silent_backup
 
-    def preparePath(self):
-        pw = pwd.getpwnam("root")
-        for dir in ["custom/", "databases/"]:
-            utils.mkdir_safe(os.path.join(self.destinationPath, dir),
-                             stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
-
-    def validatePath(self, path):
+    def validate_path(self, path):
         """Check basic condition for backup directory."""
 
         path_exists = os.path.exists(path)
@@ -52,10 +46,10 @@ class Backup:
 
         if not path_exists:
             if not self.silent_backup:
-                createDir = input(
+                create_dir = input(
                     f"\"{path}\" doesn't exists, would you like to create it ? [Y/n]\n").lower()
 
-            if self.silent_backup or (not self.silent_backup and (createDir == "y" or createDir == "yes")):
+            if self.silent_backup or (not self.silent_backup and (create_dir == "y" or create_dir == "yes")):
                 pw = pwd.getpwnam("root")
                 utils.mkdir_safe(path, stat.S_IRWXU |
                                  stat.S_IRWXG, pw[2], pw[3])
@@ -64,40 +58,44 @@ class Backup:
 
         if len(os.listdir(path)) != 0:
             if not self.silent_backup:
-                delDir = input(
+                delete_dir = input(
                     "Warning : backup folder is not empty, it will be purged if you continue... [Y/n]\n").lower()
-            if self.silent_backup or (not self.silent_backup and (delDir == "y" or delDir == "yes")):
+            if self.silent_backup or (not self.silent_backup and (delete_dir == "y" or delete_dir == "yes")):
                 shutil.rmtree(path)
             else:
                 return False
 
-        self.destinationPath = path
+        self.backup_path = path
 
-        self.preparePath()
+        pw = pwd.getpwnam("root")
+        for dir in ["custom/", "databases/"]:
+            utils.mkdir_safe(os.path.join(self.backup_path, dir),
+                             stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
+
         return True
 
     def set_path(self):
         """Setup backup directory."""
         if self.silent_backup:
-            if self.destinationPath is None:
+            if self.backup_path is None:
                 date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M")
                 path = f"./modoboa_backup/backup_{date}/"
-                self.validatePath(path)
+                self.validate_path(path)
             else:
-                if not self.validatePath(self.destinationPath):
+                if not self.validate_path(self.backup_path):
                     utils.printcolor(
-                        f"Path provided : {self.destinationPath}", utils.BLUE)
+                        f"Path provided : {self.backup_path}", utils.BLUE)
                     sys.exit(1)
         else:
             user_value = None
-            while user_value == "" or user_value is None or not self.validatePath(user_value):
+            while user_value == "" or user_value is None or not self.validate_path(user_value):
                 utils.printcolor(
                     "Enter backup path, please provide an empty folder.", utils.MAGENTA)
                 utils.printcolor("CTRL+C to cancel", utils.MAGENTA)
                 user_value = utils.user_input("-> ")
 
     def config_file_backup(self):
-        utils.copy_file("installer.cfg", self.destinationPath)
+        utils.copy_file("installer.cfg", self.backup_path)
 
     def mail_backup(self):
         if self.nomail:
@@ -114,7 +112,7 @@ class Backup:
                              f" ({home_path}) seems not right...", utils.RED)
 
         else:
-            dst = os.path.join(self.destinationPath, "mails/")
+            dst = os.path.join(self.backup_path, "mails/")
 
             if os.path.exists(dst):
                 shutil.rmtree(dst)
@@ -131,7 +129,7 @@ class Backup:
             "Backing up some custom configuration...", utils.MAGENTA)
 
         custom_path = os.path.join(
-            self.destinationPath, "custom")
+            self.backup_path, "custom")
 
         # AMAVIS
         if (self.config.has_option("amavis", "enabled") and
@@ -145,8 +143,7 @@ class Backup:
         # POSTWHITE
         if (self.config.has_option("postwhite", "enabled") and
                 self.config.getboolean("postwhite", "enabled")):
-            postswhite_custom = os.path.join(self.config.get(
-                "postwhite", "config_dir", "postwhite.conf"))
+            postswhite_custom = "/etc/postwhite.conf"
             if os.path.isfile(postswhite_custom):
                 utils.copy_file(postswhite_custom, custom_path)
                 utils.printcolor(
@@ -163,7 +160,7 @@ class Backup:
 
     def database_dump(self, app_name):
 
-        dump_path = os.path.join(self.destinationPath, "backup")
+        dump_path = os.path.join(self.backup_path, "backup")
         backend = database.get_backend(self.config)
 
         if app_name == "modoboa" or (self.config.has_option(app_name, "enabled") and
@@ -176,7 +173,7 @@ class Backup:
 
     def backup_completed(self):
         utils.printcolor("Backup process done, your backup is availible here:"
-                         f"--> {self.destinationPath}", utils.GREEN)
+                         f"--> {self.backup_path}", utils.GREEN)
 
     def run(self):
         self.set_path()

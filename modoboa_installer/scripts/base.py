@@ -161,10 +161,6 @@ class Installer(object):
         """Tasks to execute before the installer starts."""
         pass
 
-    def restore(self):
-        """Tasks to execute to restore files/databases."""
-        pass
-
     def post_run(self):
         """Additionnal tasks."""
         pass
