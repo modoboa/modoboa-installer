@@ -148,7 +148,7 @@ def main(input_args):
     elif args.backup or args.silent_backup:
         backup_disclaimer()
         scripts.backup(config, args.silent_backup,
-                       args.backup_path, args.no_mail)
+                       args.backup_path, args.no_mail_backup)
         return
     elif args.restore:
         restore_disclaimer()
