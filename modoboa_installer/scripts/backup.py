@@ -4,7 +4,6 @@ import os
 import pwd
 import shutil
 import stat
-import datetime
 import sys
 
 from .. import database
@@ -78,8 +77,10 @@ class Backup:
         """Setup backup directory."""
         if self.silent_backup:
             if self.backup_path is None:
-                date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M")
-                path = f"./modoboa_backup/backup_{date}/"
+                if self.config.has_option("backup", "default_path"):
+                    path = self.config.get("backup", "default_path")
+                else:
+                    path = f"./modoboa_backup/"
                 self.validate_path(path)
             else:
                 if not self.validate_path(self.backup_path):

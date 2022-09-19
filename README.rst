@@ -108,30 +108,30 @@ You can start the process as follows::
 
 Then follow the step on the console.
 
-There are also two non-interactive mode:
+There are also a non-interactive mode:
 
-1. Silent batch mode
-
-Command::
-
-  $ sudo ./run.py --backup --sbatch <your domain>
-
-This mode is the silent batch mode, when executed, it will create /modoboa_backup/backup{time} and each time you execute it, it will create a new backup directory with current time.
-
-2. Path batch mode
+1. Silent mode
 
 Command::
 
-  $ sudo ./run.py --backup --batch /path/of/backup/directory <your domain>
+  $ sudo ./run.py --silent-backup <your domain>
+
+This mode is the silent batch mode, when executed, it will create /modoboa_backup/ and each time you execute it, it will create a new backup directory with current time.
+
+You can supply a custom path.
+
+Command::
+
+  $ sudo ./run.py --silent-backup --backup-path /path/of/backup/directory <your domain>
 
 This mode is the same as silent batch mode, but you provide the path to the backup directory you want.
 
 
 If you want to disable mail backup::
 
-  $ sudo ./run.py --backup --no-mail <your domain>
+  $ sudo ./run.py {--backup|--silent-backup} --no-mail-backup <your domain>
  
-This can be useful for larger instance
+This can be useful for larger instance.
 
 Restore mode
 ------------
