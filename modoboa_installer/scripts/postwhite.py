@@ -20,6 +20,7 @@ class Postwhite(base.Installer):
     ]
     no_daemon = True
     packages = {
+        "deb": ["bind9-host"],
         "rpm": ["bind-utils"]
     }
 

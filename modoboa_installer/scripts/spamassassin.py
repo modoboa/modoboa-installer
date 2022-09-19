@@ -57,10 +57,12 @@ class Spamassassin(base.Installer):
         context = super(Spamassassin, self).get_template_context()
         if self.dbengine == "postgres":
             store_module = "Mail::SpamAssassin::BayesStore::PgSQL"
-            dsn = "DBI:Pg:dbname={};host={}".format(self.dbname, self.dbhost)
+            dsn = "DBI:Pg:dbname={};host={};port={}".format(
+                self.dbname, self.dbhost, self.dbport)
         else:
             store_module = "Mail::SpamAssassin::BayesStore::MySQL"
-            dsn = "DBI:mysql:{}:{}".format(self.dbname, self.dbhost)
+            dsn = "DBI:mysql:{}:{}:{}".format(
+                self.dbname, self.dbhost, self.dbport)
         context.update({
             "store_module": store_module, "dsn": dsn, "dcc_enabled": "#"})
         return context

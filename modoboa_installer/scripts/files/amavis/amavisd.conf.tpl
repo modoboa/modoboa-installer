@@ -112,7 +112,7 @@ $sa_local_tests_only = 0;    # only tests which do not require internet access?
 # @storage_redis_dsn = ( {server=>'127.0.0.1:6379', db_id=>1} );
 # $redis_logging_key = 'amavis-log';
 # $redis_logging_queue_size_limit = 300000;  # about 250 MB / 100000
-@lookup_sql_dsn = ( [ 'DBI:%dbengine:database=%dbname;host=%dbhost', '%dbuser', '%dbpassword' ]);
+@lookup_sql_dsn = ( [ 'DBI:%dbengine:database=%dbname;host=%dbhost;port=%dbport', '%dbuser', '%dbpassword' ]);
 @storage_sql_dsn = @lookup_sql_dsn;
 $sql_allow_8bit_address = 1;
 

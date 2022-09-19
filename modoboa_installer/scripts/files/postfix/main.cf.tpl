@@ -3,7 +3,7 @@ inet_protocols = all
 myhostname = %hostname
 myorigin = $myhostname
 mydestination = $myhostname
-mynetworks = 127.0.0.0/8
+mynetworks = 127.0.0.0/8 [::1]/128
 smtpd_banner = $myhostname ESMTP
 biff = no
 unknown_local_recipient_reject_code = 550
@@ -142,10 +142,10 @@ postscreen_blacklist_action = enforce
 
 # Use some DNSBL
 postscreen_dnsbl_sites = 
-	zen.spamhaus.org*3
-	bl.spameatingmonkey.net*2
-	bl.spamcop.net
-	dnsbl.sorbs.net
+	zen.spamhaus.org=127.0.0.[2..11]*3
+	bl.spameatingmonkey.net=127.0.0.2*2
+	bl.spamcop.net=127.0.0.2
+	dnsbl.sorbs.net=127.0.0.[2..15]
 postscreen_dnsbl_threshold = 3 
 postscreen_dnsbl_action = enforce 
 

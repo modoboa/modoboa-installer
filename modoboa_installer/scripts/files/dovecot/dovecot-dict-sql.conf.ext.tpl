@@ -1,4 +1,4 @@
-connect = host=%dbhost dbname=%modoboa_dbname user=%modoboa_dbuser password=%modoboa_dbpassword
+connect = host=%dbhost port=%dbport dbname=%modoboa_dbname user=%modoboa_dbuser password=%modoboa_dbpassword
 
 # CREATE TABLE quota (
 #   username varchar(100) not null,

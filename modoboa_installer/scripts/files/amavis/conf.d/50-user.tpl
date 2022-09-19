@@ -7,7 +7,7 @@ $max_servers = %max_servers;
 
 # SQL configuration
 #
-@lookup_sql_dsn = ( [ 'DBI:%dbengine:database=%dbname;host=%dbhost', '%dbuser', '%dbpassword' ]);
+@lookup_sql_dsn = ( [ 'DBI:%dbengine:database=%dbname;host=%dbhost;port=%dbport', '%dbuser', '%dbpassword' ]);
 @storage_sql_dsn = @lookup_sql_dsn;
 $sql_allow_8bit_address = 1;
 
