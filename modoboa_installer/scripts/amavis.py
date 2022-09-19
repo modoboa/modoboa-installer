@@ -77,16 +77,9 @@ class Amavis(base.Installer):
     def get_sql_schema_path(self):
         """Return schema path."""
         if self.restore:
-            utils.printcolor(
-                "Trying to restore amavis database from backup.", utils.MAGENTA)
-            amavis_db_backup_path = os.path.join(
-                self.restore, "databases/amavis.sql")
-            if os.path.isfile(amavis_db_backup_path):
-                utils.printcolor(
-                    "Amavis database backup found ! Restoring...", utils.GREEN)
-                return amavis_db_backup_path
-            utils.printcolor(
-                "Amavis database backup not found, creating empty database.", utils.RED)
+            db_dump_path = self._restore_database_dump("amavis")
+            if db_dump_path is not None:
+                return db_dump_path
 
         version = package.backend.get_installed_version("amavisd-new")
         if version is None:

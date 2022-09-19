@@ -160,6 +160,20 @@ class Installer(object):
         self.post_run()
         self.restart_daemon()
 
+    def _restore_database_dump(self, app_name):
+        """Restore database dump from a dump."""
+
+        utils.printcolor(
+                f"Trying to restore {app_name} database from backup.", utils.MAGENTA)
+        database_backup_path = os.path.join(
+            self.restore, f"databases/{app_name}.sql")
+        if os.path.isfile(database_backup_path):
+            utils.printcolor(
+                f"{app_name.capitalize()} database backup found ! Restoring...", utils.GREEN)
+            return database_backup_path
+        utils.printcolor(
+            f"{app_name.capitalize()} database backup not found, creating empty database.", utils.RED)
+
     def pre_run(self):
         """Tasks to execute before the installer starts."""
         pass
