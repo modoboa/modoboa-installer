@@ -116,7 +116,7 @@ Command::
 
   $ sudo ./run.py --silent-backup <your domain>
 
-This mode is the silent batch mode, when executed, it will create /modoboa_backup/ and each time you execute it, it will create a new backup directory with current time.
+This mode is the silent batch mode, when executed, it will create /modoboa_backup/ and each time you execute it, it will create a new backup directory with current date and time.
 
 You can supply a custom path.
 

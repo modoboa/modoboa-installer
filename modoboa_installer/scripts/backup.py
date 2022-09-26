@@ -5,6 +5,7 @@ import pwd
 import shutil
 import stat
 import sys
+import datetime
 
 from .. import database
 from .. import utils
@@ -53,15 +54,29 @@ class Backup:
                 utils.mkdir_safe(path, stat.S_IRWXU |
                                  stat.S_IRWXG, pw[2], pw[3])
             else:
+                utils.printcolor(
+                    "Error, backup dir not present.", utils.RED
+                )
                 return False
 
         if len(os.listdir(path)) != 0:
             if not self.silent_backup:
                 delete_dir = input(
                     "Warning : backup folder is not empty, it will be purged if you continue... [Y/n]\n").lower()
+            
             if self.silent_backup or (not self.silent_backup and (delete_dir == "y" or delete_dir == "yes")):
-                shutil.rmtree(path)
+                try:
+                    os.remove(os.path.join(path, "installer.cfg"))
+                except FileNotFoundError:
+                    pass
+                
+                shutil.rmtree(os.path.join(path, "custom"),ignore_errors=False)
+                shutil.rmtree(os.path.join(path, "mails"), ignore_errors=False)
+                shutil.rmtree(os.path.join(path, "databases"), ignore_errors=False)
             else:
+                utils.printcolor(
+                    "Error, backup dir not clean.", utils.RED
+                )
                 return False
 
         self.backup_path = path
@@ -70,7 +85,6 @@ class Backup:
         for dir in ["custom/", "databases/"]:
             utils.mkdir_safe(os.path.join(self.backup_path, dir),
                              stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
-
         return True
 
     def set_path(self):
@@ -81,6 +95,8 @@ class Backup:
                     path = self.config.get("backup", "default_path")
                 else:
                     path = f"./modoboa_backup/"
+                date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M")
+                path = os.path.join(path, f"backup_{date}")
                 self.validate_path(path)
             else:
                 if not self.validate_path(self.backup_path):
