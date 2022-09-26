@@ -110,6 +110,11 @@ class Dovecot(base.Installer):
             self.config.get("dovecot", "mailboxes_owner"),
             'dovecot'
         )
+        # Add modoboa to dovecot group for doveadm commands.
+        system.add_user_to_group(
+            self.config.get("modoboa", "user"),
+            'dovecot'
+        )
 
     def restart_daemon(self):
         """Restart daemon process.
