@@ -89,6 +89,21 @@ service postlogin {
   }
 }
 
+service stats {
+  # To allow modoboa to access availible cipher list.
+  unix_listener stats-reader {
+    user = vmail
+    group = vmail
+    mode = 0660
+  }
+
+  unix_listener stats-writer {
+    user = vmail
+    group = vmail
+    mode = 0660
+  }
+}
+
 service auth {
   # auth_socket_path points to this userdb socket by default. It's typically
   # used by dovecot-lda, doveadm, possibly imap process, etc. Users that have
