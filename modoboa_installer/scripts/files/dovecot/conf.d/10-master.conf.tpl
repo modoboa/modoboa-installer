@@ -90,7 +90,7 @@ service postlogin {
 }
 
 service stats {
-  # To allow modoboa to access availible cipher list.
+  # To allow modoboa to access available cipher list.
   unix_listener stats-reader {
     user = vmail
     group = vmail
