@@ -58,6 +58,7 @@ class Modoboa(base.Installer):
             if not self.config.getboolean("radicale", "enabled"):
                 self.extensions.remove("modoboa-radicale")
         self.dovecot_enabled = self.config.getboolean("dovecot", "enabled")
+        self.opendkim_enabled = self.config.getboolean("opendkim", "enabled")
 
     def is_extension_ok_for_version(self, extension, version):
         """Check if extension can be installed with this modo version."""
@@ -163,12 +164,25 @@ class Modoboa(base.Installer):
                     self.config.get("amavis", "dbname")
                 )
             ]
+        if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
+            # Drop dkim view to prevent an error during migration (2.0)
+            self.backend._exec_query("DROP VIEW IF EXISTS dkim")
         code, output = utils.exec_cmd(
             "bash -c '{} modoboa-admin.py deploy instance {}'".format(
                 prefix, " ".join(args)),
             sudo_user=self.user, cwd=self.home_dir)
         if code:
             raise utils.FatalError(output)
+        if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
+            # Restore view previously deleted
+            self.backend.load_sql_file(
+                self.dbname, self.dbuser, self.dbpassword,
+                self.get_file_path("dkim_view_{}.sql".format(self.dbengine))
+            )
+            self.backend.grant_right_on_table(
+                self.dbname, "dkim", self.config.get("opendkim", "dbuser"),
+                "SELECT"
+            )
 
     def setup_database(self):
         """Additional config."""
