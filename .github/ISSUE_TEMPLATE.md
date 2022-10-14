@@ -1,7 +1,7 @@
 # Impacted versions
 
 * Distribution: Debian / Ubuntu / Centos
-* Codename: Jessie / Trusty / Centos 7 / ...
+* Codename: Jessie / Trusty / Centos 9 Stream / ...
 * Arch: 32 Bits / 64 Bits
 * Database: PostgreSQL / MySQL
 

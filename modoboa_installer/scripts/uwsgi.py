@@ -17,7 +17,7 @@ class Uwsgi(base.Installer):
     appname = "uwsgi"
     packages = {
         "deb": ["uwsgi", "uwsgi-plugin-python3"],
-        "rpm": ["uwsgi", "uwsgi-plugin-python36"],
+        "rpm": ["uwsgi", "uwsgi-plugin-python3"],
     }
 
     def get_socket_path(self, app):

@@ -11,11 +11,12 @@ An installer which deploy a complete mail server based on Modoboa.
 
    * Debian Buster (10) / Bullseye (11)
    * Ubuntu Bionic Beaver (18.04) and upper
-   * CentOS 7
+   * CentOS 9 Stream
 
 .. warning::
       
    ``/tmp`` partition must be mounted without the ``noexec`` option.
+   Centos 7 support has been depreceated since modoboa requires python 3.7>=.
 
 .. note::
 

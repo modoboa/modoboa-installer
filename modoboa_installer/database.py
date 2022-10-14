@@ -42,7 +42,7 @@ class PostgreSQL(Database):
     default_port = 5432
     packages = {
         "deb": ["postgresql", "postgresql-server-dev-all"],
-        "rpm": ["postgresql-server", "postgresql-devel"]
+        "rpm": ["postgresql-server", "postgresql-server-devel", "postgresql"]
     }
     service = "postgresql"
 
@@ -54,20 +54,8 @@ class PostgreSQL(Database):
         """Install database if required."""
         name, version = utils.dist_info()
         if "CentOS" in name:
-            if version.startswith("7"):
-                # Install newer version of postgres in this case
-                package.backend.install(
-                    "https://download.postgresql.org/pub/repos/yum/"
-                    "reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
-                )
-                self.packages["rpm"] = [
-                    "postgresql10-server", "postgresql10-devel"]
-                self.service = "postgresql-10"
-                initdb_cmd = "/usr/pgsql-10/bin/postgresql-10-setup initdb"
-                cfgfile = "/var/lib/pgsql/10/data/pg_hba.conf"
-            else:
-                initdb_cmd = "postgresql-setup initdb"
-                cfgfile = "/var/lib/pgsql/data/pg_hba.conf"
+            initdb_cmd = "postgresql-setup initdb"
+            cfgfile = "/var/lib/pgsql/data/pg_hba.conf"
             package.backend.install_many(self.packages[package.backend.FORMAT])
             utils.exec_cmd(initdb_cmd)
             pattern = "s/^host(.+)ident$/host$1md5/"

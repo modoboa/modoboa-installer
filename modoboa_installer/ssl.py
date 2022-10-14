@@ -97,7 +97,7 @@ class LetsEncryptCertificate(CertificateBackend):
                 self.config.has_option("nginx", "enabled") and
                 self.config.getboolean("nginx", "enabled")
         ):
-            if name == "ubuntu" or name.startswith("debian"):
+            if name == "ubuntu" or name.startswith("debian") or ("Centos" in name and version.startswith("9")):
                 package.backend.install("python3-certbot-nginx")
 
     def generate_cert(self):

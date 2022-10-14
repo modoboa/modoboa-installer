@@ -22,7 +22,7 @@ class Amavis(base.Installer):
             "unrar-free",
         ],
         "rpm": [
-            "amavisd-new", "arj", "lz4", "lzop", "p7zip",
+            "amavis", "arj", "lz4", "lzop", "p7zip",
         ],
     }
     with_db = True

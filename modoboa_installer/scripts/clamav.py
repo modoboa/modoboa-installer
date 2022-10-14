@@ -15,7 +15,7 @@ class Clamav(base.Installer):
     packages = {
         "deb": ["clamav-daemon"],
         "rpm": [
-            "clamav", "clamav-update", "clamav-server", "clamav-server-systemd"
+            "clamav", "clamav-update", "clamd"
         ],
     }
 
