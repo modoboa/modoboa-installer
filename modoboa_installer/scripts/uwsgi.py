@@ -29,10 +29,7 @@ class Uwsgi(base.Installer):
     def get_template_context(self, app):
         """Additionnal variables."""
         context = super(Uwsgi, self).get_template_context()
-        if package.backend.FORMAT == "deb":
-            uwsgi_plugin = "python3"
-        else:
-            uwsgi_plugin = "python36"
+        uwsgi_plugin = "python3"
         context.update({
             "app_user": self.config.get(app, "user"),
             "app_venv_path": self.config.get(app, "venv_path"),

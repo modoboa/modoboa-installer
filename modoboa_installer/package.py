@@ -82,17 +82,27 @@ class RPMPackage(Package):
 
     def __init__(self, dist_name):
         """Initialize backend."""
+        self.dist_name = dist_name
         super(RPMPackage, self).__init__(dist_name)
-        if "centos" in dist_name:
+
+    def prepare_system(self):
+        if "centos" in self.dist_name:
+            utils.exec_cmd("dnf config-manager --set-enabled crb")
             self.install("epel-release")
+        self.update()
+
+    def update(self):
+        """Update the database repo."""
+        utils.exec_cmd("dnf update -y --quiet")
 
     def install(self, name):
         """Install a package."""
-        utils.exec_cmd("yum install -y --quiet {}".format(name))
+        """Need to add check for rrdtool, sendmail-milter, libmemcached and --enablerepo=crb"""
+        utils.exec_cmd("dnf install -y --quiet {}".format(name))
 
     def install_many(self, names):
         """Install many packages."""
-        return utils.exec_cmd("yum install -y --quiet {}".format(" ".join(names)))
+        return utils.exec_cmd("dnf install -y --quiet {}".format(" ".join(names)))
 
     def get_installed_version(self, name):
         """Get installed package version."""

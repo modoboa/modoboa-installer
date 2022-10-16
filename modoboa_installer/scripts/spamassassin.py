@@ -59,10 +59,6 @@ class Spamassassin(base.Installer):
         """Additional tasks."""
         amavis_user = self.config.get("amavis", "user")
         pw = pwd.getpwnam(amavis_user)
-        utils.exec_cmd(
-            "pyzor --homedir {} discover".format(pw[5]),
-            sudo_user=amavis_user, login=False
-        )
         install("razor", self.config, self.upgrade)
         if utils.dist_name() in ["debian", "ubuntu"]:
             utils.exec_cmd(
