@@ -18,8 +18,8 @@ UMask			007
 #KeyFile		/etc/dkimkeys/dkim.key
 #Selector		2007
 
-KeyTable		dsn:%{db_driver}://%{db_user}:%{db_password}@%{dbhost}:%{dbport}/%{db_name}/table=dkim?keycol=id?datacol=domain_name,selector,private_key_path
-SigningTable		dsn:%db_driver://%{db_user}:%{db_password}@%{dbhost}:%{dbport}/%{db_name}/table=dkim?keycol=domain_name?datacol=id
+KeyTable		dsn:%{db_driver}://%{db_user}:%{db_password}@%{dbport}+%{dbhost}/%{db_name}/table=dkim?keycol=id?datacol=domain_name,selector,private_key_path
+SigningTable		dsn:%db_driver://%{db_user}:%{db_password}@%{dbport}+%{dbhost}/%{db_name}/table=dkim?keycol=domain_name?datacol=id
 
 # Commonly-used options; the commented-out versions show the defaults.
 #Canonicalization	simple

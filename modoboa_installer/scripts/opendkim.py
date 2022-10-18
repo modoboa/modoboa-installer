@@ -97,7 +97,8 @@ class Opendkim(base.Installer):
                 'SOCKET="inet:12345@localhost"',
             ]))
 
-        """ Make sure opendkim is started after postgresql and mysql, respectively. """
+        # Make sure opendkim is started after postgresql and mysql,
+        # respectively.
         if (self.dbengine != "postgres" and package.backend.FORMAT == "deb"):
             dbservice = "mysql.service"
         elif (self.dbengine != "postgres" and package.backend.FORMAT != "deb"):
