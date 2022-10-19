@@ -210,7 +210,7 @@ ConfigDictTemplate = [
             },
             {
                 "option": "max_servers",
-                "default": "1",
+                "default": "2",
             },
             {
                 "option": "dbname",
