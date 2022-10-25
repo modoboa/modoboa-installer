@@ -22,6 +22,7 @@ class Backup:
         |--> { (copy of) /etc/postfix/custom_whitelist.cidr }
         |--> { (copy of) dkim folder }
             |--> {dkim.pem}...
+        |--> { (copy of) radicale home_dir }
     ||--> databases
         |--> modoboa.sql
         |--> { amavis.sql }
@@ -144,6 +145,7 @@ class Backup:
     def custom_config_backup(self):
         """Custom config :
         - DKIM keys: {{keys_storage_dir}}
+        - Radicale collection (calendat, contacts): {{home_dir}}
         - Amavis : /etc/amavis/conf.d/99-custom
         - Postwhite : /etc/postwhite.conf
         Feel free to suggest to add others!"""
@@ -158,9 +160,20 @@ class Backup:
                 self.config.getboolean("opendkim", "enabled")):
             dkim_keys = self.config.get(
                 "opendkim", "keys_storage_dir", fallback="/var/lib/dkim")
-            shutil.copytree(dkim_keys, os.path.join(custom_path, "dkim"))
-            utils.printcolor(
-                "DKIM keys saved!", utils.GREEN)
+            if os.path.isdir(dkim_keys):
+                shutil.copytree(dkim_keys, os.path.join(custom_path, "dkim"))
+                utils.printcolor(
+                    "DKIM keys saved!", utils.GREEN)
+
+        # Radicale Collections
+        if (self.config.has_option("radicale", "enabled") and
+                self.config.getboolean("radicale", "enabled")):
+            radicale_backup = os.path.join(self.config.get(
+                "radicale", "home_dir", fallback="/srv/radicale"), "collections")
+            if os.path.isdir(radicale_backup):
+                shutil.copytree(radicale_backup, os.path.join(
+                    custom_path, "radicale"))
+                utils.printcolor("Radicale files saved", utils.GREEN)
 
         # AMAVIS
         if (self.config.has_option("amavis", "enabled") and

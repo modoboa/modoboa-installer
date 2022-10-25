@@ -193,7 +193,7 @@ class Modoboa(base.Installer):
             self.config.get("amavis", "dbname"), self.dbuser)
 
     def get_sql_schema_path(self):
-        if self.restore:
+        if self.restore is not None:
             db_dump_path = self._restore_database_dump("modoboa")
             if db_dump_path is not None:
                 return db_dump_path

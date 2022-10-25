@@ -42,13 +42,14 @@ class Amavis(base.Installer):
     def get_config_files(self):
         """Return appropriate config files."""
         if package.backend.FORMAT == "deb":
-            amavis_custom_configuration = os.path.join(
-                self.restore, "custom/99-custom")
-            if self.restore and os.path.isfile(amavis_custom_configuration):
-                utils.copy_file(amavis_custom_configuration, os.path.join(
-                    self.config_dir, "/conf.d"))
-                utils.printcolor(
-                    "Custom amavis configuration restored.", utils.GREEN)
+            if self.restore is not None:
+                amavis_custom_configuration = os.path.join(
+                    self.restore, "custom/99-custom")
+                if os.path.isfile(amavis_custom_configuration):
+                    utils.copy_file(amavis_custom_configuration, os.path.join(
+                        self.config_dir, "conf.d"))
+                    utils.printcolor(
+                        "Custom amavis configuration restored.", utils.GREEN)
             return [
                 "conf.d/05-node_id", "conf.d/15-content_filter_mode",
                 "conf.d/50-user"]

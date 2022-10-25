@@ -89,7 +89,7 @@ class Dovecot(base.Installer):
     def post_run(self):
         """Additional tasks."""
         mail_dir = os.path.join(self.restore, "mails/")
-        if self.restore and len(os.listdir(mail_dir)) > 0:
+        if self.restore is not None and len(os.listdir(mail_dir)) > 0:
             utils.printcolor(
                 "Copying mail backup over dovecot directory.", utils.GREEN)
 
@@ -103,7 +103,7 @@ class Dovecot(base.Installer):
                 for filename in filenames:
                     shutil.chown(os.path.join(dirpath, filename),
                                  self.user, self.user)
-        elif self.restore:
+        elif self.restore is not None:
             utils.printcolor(
                 "It seems that mails were not backed up, skipping mail restoration.", utils.MAGENTA)
 
