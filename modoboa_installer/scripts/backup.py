@@ -177,7 +177,7 @@ class Backup:
 
     def database_dump(self, app_name):
 
-        dump_path = os.path.join(self.backup_path, "backup")
+        dump_path = os.path.join(self.backup_path, "databases")
         backend = database.get_backend(self.config)
 
         if app_name == "modoboa" or (self.config.has_option(app_name, "enabled") and
