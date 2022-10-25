@@ -20,6 +20,8 @@ class Backup:
     ||--> custom
         |--> { (copy of) /etc/amavis/conf.d/99-custom }
         |--> { (copy of) /etc/postfix/custom_whitelist.cidr }
+        |--> { (copy of) dkim folder }
+            |--> {dkim.pem}...
     ||--> databases
         |--> modoboa.sql
         |--> { amavis.sql }
@@ -63,16 +65,18 @@ class Backup:
             if not self.silent_backup:
                 delete_dir = input(
                     "Warning : backup folder is not empty, it will be purged if you continue... [Y/n]\n").lower()
-            
+
             if self.silent_backup or (not self.silent_backup and (delete_dir == "y" or delete_dir == "yes")):
                 try:
                     os.remove(os.path.join(path, "installer.cfg"))
                 except FileNotFoundError:
                     pass
-                
-                shutil.rmtree(os.path.join(path, "custom"),ignore_errors=False)
+
+                shutil.rmtree(os.path.join(path, "custom"),
+                              ignore_errors=False)
                 shutil.rmtree(os.path.join(path, "mails"), ignore_errors=False)
-                shutil.rmtree(os.path.join(path, "databases"), ignore_errors=False)
+                shutil.rmtree(os.path.join(path, "databases"),
+                              ignore_errors=False)
             else:
                 utils.printcolor(
                     "Error, backup dir not clean.", utils.RED
@@ -139,6 +143,7 @@ class Backup:
 
     def custom_config_backup(self):
         """Custom config :
+        - DKIM keys: {{keys_storage_dir}}
         - Amavis : /etc/amavis/conf.d/99-custom
         - Postwhite : /etc/postwhite.conf
         Feel free to suggest to add others!"""
@@ -147,6 +152,15 @@ class Backup:
 
         custom_path = os.path.join(
             self.backup_path, "custom")
+
+        # DKIM Key
+        if (self.config.has_option("opendkim", "enabled") and
+                self.config.getboolean("opendkim", "enabled")):
+            dkim_keys = self.config.get(
+                "opendkim", "keys_storage_dir", fallback="/var/lib/dkim")
+            shutil.copytree(dkim_keys, os.path.join(custom_path, "dkim"))
+            utils.printcolor(
+                "DKIM keys saved!", utils.GREEN)
 
         # AMAVIS
         if (self.config.has_option("amavis", "enabled") and
