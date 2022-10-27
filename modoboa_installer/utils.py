@@ -2,10 +2,13 @@
 
 import contextlib
 import datetime
+import getpass
 import glob
 import os
+import pwd
 import random
 import shutil
+import stat
 import string
 import subprocess
 import sys
@@ -307,3 +310,11 @@ def gen_config(dest, interactive=False):
 
     with open(dest, "w") as configfile:
         config.write(configfile)
+
+    # Set file owner to running user and group, and set config file permission to 600
+    current_username = getpass.getuser()
+    current_user = pwd.getpwnam(current_username)
+    os.chown(dest, current_user[2], current_user[3])
+    os.chmod(dest, stat.S_IRUSR|stat.S_IWUSR)
+
+    
