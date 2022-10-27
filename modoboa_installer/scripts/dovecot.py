@@ -26,7 +26,7 @@ class Dovecot(base.Installer):
     }
     config_files = [
         "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
-        "conf.d/10-master.conf", "conf.d/20-lmtp.conf"]
+        "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try"]
     with_user = True
 
     def get_config_files(self):
@@ -58,8 +58,13 @@ class Dovecot(base.Installer):
         """Additional variables."""
         context = super(Dovecot, self).get_template_context()
         pw = pwd.getpwnam(self.user)
+        dovecot_package = {"deb": "dovecot-core", "rpm": "dovecot"}
+        ssl_protocol_parameter = "ssl_protocols"
+        if package.backend.get_installed_version(dovecot_package[package.backend.FORMAT]) > "2.3":
+            ssl_protocol_parameter = "ssl_min_protocol"
         ssl_protocols = "!SSLv2 !SSLv3"
-        if package.backend.get_installed_version("openssl").startswith("1.1"):
+        if package.backend.get_installed_version("openssl").startswith("1.1") \
+                or package.backend.get_installed_version("openssl").startswith("3"):
             ssl_protocols = "!SSLv3"
         if "centos" in utils.dist_name():
             protocols = "protocols = imap lmtp sieve"
@@ -79,6 +84,7 @@ class Dovecot(base.Installer):
             "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
             "protocols": protocols,
             "ssl_protocols": ssl_protocols,
+            "ssl_protocol_parameter": ssl_protocol_parameter,
             "radicale_user": self.config.get("radicale", "user"),
             "radicale_auth_socket_path": os.path.basename(
                 self.config.get("dovecot", "radicale_auth_socket_path"))
