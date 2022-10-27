@@ -66,6 +66,8 @@ class Dovecot(base.Installer):
         if package.backend.get_installed_version("openssl").startswith("1.1") \
                 or package.backend.get_installed_version("openssl").startswith("3"):
             ssl_protocols = "!SSLv3"
+        if ssl_protocol_parameter == "ssl_min_protocol":
+            ssl_protocols = "TLSv1"
         if "centos" in utils.dist_name():
             protocols = "protocols = imap lmtp sieve"
             extra_protocols = self.config.get("dovecot", "extra_protocols")
