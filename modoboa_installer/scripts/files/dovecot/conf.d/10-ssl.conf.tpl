@@ -8,7 +8,7 @@
 # Workarround https://github.com/modoboa/modoboa/issues/2570 
 # We try to load the key and pass if it fails
 # Keys require root permissions, standard commands would be blocked
-# by permissions
+# because dovecot can't load these cert
 !include_try = /etc/dovecot/conf.d/10-ssl-keys.try
 
 # If key file is password protected, give the password here. Alternatively

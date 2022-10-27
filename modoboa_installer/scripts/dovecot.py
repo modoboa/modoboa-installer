@@ -60,7 +60,7 @@ class Dovecot(base.Installer):
         pw = pwd.getpwnam(self.user)
         dovecot_package = {"deb": "dovecot-core", "rpm": "dovecot"}
         ssl_protocol_parameter = "ssl_protocols"
-        if package.backend.get_installed_version(dovecot_package[package.backend.FORMAT]).startswith("2.3"):
+        if package.backend.get_installed_version(dovecot_package[package.backend.FORMAT]) > "2.3":
             ssl_protocol_parameter = "ssl_min_protocol"
         ssl_protocols = "!SSLv2 !SSLv3"
         if package.backend.get_installed_version("openssl").startswith("1.1") \
