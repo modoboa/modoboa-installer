@@ -172,9 +172,9 @@ def copy_from_template(template, dest, context):
 
 def check_config_file(dest, interactive=False, upgrade=False, backup=False, restore=False):
     """Create a new installer config file if needed."""
-    isPresent = True
+    is_present = True
     if os.path.exists(dest):
-        return isPresent
+        return is_present
     if upgrade:
         printcolor(
             "You cannot upgrade an existing installation without a "

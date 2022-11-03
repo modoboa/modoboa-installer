@@ -9,18 +9,19 @@ import datetime
 
 from .. import database
 from .. import utils
+from ..constants import DEFAULT_BACKUP_DIRECTORY
 
 
 class Backup:
     """
     Backup structure ( {optional} ):
-    {{backup_folder}}
+    {{backup_directory}}
     ||
     ||--> installer.cfg
     ||--> custom
         |--> { (copy of) /etc/amavis/conf.d/99-custom }
         |--> { (copy of) /etc/postfix/custom_whitelist.cidr }
-        |--> { (copy of) dkim folder }
+        |--> { (copy of) dkim directory }
             |--> {dkim.pem}...
         |--> { (copy of) radicale home_dir }
     ||--> databases
@@ -50,22 +51,22 @@ class Backup:
         if not path_exists:
             if not self.silent_backup:
                 create_dir = input(
-                    f"\"{path}\" doesn't exists, would you like to create it ? [Y/n]\n").lower()
+                    f"\"{path}\" doesn't exists, would you like to create it? [Y/n]\n").lower()
 
-            if self.silent_backup or (not self.silent_backup and (create_dir == "y" or create_dir == "yes")):
+            if self.silent_backup or (not self.silent_backup and create_dir.startswith("y")):
                 pw = pwd.getpwnam("root")
                 utils.mkdir_safe(path, stat.S_IRWXU |
                                  stat.S_IRWXG, pw[2], pw[3])
             else:
                 utils.printcolor(
-                    "Error, backup dir not present.", utils.RED
+                    "Error, backup directory not present.", utils.RED
                 )
                 return False
 
         if len(os.listdir(path)) != 0:
             if not self.silent_backup:
                 delete_dir = input(
-                    "Warning : backup folder is not empty, it will be purged if you continue... [Y/n]\n").lower()
+                    "Warning : backup directory is not empty, it will be purged if you continue... [Y/n]\n").lower()
 
             if self.silent_backup or (not self.silent_backup and (delete_dir == "y" or delete_dir == "yes")):
                 try:
@@ -99,7 +100,7 @@ class Backup:
                 if self.config.has_option("backup", "default_path"):
                     path = self.config.get("backup", "default_path")
                 else:
-                    path = f"./modoboa_backup/"
+                    path = DEFAULT_BACKUP_DIRECTORY
                 date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M")
                 path = os.path.join(path, f"backup_{date}")
                 self.validate_path(path)
@@ -112,7 +113,7 @@ class Backup:
             user_value = None
             while user_value == "" or user_value is None or not self.validate_path(user_value):
                 utils.printcolor(
-                    "Enter backup path, please provide an empty folder.", utils.MAGENTA)
+                    "Enter backup path (it must be an empty directory)", utils.MAGENTA)
                 utils.printcolor("CTRL+C to cancel", utils.MAGENTA)
                 user_value = utils.user_input("-> ")
 

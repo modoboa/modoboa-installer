@@ -123,10 +123,10 @@ def main(input_args):
             sys.exit(1)
 
     utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
-    is_config_file_availible = utils.check_config_file(
+    is_config_file_available = utils.check_config_file(
         args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
 
-    if is_config_file_availible and args.backup:
+    if is_config_file_available and args.backup:
         utils.printcolor("No config file found,", utils.RED)
         return
 

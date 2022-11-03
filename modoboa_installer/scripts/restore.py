@@ -17,10 +17,10 @@ class Restore:
                 "Provided path is not a directory !", utils.RED)
             sys.exit(1)
 
-        modobasql_file = os.path.join(restore, "databases/modoboa.sql")
-        if not os.path.isfile(modobasql_file):
+        modoba_sql_file = os.path.join(restore, "databases/modoboa.sql")
+        if not os.path.isfile(modoba_sql_file):
             utils.printcolor(
-                modobasql_file + " not found, please check your backup", utils.RED)
+                modoba_sql_file + " not found, please check your backup", utils.RED)
             sys.exit(1)
 
         # Everything seems allright here, proceding...
