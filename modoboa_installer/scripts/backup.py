@@ -51,7 +51,7 @@ class Backup:
         if not path_exists:
             if not self.silent_backup:
                 create_dir = input(
-                    f"\"{path}\" doesn't exists, would you like to create it? [Y/n]\n").lower()
+                    f"\"{path}\" doesn't exist, would you like to create it? [Y/n]\n").lower()
 
             if self.silent_backup or (not self.silent_backup and create_dir.startswith("y")):
                 pw = pwd.getpwnam("root")
@@ -66,9 +66,9 @@ class Backup:
         if len(os.listdir(path)) != 0:
             if not self.silent_backup:
                 delete_dir = input(
-                    "Warning : backup directory is not empty, it will be purged if you continue... [Y/n]\n").lower()
+                    "Warning: backup directory is not empty, it will be purged if you continue... [Y/n]\n").lower()
 
-            if self.silent_backup or (not self.silent_backup and (delete_dir == "y" or delete_dir == "yes")):
+            if self.silent_backup or (not self.silent_backup and delete_dir.startswith("y")):
                 try:
                     os.remove(os.path.join(path, "installer.cfg"))
                 except FileNotFoundError:
@@ -81,7 +81,7 @@ class Backup:
                               ignore_errors=False)
             else:
                 utils.printcolor(
-                    "Error, backup dir not clean.", utils.RED
+                    "Error: backup directory not clean.", utils.RED
                 )
                 return False
 
@@ -107,7 +107,7 @@ class Backup:
             else:
                 if not self.validate_path(self.backup_path):
                     utils.printcolor(
-                        f"Path provided : {self.backup_path}", utils.BLUE)
+                        f"Path provided: {self.backup_path}", utils.BLUE)
                     sys.exit(1)
         else:
             user_value = None
@@ -144,12 +144,14 @@ class Backup:
             utils.printcolor("Mail backup complete!", utils.GREEN)
 
     def custom_config_backup(self):
-        """Custom config :
+        """
+        Custom config :
         - DKIM keys: {{keys_storage_dir}}
         - Radicale collection (calendat, contacts): {{home_dir}}
         - Amavis : /etc/amavis/conf.d/99-custom
         - Postwhite : /etc/postwhite.conf
-        Feel free to suggest to add others!"""
+        Feel free to suggest to add others!
+        """
         utils.printcolor(
             "Backing up some custom configuration...", utils.MAGENTA)
 
@@ -217,7 +219,7 @@ class Backup:
                                   os.path.join(dump_path, f"{app_name}.sql"))
 
     def backup_completed(self):
-        utils.printcolor("Backup process done, your backup is availible here:"
+        utils.printcolor("Backup process done, your backup is available here:"
                          f"--> {self.backup_path}", utils.GREEN)
 
     def run(self):
