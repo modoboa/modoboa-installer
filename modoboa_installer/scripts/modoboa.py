@@ -198,7 +198,7 @@ class Modoboa(base.Installer):
             if db_dump_path is not None:
                 return db_dump_path
 
-        return super().get_sql_schema_path()()
+        return super().get_sql_schema_path()
 
     def get_packages(self):
         """Include extra packages if needed."""
