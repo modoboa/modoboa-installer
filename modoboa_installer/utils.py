@@ -181,7 +181,7 @@ def check_config_file(dest, interactive=False, upgrade=False, backup=False, rest
             "configuration file.", RED)
         sys.exit(1)
     elif backup:
-        isPresent = False
+        is_present = False
         printcolor(
             "Your configuration file hasn't been found. A new one will be generated. "
             "Please edit it with correct password for the databases !", RED)
@@ -195,7 +195,7 @@ def check_config_file(dest, interactive=False, upgrade=False, backup=False, rest
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)
     gen_config(dest, interactive)
-    return isPresent
+    return is_present
 
 
 def has_colours(stream):
