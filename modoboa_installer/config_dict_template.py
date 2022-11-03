@@ -1,7 +1,7 @@
 import random
 import string
 
-from constants import DEFAULT_BACKUP_DIRECTORY
+from .constants import DEFAULT_BACKUP_DIRECTORY
 
 
 def make_password(length=16):
