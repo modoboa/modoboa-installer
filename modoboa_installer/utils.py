@@ -107,6 +107,13 @@ def mkdir(path, mode, uid, gid):
     os.chown(path, uid, gid)
 
 
+def mkdir_safe(path, mode, uid, gid):
+    """Create a directory. Safe way (-p)"""
+    if not os.path.exists(path):
+        os.makedirs(os.path.abspath(path), mode)
+    mkdir(path, mode, uid, gid)
+
+
 def make_password(length=16):
     """Create a random password."""
     return "".join(
@@ -163,19 +170,32 @@ def copy_from_template(template, dest, context):
         fp.write(ConfigFileTemplate(buf).substitute(context))
 
 
-def check_config_file(dest, interactive=False, upgrade=False):
+def check_config_file(dest, interactive=False, upgrade=False, backup=False, restore=False):
     """Create a new installer config file if needed."""
+    is_present = True
     if os.path.exists(dest):
-        return
+        return is_present
     if upgrade:
         printcolor(
             "You cannot upgrade an existing installation without a "
             "configuration file.", RED)
         sys.exit(1)
+    elif backup:
+        is_present = False
+        printcolor(
+            "Your configuration file hasn't been found. A new one will be generated. "
+            "Please edit it with correct password for the databases !", RED)
+    elif restore:
+        printcolor(
+            "You cannot restore an existing installation without a "
+            f"configuration file. (file : {dest} has not been found...", RED)
+        sys.exit(1)
+
     printcolor(
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)
     gen_config(dest, interactive)
+    return is_present
 
 
 def has_colours(stream):

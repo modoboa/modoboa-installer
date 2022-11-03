@@ -1,6 +1,7 @@
 """Radicale related tasks."""
 
 import os
+import shutil
 import stat
 
 from .. import package
@@ -70,6 +71,17 @@ class Radicale(base.Installer):
                 stat.S_IROTH | stat.S_IXOTH,
                 0, 0
             )
+        # Attempt to restore radicale collections from backup
+        if self.restore is not None:
+            radicale_backup = os.path.join(
+                self.restore, "custom/radicale")
+            if os.path.isdir(radicale_backup):
+                restore_target = os.path.join(self.home_dir, "collections")
+                if os.path.isdir(restore_target):
+                    shutil.rmtree(restore_target)
+                shutil.copytree(radicale_backup, restore_target)
+                utils.printcolor(
+                    "Radicale collections restored from backup", utils.GREEN)
         super(Radicale, self).install_config_files()
 
     def post_run(self):

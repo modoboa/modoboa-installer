@@ -1,7 +1,6 @@
 """Amavis related functions."""
 
 import os
-import platform
 
 from .. import package
 from .. import utils
@@ -43,6 +42,14 @@ class Amavis(base.Installer):
     def get_config_files(self):
         """Return appropriate config files."""
         if package.backend.FORMAT == "deb":
+            if self.restore is not None:
+                amavis_custom_configuration = os.path.join(
+                    self.restore, "custom/99-custom")
+                if os.path.isfile(amavis_custom_configuration):
+                    utils.copy_file(amavis_custom_configuration, os.path.join(
+                        self.config_dir, "conf.d"))
+                    utils.printcolor(
+                        "Custom amavis configuration restored.", utils.GREEN)
             return [
                 "conf.d/05-node_id", "conf.d/15-content_filter_mode",
                 "conf.d/50-user"]
@@ -70,6 +77,11 @@ class Amavis(base.Installer):
 
     def get_sql_schema_path(self):
         """Return schema path."""
+        if self.restore:
+            db_dump_path = self._restore_database_dump("amavis")
+            if db_dump_path is not None:
+                return db_dump_path
+
         version = package.backend.get_installed_version("amavisd-new")
         if version is None:
             # Fallback to amavis...
@@ -83,7 +95,7 @@ class Amavis(base.Installer):
             path = self.get_file_path(
                 "amavis_{}_{}.sql".format(self.dbengine, version))
             if not os.path.exists(path):
-               raise utils.FatalError("Failed to find amavis database schema")
+                raise utils.FatalError("Failed to find amavis database schema")
         return path
 
     def pre_run(self):
@@ -93,5 +105,5 @@ class Amavis(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        install("spamassassin", self.config, self.upgrade)
-        install("clamav", self.config, self.upgrade)
+        install("spamassassin", self.config, self.upgrade, self.restore)
+        install("clamav", self.config, self.upgrade, self.restore)

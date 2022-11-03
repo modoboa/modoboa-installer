@@ -47,6 +47,15 @@ class Postwhite(base.Installer):
         self.install_from_archive(SPF_TOOLS_REPOSITORY, install_dir)
         postw_dir = self.install_from_archive(
             POSTWHITE_REPOSITORY, install_dir)
-        utils.copy_file(os.path.join(postw_dir, "postwhite.conf"), "/etc")
+        # Attempt to restore config file from backup
+        if self.restore is not None:
+            postwhite_backup_configuration = os.path.join(
+                self.restore, "custom/postwhite.conf")
+            if os.path.isfile(postwhite_backup_configuration):
+                utils.copy_file(postwhite_backup_configuration, self.config_dir)
+                utils.printcolor(
+                    "postwhite.conf restored from backup", utils.GREEN)
+            else:
+                utils.copy_file(os.path.join(postw_dir, "postwhite.conf"), self.config_dir)
         postw_bin = os.path.join(postw_dir, "postwhite")
         utils.exec_cmd("{} /etc/postwhite.conf".format(postw_bin))

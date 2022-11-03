@@ -1,6 +1,8 @@
 import random
 import string
 
+from constants import DEFAULT_BACKUP_DIRECTORY
+
 
 def make_password(length=16):
     """Create a random password."""
@@ -439,4 +441,13 @@ ConfigDictTemplate = [
 
         ]
     },
+    {
+        "name": "backup",
+        "values": [
+            {
+                "option": "default_path",
+                "default": DEFAULT_BACKUP_DIRECTORY
+            }
+        ]
+    }
 ]

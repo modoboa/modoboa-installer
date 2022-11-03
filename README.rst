@@ -92,6 +92,58 @@ You can activate it as follows::
 
 It will automatically install latest versions of modoboa and its plugins.
 
+Backup mode 
+------------
+
+An experimental backup mode is available.
+
+.. warning::
+
+   You must keep the original configuration file, i.e. the one used for
+   the installation. Otherwise, you will need to recreate it manually with the right information !
+
+You can start the process as follows::
+
+  $ sudo ./run.py --backup <your domain>
+
+Then follow the step on the console.
+
+There are also a non-interactive mode:
+
+1. Silent mode
+
+Command::
+
+  $ sudo ./run.py --silent-backup <your domain>
+
+This mode is the silent batch mode, when executed, it will create /modoboa_backup/ and each time you execute it, it will create a new backup directory with current date and time.
+
+You can supply a custom path.
+
+Command::
+
+  $ sudo ./run.py --silent-backup --backup-path /path/of/backup/directory <your domain>
+
+This mode is the same as silent batch mode, but you provide the path to the backup directory you want.
+
+
+If you want to disable mail backup::
+
+  $ sudo ./run.py {--backup|--silent-backup} --no-mail-backup <your domain>
+ 
+This can be useful for larger instance.
+
+Restore mode
+------------
+
+An experimental restore mode is available.
+
+You can start the process as follows::
+
+  $ sudo ./run.py --restore /path/to/backup/directory/ <your domain>
+
+Then wait for the process to finish
+
 Change the generated hostname
 -----------------------------
 

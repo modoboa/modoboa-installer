@@ -146,6 +146,15 @@ class PostgreSQL(Database):
             self.dbhost, self.dbport, dbname, dbuser, path)
         utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
+    def dump_database(self, dbname, dbuser, dbpassword, path):
+        """Dump DB to SQL file."""
+        # Reset pgpass since we backup multiple db (different secret set)
+        self._pgpass_done = False
+        self._setup_pgpass(dbname, dbuser, dbpassword)
+        cmd = "pg_dump -h {} -d {} -U {} -O  -w > {}".format(
+            self.dbhost, dbname, dbuser, path)
+        utils.exec_cmd(cmd, sudo_user=self.dbuser)
+
 
 class MySQL(Database):
 
@@ -257,6 +266,12 @@ class MySQL(Database):
             "mysql -h {} -P {} -u {} -p{} {} < {}".format(
                 self.dbhost, self.dbport, dbuser, dbpassword, dbname, path)
         )
+
+    def dump_database(self, dbname, dbuser, dbpassword, path):
+        """Dump DB to SQL file."""
+        cmd = "mysqldump -h {} -u {} -p{} {} > {}".format(
+            self.dbhost, dbuser, dbpassword, dbname, path)
+        utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
 
 def get_backend(config):
