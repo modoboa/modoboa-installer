@@ -3,7 +3,7 @@
 import glob
 import os
 import pwd
-import shutil
+# import shutil -- Useless because of #424 bug
 
 from .. import database
 from .. import package
@@ -96,6 +96,9 @@ class Dovecot(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
+
+        """ All that part is commented because it bugs since #424
+
         mail_dir = os.path.join(self.restore, "mails/")
         if self.restore is not None and len(os.listdir(mail_dir)) > 0:
             utils.printcolor(
@@ -114,6 +117,7 @@ class Dovecot(base.Installer):
         elif self.restore is not None:
             utils.printcolor(
                 "It seems that mails were not backed up, skipping mail restoration.", utils.MAGENTA)
+        """
 
         if self.dbengine == "postgres":
             dbname = self.config.get("modoboa", "dbname")
