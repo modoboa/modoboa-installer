@@ -96,24 +96,27 @@ class Dovecot(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        mail_dir = os.path.join(self.restore, "mails/")
-        if self.restore is not None and len(os.listdir(mail_dir)) > 0:
-            utils.printcolor(
-                "Copying mail backup over dovecot directory.", utils.GREEN)
+        if self.restore is not None:
+            mail_dir = os.path.join(self.restore, "mails/")
+            if len(os.listdir(mail_dir)) > 0:
+                utils.printcolor(
+                    "Copying mail backup over dovecot directory.", utils.GREEN)
 
-            if os.path.exists(self.home_dir):
-                shutil.rmtree(self.home_dir)
+                if os.path.exists(self.home_dir):
+                    shutil.rmtree(self.home_dir)
 
-            shutil.copytree(mail_dir, self.home_dir)
-            # Resetting permission for vmail
-            for dirpath, dirnames, filenames in os.walk(self.home_dir):
-                shutil.chown(dirpath, self.user, self.user)
-                for filename in filenames:
-                    shutil.chown(os.path.join(dirpath, filename),
-                                 self.user, self.user)
-        elif self.restore is not None:
-            utils.printcolor(
-                "It seems that mails were not backed up, skipping mail restoration.", utils.MAGENTA)
+                shutil.copytree(mail_dir, self.home_dir)
+                # Resetting permission for vmail
+                for dirpath, dirnames, filenames in os.walk(self.home_dir):
+                    shutil.chown(dirpath, self.user, self.user)
+                    for filename in filenames:
+                        shutil.chown(os.path.join(dirpath, filename),
+                                     self.user, self.user)
+            else:
+                utils.printcolor(
+                    "It seems that mails were not backed up, skipping mail restoration.",
+                    utils.MAGENTA
+                )
 
         if self.dbengine == "postgres":
             dbname = self.config.get("modoboa", "dbname")
