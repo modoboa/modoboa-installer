@@ -6,7 +6,7 @@ from .. import package
 from .. import utils
 
 from . import base
-from . import install
+from . import backup, install
 
 
 class Amavis(base.Installer):
@@ -42,14 +42,6 @@ class Amavis(base.Installer):
     def get_config_files(self):
         """Return appropriate config files."""
         if package.backend.FORMAT == "deb":
-            if self.restore is not None:
-                amavis_custom_configuration = os.path.join(
-                    self.restore, "custom/99-custom")
-                if os.path.isfile(amavis_custom_configuration):
-                    utils.copy_file(amavis_custom_configuration, os.path.join(
-                        self.config_dir, "conf.d"))
-                    utils.printcolor(
-                        "Custom amavis configuration restored.", utils.GREEN)
             return [
                 "conf.d/05-node_id", "conf.d/15-content_filter_mode",
                 "conf.d/50-user"]
@@ -77,11 +69,6 @@ class Amavis(base.Installer):
 
     def get_sql_schema_path(self):
         """Return schema path."""
-        if self.restore:
-            db_dump_path = self._restore_database_dump("amavis")
-            if db_dump_path is not None:
-                return db_dump_path
-
         version = package.backend.get_installed_version("amavisd-new")
         if version is None:
             # Fallback to amavis...
@@ -107,3 +94,23 @@ class Amavis(base.Installer):
         """Additional tasks."""
         install("spamassassin", self.config, self.upgrade, self.restore)
         install("clamav", self.config, self.upgrade, self.restore)
+
+    def custom_backup(self, path):
+        """Backup custom configuration if any."""
+        if package.backend.FORMAT == "deb":
+            amavis_custom = f"{self.config_dir}/conf.d/99-custom"
+            if os.path.isfile(amavis_custom):
+                utils.copy_file(amavis_custom, path)
+                utils.success("Amavis custom configuration saved!")
+        backup("spamassassin", path)
+
+    def restore(self):
+        """Restore custom config files."""
+        if package.backend.FORMAT != "deb":
+            return
+        amavis_custom_configuration = os.path.join(
+            self.restore, "custom/99-custom")
+        if os.path.isfile(amavis_custom_configuration):
+            utils.copy_file(amavis_custom_configuration, os.path.join(
+                self.config_dir, "conf.d"))
+            utils.success("Custom amavis configuration restored.")

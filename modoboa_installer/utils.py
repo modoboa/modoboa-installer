@@ -226,6 +226,16 @@ def printcolor(message, color):
     print(message)
 
 
+def error(message):
+    """Print error message."""
+    printcolor(message, RED)
+
+
+def success(message):
+    """Print success message."""
+    printcolor(message, GREEN)
+
+
 def convert_version_to_int(version):
     """Convert a version string to an integer."""
     number_bits = (8, 8, 16)
@@ -335,6 +345,57 @@ def gen_config(dest, interactive=False):
     current_username = getpass.getuser()
     current_user = pwd.getpwnam(current_username)
     os.chown(dest, current_user[2], current_user[3])
-    os.chmod(dest, stat.S_IRUSR|stat.S_IWUSR)
+    os.chmod(dest, stat.S_IRUSR | stat.S_IWUSR)
 
-    
+
+def validate_backup_path(path: str, silent_mode: bool):
+    """Check if provided backup path is valid or not."""
+    path_exists = os.path.exists(path)
+    if path_exists and os.path.isfile(path):
+        printcolor(
+            "Error, you provided a file instead of a directory!", RED)
+        return None
+
+    if not path_exists:
+        if not silent_mode:
+            create_dir = input(
+                f"\"{path}\" doesn't exist, would you like to create it? [Y/n]\n"
+            ).lower()
+
+        if silent_mode or (not silent_mode and create_dir.startswith("y")):
+            pw = pwd.getpwnam("root")
+            mkdir_safe(path, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
+        else:
+            printcolor(
+                "Error, backup directory not present.", RED
+            )
+            return None
+
+    if len(os.listdir(path)) != 0:
+        if not silent_mode:
+            delete_dir = input(
+                "Warning: backup directory is not empty, it will be purged if you continue... [Y/n]\n").lower()
+
+        if silent_mode or (not silent_mode and delete_dir.startswith("y")):
+            try:
+                os.remove(os.path.join(path, "installer.cfg"))
+            except FileNotFoundError:
+                pass
+
+            shutil.rmtree(os.path.join(path, "custom"),
+                          ignore_errors=False)
+            shutil.rmtree(os.path.join(path, "mails"), ignore_errors=False)
+            shutil.rmtree(os.path.join(path, "databases"),
+                          ignore_errors=False)
+        else:
+            printcolor(
+                "Error: backup directory not clean.", RED
+            )
+            return None
+
+    backup_path = path
+    pw = pwd.getpwnam("root")
+    for dir in ["custom/", "databases/"]:
+        mkdir_safe(os.path.join(backup_path, dir),
+                   stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
+    return backup_path

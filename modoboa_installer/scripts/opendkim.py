@@ -2,6 +2,7 @@
 
 import os
 import pwd
+import shutil
 import stat
 
 from .. import database
@@ -121,3 +122,12 @@ class Opendkim(base.Installer):
             "s/^After=(.*)$/After=$1 {}/".format(dbservice))
         utils.exec_cmd(
             "perl -pi -e '{}' /lib/systemd/system/opendkim.service".format(pattern))
+
+    def custom_backup(self, path):
+        """Backup DKIM keys."""
+        storage_dir = self.config.get(
+            "opendkim", "keys_storage_dir", fallback="/var/lib/dkim")
+        if os.path.isdir(storage_dir):
+            shutil.copytree(storage_dir, os.path.join(path, "dkim"))
+            utils.printcolor(
+                "DKIM keys saved!", utils.GREEN)
