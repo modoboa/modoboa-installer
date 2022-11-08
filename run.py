@@ -180,8 +180,9 @@ def main(input_args):
     is_config_file_available = utils.check_config_file(
         args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
 
-    if not is_config_file_available and (args.upgrade or args.backup):
-        utils.error("No config file found,")
+    if not is_config_file_available and (
+            args.upgrade or args.backup or args.silent_backup):
+        utils.error("No config file found.")
         return
 
     if args.stop_after_configfile_check:
