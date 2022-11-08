@@ -102,7 +102,7 @@ class Amavis(base.Installer):
             if os.path.isfile(amavis_custom):
                 utils.copy_file(amavis_custom, path)
                 utils.success("Amavis custom configuration saved!")
-        backup("spamassassin", path)
+        backup("spamassassin", self.config, os.path.dirname(path))
 
     def restore(self):
         """Restore custom config files."""

@@ -137,28 +137,30 @@ class Dovecot(base.Installer):
 
     def backup(self, path):
         """Backup emails."""
+        home_dir = self.config.get("dovecot", "home_dir")
         utils.printcolor("Backing up mails", utils.MAGENTA)
-        if not os.path.exists(self.home_dir) or os.path.isfile(self.home_dir):
-            utils.printcolor("Error backing up emails, provided path "
-                             f" ({self.home_dir}) seems not right...", utils.RED)
+        if not os.path.exists(home_dir) or os.path.isfile(home_dir):
+            utils.error("Error backing up emails, provided path "
+                        f" ({home_dir}) seems not right...")
             return
 
         dst = os.path.join(path, "mails/")
         if os.path.exists(dst):
             shutil.rmtree(dst)
-        shutil.copytree(self.home_dir, dst)
-        utils.printcolor("Mail backup complete!", utils.GREEN)
+        shutil.copytree(home_dir, dst)
+        utils.success("Mail backup complete!")
 
     def restore(self):
         """Restore emails."""
+        home_dir = self.config.get("dovecot", "home_dir")
         mail_dir = os.path.join(self.restore, "mails/")
         if len(os.listdir(mail_dir)) > 0:
             utils.success("Copying mail backup over dovecot directory.")
-            if os.path.exists(self.home_dir):
-                shutil.rmtree(self.home_dir)
-            shutil.copytree(mail_dir, self.home_dir)
+            if os.path.exists(home_dir):
+                shutil.rmtree(home_dir)
+            shutil.copytree(mail_dir, home_dir)
             # Resetting permission for vmail
-            for dirpath, dirnames, filenames in os.walk(self.home_dir):
+            for dirpath, dirnames, filenames in os.walk(home_dir):
                 shutil.chown(dirpath, self.user, self.user)
                 for filename in filenames:
                     shutil.chown(os.path.join(dirpath, filename),

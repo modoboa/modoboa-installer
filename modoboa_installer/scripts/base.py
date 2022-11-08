@@ -161,6 +161,10 @@ class Installer(object):
         custom_backup_path = os.path.join(path, "custom")
         self.custom_backup(custom_backup_path)
 
+    def custom_backup(self, path):
+        """Override this method in subscripts to add custom backup content."""
+        pass
+
     def restore(self):
         """Restore from a previous backup."""
         pass

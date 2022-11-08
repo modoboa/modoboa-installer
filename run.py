@@ -64,9 +64,9 @@ def upgrade_disclaimer(config):
 def backup_disclaimer():
     """Display backup disclamer. """
     utils.printcolor(
-        "Your mail server will be backed up (messages and databases) locally."
-        " !! You should really transfer the backup somewhere else..."
-        " Custom configuration (like to postfix) won't be saved.", utils.BLUE)
+        "Your mail server will be backed up locally.\n"
+        " !! You should really transfer the backup somewhere else...\n"
+        " !! Custom configuration (like for postfix) won't be saved.", utils.BLUE)
 
 
 def restore_disclaimer():
@@ -91,7 +91,7 @@ def backup_system(config, args):
             path = os.path.join(path, f"backup_{date}")
         else:
             path = args.backup_path
-        backup_path = utils.validate_backup_path(path)
+        backup_path = utils.validate_backup_path(path, args.silent_backup)
         if not backup_path:
             utils.printcolor(f"Path provided: {path}", utils.BLUE)
             return
@@ -104,7 +104,9 @@ def backup_system(config, args):
             )
             utils.printcolor("CTRL+C to cancel", utils.MAGENTA)
             user_value = utils.user_input("-> ")
-            backup_path = utils.validate_backup_path(user_value)
+            if not user_value:
+                continue
+            backup_path = utils.validate_backup_path(user_value, args.silent_backup)
 
     # Backup configuration file
     utils.copy_file(args.configfile, backup_path)
@@ -119,8 +121,6 @@ def main(input_args):
     versions = (
         ["latest"] + list(compatibility_matrix.COMPATIBILITY_MATRIX.keys())
     )
-    parser.add_argument("--backup", action="store_true", default=False,
-                        help="Backing up interactively previously installed instance")
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Enable debug output")
     parser.add_argument("--force", action="store_true", default=False,
@@ -145,6 +145,10 @@ def main(input_args):
     parser.add_argument(
         "--backup-path", type=str, metavar="path",
         help="To use with --silent-backup, you must provide a valid path")
+    parser.add_argument(
+        "--backup", action="store_true", default=False,
+        help="Backing up interactively previously installed instance"
+    )
     parser.add_argument(
         "--silent-backup", action="store_true", default=False,
         help="For script usage, do not require user interaction "
@@ -176,7 +180,7 @@ def main(input_args):
     is_config_file_available = utils.check_config_file(
         args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
 
-    if is_config_file_available and args.backup:
+    if not is_config_file_available and (args.upgrade or args.backup):
         utils.error("No config file found,")
         return
 

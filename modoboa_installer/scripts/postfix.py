@@ -101,4 +101,4 @@ class Postfix(base.Installer):
 
     def backup(self, path):
         """Launch postwhite backup."""
-        backup("postwhite", path)
+        backup("postwhite", self.config, path)
