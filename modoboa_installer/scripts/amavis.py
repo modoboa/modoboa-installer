@@ -92,8 +92,8 @@ class Amavis(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        install("spamassassin", self.config, self.upgrade, self.restore)
-        install("clamav", self.config, self.upgrade, self.restore)
+        install("spamassassin", self.config, self.upgrade, self.archive_path)
+        install("clamav", self.config, self.upgrade, self.archive_path)
 
     def custom_backup(self, path):
         """Backup custom configuration if any."""
@@ -109,7 +109,7 @@ class Amavis(base.Installer):
         if package.backend.FORMAT != "deb":
             return
         amavis_custom_configuration = os.path.join(
-            self.restore, "custom/99-custom")
+            self.archive_path, "custom/99-custom")
         if os.path.isfile(amavis_custom_configuration):
             utils.copy_file(amavis_custom_configuration, os.path.join(
                 self.config_dir, "conf.d"))

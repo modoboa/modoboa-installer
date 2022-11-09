@@ -26,7 +26,7 @@ class Radicale(base.Installer):
 
     def __init__(self, *args, **kwargs):
         """Get configuration."""
-        super(Radicale, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.venv_path = self.config.get("radicale", "venv_path")
 
     def _setup_venv(self):
@@ -76,7 +76,7 @@ class Radicale(base.Installer):
     def restore(self):
         """Restore collections."""
         radicale_backup = os.path.join(
-            self.restore, "custom/radicale")
+            self.archive_path, "custom/radicale")
         if os.path.isdir(radicale_backup):
             restore_target = os.path.join(self.home_dir, "collections")
             if os.path.isdir(restore_target):

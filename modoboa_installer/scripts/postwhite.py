@@ -61,7 +61,7 @@ class Postwhite(base.Installer):
     def restore(self):
         """Restore config files."""
         postwhite_backup_configuration = os.path.join(
-            self.restore, "custom/postwhite.conf")
+            self.archive_path, "custom/postwhite.conf")
         if os.path.isfile(postwhite_backup_configuration):
             utils.copy_file(postwhite_backup_configuration, self.config_dir)
             utils.success("postwhite.conf restored from backup")

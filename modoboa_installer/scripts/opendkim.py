@@ -47,19 +47,7 @@ class Opendkim(base.Installer):
                     stat.S_IROTH | stat.S_IXOTH,
                     target[1], target[2]
                 )
-        # Restore dkim keys from backup if restoring
-        if self.restore is not None:
-            dkim_keys_backup = os.path.join(
-                self.restore, "custom/dkim")
-            if os.path.isdir(dkim_keys_backup):
-                for file in os.listdir(dkim_keys_backup):
-                    file_path = os.path.join(dkim_keys_backup, file)
-                    if os.path.isfile(file_path):
-                        utils.copy_file(file_path, self.config.get(
-                            "opendkim", "keys_storage_dir", fallback="/var/lib/dkim"))
-                utils.printcolor(
-                    "DKIM keys restored from backup", utils.GREEN)
-        super(Opendkim, self).install_config_files()
+        super().install_config_files()
 
     def get_template_context(self):
         """Additional variables."""
@@ -122,6 +110,18 @@ class Opendkim(base.Installer):
             "s/^After=(.*)$/After=$1 {}/".format(dbservice))
         utils.exec_cmd(
             "perl -pi -e '{}' /lib/systemd/system/opendkim.service".format(pattern))
+
+    def restore(self):
+        """Restore keys."""
+        dkim_keys_backup = os.path.join(
+            self.archive_path, "custom/dkim")
+        if os.path.isdir(dkim_keys_backup):
+            for file in os.listdir(dkim_keys_backup):
+                file_path = os.path.join(dkim_keys_backup, file)
+                if os.path.isfile(file_path):
+                    utils.copy_file(file_path, self.config.get(
+                        "opendkim", "keys_storage_dir", fallback="/var/lib/dkim"))
+            utils.success("DKIM keys restored from backup")
 
     def custom_backup(self, path):
         """Backup DKIM keys."""

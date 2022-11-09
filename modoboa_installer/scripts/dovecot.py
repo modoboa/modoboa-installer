@@ -153,7 +153,7 @@ class Dovecot(base.Installer):
     def restore(self):
         """Restore emails."""
         home_dir = self.config.get("dovecot", "home_dir")
-        mail_dir = os.path.join(self.restore, "mails/")
+        mail_dir = os.path.join(self.archive_path, "mails/")
         if len(os.listdir(mail_dir)) > 0:
             utils.success("Copying mail backup over dovecot directory.")
             if os.path.exists(home_dir):

@@ -20,11 +20,11 @@ class Installer(object):
     with_db = False
     config_files = []
 
-    def __init__(self, config, upgrade, restore):
+    def __init__(self, config, upgrade: bool, archive_path: str):
         """Get configuration."""
         self.config = config
         self.upgrade = upgrade
-        self.restore = restore
+        self.archive_path = archive_path
         if self.config.has_section(self.appname):
             self.app_config = dict(self.config.items(self.appname))
         self.dbengine = self.config.get("database", "engine")
@@ -61,7 +61,7 @@ class Installer(object):
             utils.MAGENTA
         )
         database_backup_path = os.path.join(
-            self.restore, f"databases/{self.appname}.sql")
+            self.archive_path, f"databases/{self.appname}.sql")
         if os.path.isfile(database_backup_path):
             utils.success(f"SQL dump found in backup for {self.appname}!")
             return database_backup_path
@@ -81,7 +81,7 @@ class Installer(object):
         self.backend.create_user(self.dbuser, self.dbpasswd)
         self.backend.create_database(self.dbname, self.dbuser)
         schema = None
-        if self.restore:
+        if self.archive_path:
             schema = self.get_sql_schema_from_backup()
         if not schema:
             schema = self.get_sql_schema_path()
@@ -188,9 +188,9 @@ class Installer(object):
         if not self.upgrade:
             self.setup_database()
         self.install_config_files()
-        if self.restore:
-            self.restore()
         self.post_run()
+        if self.archive_path:
+            self.restore()
         self.restart_daemon()
 
     def _dump_database(self, backup_path: str):

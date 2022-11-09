@@ -17,7 +17,7 @@ def load_app_script(appname):
     return script
 
 
-def install(appname, config, upgrade, restore):
+def install(appname: str, config, upgrade: bool, archive_path: str):
     """Install an application."""
     if (config.has_option(appname, "enabled") and
             not config.getboolean(appname, "enabled")):
@@ -26,9 +26,9 @@ def install(appname, config, upgrade, restore):
     utils.printcolor("Installing {}".format(appname), utils.MAGENTA)
     script = load_app_script(appname)
     try:
-        getattr(script, appname.capitalize())(config, upgrade, restore).run()
+        getattr(script, appname.capitalize())(config, upgrade, archive_path).run()
     except utils.FatalError as inst:
-        utils.printcolor(u"{}".format(inst), utils.RED)
+        utils.error("{}".format(inst))
         sys.exit(1)
 
 
@@ -43,7 +43,7 @@ def backup(appname, config, path):
     try:
         getattr(script, appname.capitalize())(config, False, False).backup(path)
     except utils.FatalError as inst:
-        utils.printcolor(u"{}".format(inst), utils.RED)
+        utils.error("{}".format(inst))
         sys.exit(1)
 
 

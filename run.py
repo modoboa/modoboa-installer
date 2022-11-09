@@ -72,7 +72,7 @@ def backup_disclaimer():
 def restore_disclaimer():
     """Display restore disclamer. """
     utils.printcolor(
-        "You are about to restore a previous installation of Modoboa."
+        "You are about to restore a previous installation of Modoboa.\n"
         "If a new version has been released in between, please update your database!",
         utils.BLUE)
 
