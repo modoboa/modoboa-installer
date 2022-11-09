@@ -10,7 +10,7 @@ from .. import package
 from .. import utils
 
 from . import base
-from . import install
+from . import backup, install
 
 
 class Postfix(base.Installer):
@@ -97,4 +97,8 @@ class Postfix(base.Installer):
             utils.exec_cmd("postalias {}".format(aliases_file))
 
         # Postwhite
-        install("postwhite", self.config, self.upgrade, self.restore)
+        install("postwhite", self.config, self.upgrade, self.archive_path)
+
+    def backup(self, path):
+        """Launch postwhite backup."""
+        backup("postwhite", self.config, path)

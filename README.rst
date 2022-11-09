@@ -1,7 +1,7 @@
 modoboa-installer
 =================
 
-|travis| |codecov|
+|workflow| |codecov|
 
 An installer which deploy a complete mail server based on Modoboa.
 
@@ -100,7 +100,7 @@ An experimental backup mode is available.
 .. warning::
 
    You must keep the original configuration file, i.e. the one used for
-   the installation. Otherwise, you will need to recreate it manually with the right information !
+   the installation. Otherwise, you will need to recreate it manually with the right information!
 
 You can start the process as follows::
 
@@ -108,7 +108,7 @@ You can start the process as follows::
 
 Then follow the step on the console.
 
-There are also a non-interactive mode:
+There is also a non-interactive mode:
 
 1. Silent mode
 
@@ -116,21 +116,17 @@ Command::
 
   $ sudo ./run.py --silent-backup <your domain>
 
-This mode is the silent batch mode, when executed, it will create /modoboa_backup/ and each time you execute it, it will create a new backup directory with current date and time.
+This mode will run silently. When executed, it will create
+/modoboa_backup/ and each time you execute it, it will create a new
+backup directory with current date and time.
 
-You can supply a custom path.
-
-Command::
+You can supply a custom path if needed::
 
   $ sudo ./run.py --silent-backup --backup-path /path/of/backup/directory <your domain>
 
-This mode is the same as silent batch mode, but you provide the path to the backup directory you want.
+If you want to disable emails backup, disable dovecot in the
+configuration file (set enabled to False).
 
-
-If you want to disable mail backup::
-
-  $ sudo ./run.py {--backup|--silent-backup} --no-mail-backup <your domain>
- 
 This can be useful for larger instance.
 
 Restore mode
@@ -142,7 +138,7 @@ You can start the process as follows::
 
   $ sudo ./run.py --restore /path/to/backup/directory/ <your domain>
 
-Then wait for the process to finish
+Then wait for the process to finish.
 
 Change the generated hostname
 -----------------------------
@@ -187,7 +183,6 @@ modify the following settings::
 Change the ``email`` setting to a valid value since it will be used
 for account recovery.
 
-.. |travis| image:: https://travis-ci.org/modoboa/modoboa-installer.png?branch=master
-   :target: https://travis-ci.org/modoboa/modoboa-installer
+.. |workflow| image:: https://github.com/modoboa/modoboa-installer/workflows/Modoboa%20installer/badge.svg
 .. |codecov| image:: http://codecov.io/github/modoboa/modoboa-installer/coverage.svg?branch=master
    :target: http://codecov.io/github/modoboa/modoboa-installer?branch=master

@@ -20,11 +20,11 @@ class Installer(object):
     with_db = False
     config_files = []
 
-    def __init__(self, config, upgrade, restore):
+    def __init__(self, config, upgrade: bool, archive_path: str):
         """Get configuration."""
         self.config = config
         self.upgrade = upgrade
-        self.restore = restore
+        self.archive_path = archive_path
         if self.config.has_section(self.appname):
             self.app_config = dict(self.config.items(self.appname))
         self.dbengine = self.config.get("database", "engine")
@@ -54,6 +54,19 @@ class Installer(object):
         """Return a schema to install."""
         return None
 
+    def get_sql_schema_from_backup(self):
+        """Retrieve a dump path from a previous backup."""
+        utils.printcolor(
+            f"Trying to restore {self.appname} database from backup.",
+            utils.MAGENTA
+        )
+        database_backup_path = os.path.join(
+            self.archive_path, f"databases/{self.appname}.sql")
+        if os.path.isfile(database_backup_path):
+            utils.success(f"SQL dump found in backup for {self.appname}!")
+            return database_backup_path
+        return None
+
     def get_file_path(self, fname):
         """Return the absolute path of this file."""
         return os.path.abspath(
@@ -67,7 +80,11 @@ class Installer(object):
             return
         self.backend.create_user(self.dbuser, self.dbpasswd)
         self.backend.create_database(self.dbname, self.dbuser)
-        schema = self.get_sql_schema_path()
+        schema = None
+        if self.archive_path:
+            schema = self.get_sql_schema_from_backup()
+        if not schema:
+            schema = self.get_sql_schema_path()
         if schema:
             self.backend.load_sql_file(
                 self.dbname, self.dbuser, self.dbpasswd, schema)
@@ -138,6 +155,20 @@ class Installer(object):
                 dst = os.path.join(self.config_dir, dst)
             utils.copy_from_template(src, dst, context)
 
+    def backup(self, path):
+        if self.with_db:
+            self._dump_database(path)
+        custom_backup_path = os.path.join(path, "custom")
+        self.custom_backup(custom_backup_path)
+
+    def custom_backup(self, path):
+        """Override this method in subscripts to add custom backup content."""
+        pass
+
+    def restore(self):
+        """Restore from a previous backup."""
+        pass
+
     def get_daemon_name(self):
         """Return daemon name if defined."""
         return self.daemon_name if self.daemon_name else self.appname
@@ -158,21 +189,16 @@ class Installer(object):
             self.setup_database()
         self.install_config_files()
         self.post_run()
+        if self.archive_path:
+            self.restore()
         self.restart_daemon()
 
-    def _restore_database_dump(self, app_name):
-        """Restore database dump from a dump."""
-
-        utils.printcolor(
-                f"Trying to restore {app_name} database from backup.", utils.MAGENTA)
-        database_backup_path = os.path.join(
-            self.restore, f"databases/{app_name}.sql")
-        if os.path.isfile(database_backup_path):
-            utils.printcolor(
-                f"{app_name.capitalize()} database backup found ! Restoring...", utils.GREEN)
-            return database_backup_path
-        utils.printcolor(
-            f"{app_name.capitalize()} database backup not found, creating empty database.", utils.RED)
+    def _dump_database(self, backup_path: str):
+        """Create a new database dump for this app."""
+        target_dir = os.path.join(backup_path, "databases")
+        target_file = os.path.join(target_dir, f"{self.appname}.sql")
+        self.backend.dump_database(
+            self.dbname, self.dbuser, self.dbpasswd, target_file)
 
     def pre_run(self):
         """Tasks to execute before the installer starts."""

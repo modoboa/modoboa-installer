@@ -96,28 +96,6 @@ class Dovecot(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        if self.restore is not None:
-            mail_dir = os.path.join(self.restore, "mails/")
-            if len(os.listdir(mail_dir)) > 0:
-                utils.printcolor(
-                    "Copying mail backup over dovecot directory.", utils.GREEN)
-
-                if os.path.exists(self.home_dir):
-                    shutil.rmtree(self.home_dir)
-
-                shutil.copytree(mail_dir, self.home_dir)
-                # Resetting permission for vmail
-                for dirpath, dirnames, filenames in os.walk(self.home_dir):
-                    shutil.chown(dirpath, self.user, self.user)
-                    for filename in filenames:
-                        shutil.chown(os.path.join(dirpath, filename),
-                                     self.user, self.user)
-            else:
-                utils.printcolor(
-                    "It seems that mails were not backed up, skipping mail restoration.",
-                    utils.MAGENTA
-                )
-
         if self.dbengine == "postgres":
             dbname = self.config.get("modoboa", "dbname")
             dbuser = self.config.get("modoboa", "dbuser")
@@ -156,3 +134,39 @@ class Dovecot(base.Installer):
             "service {} {} > /dev/null 2>&1".format(self.appname, action),
             capture_output=False)
         system.enable_service(self.get_daemon_name())
+
+    def backup(self, path):
+        """Backup emails."""
+        home_dir = self.config.get("dovecot", "home_dir")
+        utils.printcolor("Backing up mails", utils.MAGENTA)
+        if not os.path.exists(home_dir) or os.path.isfile(home_dir):
+            utils.error("Error backing up emails, provided path "
+                        f" ({home_dir}) seems not right...")
+            return
+
+        dst = os.path.join(path, "mails/")
+        if os.path.exists(dst):
+            shutil.rmtree(dst)
+        shutil.copytree(home_dir, dst)
+        utils.success("Mail backup complete!")
+
+    def restore(self):
+        """Restore emails."""
+        home_dir = self.config.get("dovecot", "home_dir")
+        mail_dir = os.path.join(self.archive_path, "mails/")
+        if len(os.listdir(mail_dir)) > 0:
+            utils.success("Copying mail backup over dovecot directory.")
+            if os.path.exists(home_dir):
+                shutil.rmtree(home_dir)
+            shutil.copytree(mail_dir, home_dir)
+            # Resetting permission for vmail
+            for dirpath, dirnames, filenames in os.walk(home_dir):
+                shutil.chown(dirpath, self.user, self.user)
+                for filename in filenames:
+                    shutil.chown(os.path.join(dirpath, filename),
+                                 self.user, self.user)
+        else:
+            utils.printcolor(
+                "It seems that emails were not backed up, skipping restoration.",
+                utils.MAGENTA
+            )
