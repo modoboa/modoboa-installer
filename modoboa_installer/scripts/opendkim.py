@@ -115,13 +115,17 @@ class Opendkim(base.Installer):
         """Restore keys."""
         dkim_keys_backup = os.path.join(
             self.archive_path, "custom/dkim")
+        keys_storage_dir = self.config.get(
+            "opendkim", "keys_storage_dir", fallback="/var/lib/dkim")
         if os.path.isdir(dkim_keys_backup):
             for file in os.listdir(dkim_keys_backup):
                 file_path = os.path.join(dkim_keys_backup, file)
                 if os.path.isfile(file_path):
-                    utils.copy_file(file_path, self.config.get(
-                        "opendkim", "keys_storage_dir", fallback="/var/lib/dkim"))
+                    utils.copy_file(file_path, keys_storage_dir)
             utils.success("DKIM keys restored from backup")
+        # Setup permissions
+        user = self.config.get("opendkim", "user")
+        utils.exec_cmd(f"chown -R {user}:{user} {keys_storage_dir}")
 
     def custom_backup(self, path):
         """Backup DKIM keys."""
