@@ -30,7 +30,7 @@ INSTANCE=%{instance_path}
 */30    *       *       *       *       root    $PYTHON $INSTANCE/manage.py modo check_mx
 
 # Public API communication
-0       *       *       *       *       root    $PYTHON $INSTANCE/manage.py communicate_with_public_api
+%{minute}       %{hours}       *       *       *       root    $PYTHON $INSTANCE/manage.py communicate_with_public_api
 
 # Generate DKIM keys (they will belong to the user running this job)
 %{opendkim_enabled}*       *       *       *       *       %{opendkim_user}    umask 077 && $PYTHON $INSTANCE/manage.py modo manage_dkim_keys
