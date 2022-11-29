@@ -230,7 +230,7 @@ class Modoboa(base.Installer):
             "radicale_enabled": (
                 "" if "modoboa-radicale" in extensions else "#"),
             "opendkim_user": self.config.get("opendkim", "user"),
-            "minute": random.randint(1, 59),
+            "minutes": random.randint(1, 59),
             "hours" : f"{random_hour},{random_hour+12}"
         })
         return context
