@@ -5,12 +5,11 @@
 # SSL/TLS support: yes, no, required. <doc/wiki/SSL.txt>
 #ssl = yes
 
-# PEM encoded X.509 SSL/TLS certificate and private key. They're opened before
-# dropping root privileges, so keep the key file unreadable by anyone but
-# root. Included doc/mkcert.sh can be used to easily generate self-signed
-# certificate, just make sure to update the domains in dovecot-openssl.cnf
-ssl_cert = <%tls_cert_file
-ssl_key = <%tls_key_file
+# Workarround https://github.com/modoboa/modoboa/issues/2570 
+# We try to load the key and pass if it fails
+# Keys require root permissions, standard commands would be blocked
+# because dovecot can't load these cert
+!include_try /etc/dovecot/conf.d/10-ssl-keys.try
 
 # If key file is password protected, give the password here. Alternatively
 # give it when starting dovecot with -p parameter. Since this file is often
@@ -41,7 +40,7 @@ ssl_key = <%tls_key_file
 #ssl_parameters_regenerate = 168
 
 # SSL protocols to use
-ssl_min_protocol = %ssl_protocols
+%ssl_protocol_parameter = %ssl_protocols
 
 
 # SSL ciphers to use

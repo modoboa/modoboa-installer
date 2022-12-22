@@ -3,6 +3,7 @@
 import json
 import os
 import pwd
+import random
 import shutil
 import stat
 import sys
@@ -219,6 +220,7 @@ class Modoboa(base.Installer):
         context = super(Modoboa, self).get_template_context()
         extensions = self.config.get("modoboa", "extensions")
         extensions = extensions.split()
+        random_hour = random.randint(0, 6)
         context.update({
             "sudo_user": (
                 "uwsgi" if package.backend.FORMAT == "rpm" else context["user"]
@@ -228,6 +230,8 @@ class Modoboa(base.Installer):
             "radicale_enabled": (
                 "" if "modoboa-radicale" in extensions else "#"),
             "opendkim_user": self.config.get("opendkim", "user"),
+            "minutes": random.randint(1, 59),
+            "hours" : f"{random_hour},{random_hour+12}"
         })
         return context
 

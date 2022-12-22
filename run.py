@@ -3,6 +3,8 @@
 """An installer for Modoboa."""
 
 import argparse
+import datetime
+import os
 try:
     import configparser
 except ImportError:
@@ -10,11 +12,25 @@ except ImportError:
 import sys
 
 from modoboa_installer import compatibility_matrix
+from modoboa_installer import constants
 from modoboa_installer import package
 from modoboa_installer import scripts
 from modoboa_installer import ssl
 from modoboa_installer import system
 from modoboa_installer import utils
+
+
+PRIMARY_APPS = [
+    "amavis",
+    "modoboa",
+    "automx",
+    "radicale",
+    "uwsgi",
+    "nginx",
+    "opendkim",
+    "postfix",
+    "dovecot"
+]
 
 
 def installation_disclaimer(args, config):
@@ -45,6 +61,60 @@ def upgrade_disclaimer(config):
     )
 
 
+def backup_disclaimer():
+    """Display backup disclamer. """
+    utils.printcolor(
+        "Your mail server will be backed up locally.\n"
+        " !! You should really transfer the backup somewhere else...\n"
+        " !! Custom configuration (like for postfix) won't be saved.", utils.BLUE)
+
+
+def restore_disclaimer():
+    """Display restore disclamer. """
+    utils.printcolor(
+        "You are about to restore a previous installation of Modoboa.\n"
+        "If a new version has been released in between, please update your database!",
+        utils.BLUE)
+
+
+def backup_system(config, args):
+    """Launch backup procedure."""
+    backup_disclaimer()
+    backup_path = None
+    if args.silent_backup:
+        if not args.backup_path:
+            if config.has_option("backup", "default_path"):
+                path = config.get("backup", "default_path")
+            else:
+                path = constants.DEFAULT_BACKUP_DIRECTORY
+            date = datetime.datetime.now().strftime("%m_%d_%Y_%H_%M")
+            path = os.path.join(path, f"backup_{date}")
+        else:
+            path = args.backup_path
+        backup_path = utils.validate_backup_path(path, args.silent_backup)
+        if not backup_path:
+            utils.printcolor(f"Path provided: {path}", utils.BLUE)
+            return
+    else:
+        user_value = None
+        while not user_value or not backup_path:
+            utils.printcolor(
+                "Enter backup path (it must be an empty directory)",
+                utils.MAGENTA
+            )
+            utils.printcolor("CTRL+C to cancel", utils.MAGENTA)
+            user_value = utils.user_input("-> ")
+            if not user_value:
+                continue
+            backup_path = utils.validate_backup_path(user_value, args.silent_backup)
+
+    # Backup configuration file
+    utils.copy_file(args.configfile, backup_path)
+    # Backup applications
+    for app in PRIMARY_APPS:
+        scripts.backup(app, config, backup_path)
+
+
 def main(input_args):
     """Install process."""
     parser = argparse.ArgumentParser()
@@ -72,16 +142,52 @@ def main(input_args):
     parser.add_argument(
         "--beta", action="store_true", default=False,
         help="Install latest beta release of Modoboa instead of the stable one")
+    parser.add_argument(
+        "--backup-path", type=str, metavar="path",
+        help="To use with --silent-backup, you must provide a valid path")
+    parser.add_argument(
+        "--backup", action="store_true", default=False,
+        help="Backing up interactively previously installed instance"
+    )
+    parser.add_argument(
+        "--silent-backup", action="store_true", default=False,
+        help="For script usage, do not require user interaction "
+        "backup will be saved at ./modoboa_backup/Backup_M_Y_d_H_M if --backup-path is not provided")
+    parser.add_argument(
+        "--restore", type=str, metavar="path",
+        help="Restore a previously backup up modoboa instance on a NEW machine. "
+        "You MUST provide backup directory"
+    )
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args(input_args)
 
     if args.debug:
         utils.ENV["debug"] = True
-    utils.printcolor("Welcome to Modoboa installer!\n", utils.GREEN)
-    utils.check_config_file(args.configfile, args.interactive, args.upgrade)
+
+    # Restore prep
+    is_restoring = False
+    if args.restore is not None:
+        is_restoring = True
+        args.configfile = os.path.join(args.restore, args.configfile)
+        if not os.path.exists(args.configfile):
+            utils.error(
+                "Installer configuration file not found in backup!"
+            )
+            sys.exit(1)
+
+    utils.success("Welcome to Modoboa installer!\n")
+    is_config_file_available = utils.check_config_file(
+        args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
+
+    if not is_config_file_available and (
+            args.upgrade or args.backup or args.silent_backup):
+        utils.error("No config file found.")
+        return
+
     if args.stop_after_configfile_check:
         return
+
     config = configparser.ConfigParser()
     with open(args.configfile) as fp:
         config.read_file(fp)
@@ -91,11 +197,20 @@ def main(input_args):
     config.set("dovecot", "domain", args.domain)
     config.set("modoboa", "version", args.version)
     config.set("modoboa", "install_beta", str(args.beta))
-    # Display disclaimerpython 3 linux distribution
-    if not args.upgrade:
-        installation_disclaimer(args, config)
-    else:
+
+    if args.backup or args.silent_backup:
+        backup_system(config, args)
+        return
+
+    # Display disclaimer python 3 linux distribution
+    if args.upgrade:
         upgrade_disclaimer(config)
+    elif args.restore:
+        restore_disclaimer()
+        scripts.restore_prep(args.restore)
+    else:
+        installation_disclaimer(args, config)
+
     # Show concerned components
     components = []
     for section in config.sections():
@@ -115,27 +230,26 @@ def main(input_args):
     utils.printcolor(
         "The process can be long, feel free to take a coffee "
         "and come back later ;)", utils.BLUE)
-    utils.printcolor("Starting...", utils.GREEN)
+    utils.success("Starting...")
     package.backend.prepare_system()
     package.backend.install_many(["sudo", "wget"])
     ssl_backend = ssl.get_backend(config)
     if ssl_backend and not args.upgrade:
         ssl_backend.generate_cert()
-    scripts.install("amavis", config, args.upgrade)
-    scripts.install("modoboa", config, args.upgrade)
-    scripts.install("automx", config, args.upgrade)
-    scripts.install("radicale", config, args.upgrade)
-    scripts.install("uwsgi", config, args.upgrade)
-    scripts.install("nginx", config, args.upgrade)
-    scripts.install("opendkim", config, args.upgrade)
-    scripts.install("postfix", config, args.upgrade)
-    scripts.install("dovecot", config, args.upgrade)
+    for appname in PRIMARY_APPS:
+        scripts.install(appname, config, args.upgrade, args.restore)
     system.restart_service("cron")
     package.backend.restore_system()
-    utils.printcolor(
-        "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
-        .format(config.get("general", "hostname")),
-        utils.GREEN)
+    if not args.restore:
+        utils.success(
+            "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
+            .format(config.get("general", "hostname"))
+        )
+    else:
+        utils.success(
+            "Restore complete! You can enjoy Modoboa at https://{} (same credentials as before)"
+            .format(config.get("general", "hostname"))
+        )
 
 
 if __name__ == "__main__":

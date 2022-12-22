@@ -3,6 +3,7 @@
 import glob
 import os
 import pwd
+import shutil
 
 from .. import database
 from .. import package
@@ -26,7 +27,7 @@ class Dovecot(base.Installer):
     }
     config_files = [
         "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
-        "conf.d/10-master.conf", "conf.d/20-lmtp.conf"]
+        "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try"]
     with_user = True
 
     def get_config_files(self):
@@ -58,10 +59,16 @@ class Dovecot(base.Installer):
         """Additional variables."""
         context = super(Dovecot, self).get_template_context()
         pw = pwd.getpwnam(self.user)
+        dovecot_package = {"deb": "dovecot-core", "rpm": "dovecot"}
+        ssl_protocol_parameter = "ssl_protocols"
+        if package.backend.get_installed_version(dovecot_package[package.backend.FORMAT]) > "2.3":
+            ssl_protocol_parameter = "ssl_min_protocol"
         ssl_protocols = "!SSLv2 !SSLv3"
         if package.backend.get_installed_version("openssl").startswith("1.1") \
                 or package.backend.get_installed_version("openssl").startswith("3"):
             ssl_protocols = "!SSLv3"
+        if ssl_protocol_parameter == "ssl_min_protocol":
+            ssl_protocols = "TLSv1"
         if "centos" in utils.dist_name():
             protocols = "protocols = imap lmtp sieve"
             extra_protocols = self.config.get("dovecot", "extra_protocols")
@@ -80,6 +87,7 @@ class Dovecot(base.Installer):
             "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
             "protocols": protocols,
             "ssl_protocols": ssl_protocols,
+            "ssl_protocol_parameter": ssl_protocol_parameter,
             "radicale_user": self.config.get("radicale", "user"),
             "radicale_auth_socket_path": os.path.basename(
                 self.config.get("dovecot", "radicale_auth_socket_path"))
@@ -126,3 +134,39 @@ class Dovecot(base.Installer):
             "service {} {} > /dev/null 2>&1".format(self.appname, action),
             capture_output=False)
         system.enable_service(self.get_daemon_name())
+
+    def backup(self, path):
+        """Backup emails."""
+        home_dir = self.config.get("dovecot", "home_dir")
+        utils.printcolor("Backing up mails", utils.MAGENTA)
+        if not os.path.exists(home_dir) or os.path.isfile(home_dir):
+            utils.error("Error backing up emails, provided path "
+                        f" ({home_dir}) seems not right...")
+            return
+
+        dst = os.path.join(path, "mails/")
+        if os.path.exists(dst):
+            shutil.rmtree(dst)
+        shutil.copytree(home_dir, dst)
+        utils.success("Mail backup complete!")
+
+    def restore(self):
+        """Restore emails."""
+        home_dir = self.config.get("dovecot", "home_dir")
+        mail_dir = os.path.join(self.archive_path, "mails/")
+        if len(os.listdir(mail_dir)) > 0:
+            utils.success("Copying mail backup over dovecot directory.")
+            if os.path.exists(home_dir):
+                shutil.rmtree(home_dir)
+            shutil.copytree(mail_dir, home_dir)
+            # Resetting permission for vmail
+            for dirpath, dirnames, filenames in os.walk(home_dir):
+                shutil.chown(dirpath, self.user, self.user)
+                for filename in filenames:
+                    shutil.chown(os.path.join(dirpath, filename),
+                                 self.user, self.user)
+        else:
+            utils.printcolor(
+                "It seems that emails were not backed up, skipping restoration.",
+                utils.MAGENTA
+            )

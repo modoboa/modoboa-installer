@@ -1,6 +1,7 @@
 """Radicale related tasks."""
 
 import os
+import shutil
 import stat
 
 from .. import package
@@ -25,7 +26,7 @@ class Radicale(base.Installer):
 
     def __init__(self, *args, **kwargs):
         """Get configuration."""
-        super(Radicale, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.venv_path = self.config.get("radicale", "venv_path")
 
     def _setup_venv(self):
@@ -70,7 +71,18 @@ class Radicale(base.Installer):
                 stat.S_IROTH | stat.S_IXOTH,
                 0, 0
             )
-        super(Radicale, self).install_config_files()
+        super().install_config_files()
+
+    def restore(self):
+        """Restore collections."""
+        radicale_backup = os.path.join(
+            self.archive_path, "custom/radicale")
+        if os.path.isdir(radicale_backup):
+            restore_target = os.path.join(self.home_dir, "collections")
+            if os.path.isdir(restore_target):
+                shutil.rmtree(restore_target)
+            shutil.copytree(radicale_backup, restore_target)
+            utils.success("Radicale collections restored from backup")
 
     def post_run(self):
         """Additional tasks."""
@@ -81,3 +93,12 @@ class Radicale(base.Installer):
         system.enable_service(daemon_name)
         utils.exec_cmd("service {} stop".format(daemon_name))
         utils.exec_cmd("service {} start".format(daemon_name))
+
+    def custom_backup(self, path):
+        """Backup collections."""
+        radicale_backup = os.path.join(self.config.get(
+            "radicale", "home_dir", fallback="/srv/radicale"), "collections")
+        if os.path.isdir(radicale_backup):
+            shutil.copytree(radicale_backup, os.path.join(
+                path, "radicale"))
+            utils.printcolor("Radicale files saved", utils.GREEN)

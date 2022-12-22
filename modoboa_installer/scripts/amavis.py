@@ -1,13 +1,12 @@
 """Amavis related functions."""
 
 import os
-import platform
 
 from .. import package
 from .. import utils
 
 from . import base
-from . import install
+from . import backup, install
 
 
 class Amavis(base.Installer):
@@ -83,7 +82,7 @@ class Amavis(base.Installer):
             path = self.get_file_path(
                 "amavis_{}_{}.sql".format(self.dbengine, version))
             if not os.path.exists(path):
-               raise utils.FatalError("Failed to find amavis database schema")
+                raise utils.FatalError("Failed to find amavis database schema")
         return path
 
     def pre_run(self):
@@ -93,5 +92,25 @@ class Amavis(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        install("spamassassin", self.config, self.upgrade)
-        install("clamav", self.config, self.upgrade)
+        install("spamassassin", self.config, self.upgrade, self.archive_path)
+        install("clamav", self.config, self.upgrade, self.archive_path)
+
+    def custom_backup(self, path):
+        """Backup custom configuration if any."""
+        if package.backend.FORMAT == "deb":
+            amavis_custom = f"{self.config_dir}/conf.d/99-custom"
+            if os.path.isfile(amavis_custom):
+                utils.copy_file(amavis_custom, path)
+                utils.success("Amavis custom configuration saved!")
+        backup("spamassassin", self.config, os.path.dirname(path))
+
+    def restore(self):
+        """Restore custom config files."""
+        if package.backend.FORMAT != "deb":
+            return
+        amavis_custom_configuration = os.path.join(
+            self.archive_path, "custom/99-custom")
+        if os.path.isfile(amavis_custom_configuration):
+            utils.copy_file(amavis_custom_configuration, os.path.join(
+                self.config_dir, "conf.d"))
+            utils.success("Custom amavis configuration restored.")

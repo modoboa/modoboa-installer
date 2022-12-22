@@ -1,0 +1,60 @@
+name: Modoboa installer
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9]
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          pip install -r test-requirements.txt
+      - name: Run tests
+        if: ${{ matrix.python-version != '3.9' }}
+        run: |
+          python tests.py
+      - name: Run tests and coverage
+        if: ${{ matrix.python-version == '3.9' }}
+        run: |
+          coverage run tests.py
+      - name: Upload coverage result
+        if: ${{ matrix.python-version == '3.9' }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-results
+          path: .coverage
+
+  coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          pip install codecov
+      - name: Download coverage results
+        uses: actions/download-artifact@v2
+        with:
+          name: coverage-results
+      - name: Report coverage
+        run: |
+          coverage report
+          codecov
