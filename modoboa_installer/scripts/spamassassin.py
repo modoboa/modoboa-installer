@@ -59,7 +59,7 @@ class Spamassassin(base.Installer):
         """Additional tasks."""
         amavis_user = self.config.get("amavis", "user")
         pw = pwd.getpwnam(amavis_user)
-        install("razor", self.config, self.upgrade)
+        install("razor", self.config, self.upgrade, self.archive_path)
         if utils.dist_name() in ["debian", "ubuntu"]:
             utils.exec_cmd(
                 "perl -pi -e 's/^CRON=0/CRON=1/' /etc/cron.daily/spamassassin")

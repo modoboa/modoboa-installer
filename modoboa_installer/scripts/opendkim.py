@@ -82,21 +82,19 @@ class Opendkim(base.Installer):
         """Additional tasks.
         Check linux distribution (package deb, rpm), to adapt
         to config file location and syntax.
-        - update opendkim isocket port config
+        - update opendkim isocket port config for Debian based distro
         - make sure opendkim starts after db service started
         """
         if package.backend.FORMAT == "deb":
             params_file = "/etc/default/opendkim"
-        else:
-            params_file = "/etc/opendkim.conf"
-        pattern = r"s/^(SOCKET=.*)/#\1/"
-        utils.exec_cmd(
-            "perl -pi -e '{}' {}".format(pattern, params_file))
-        with open(params_file, "a") as f:
-            f.write('\n'.join([
-                "",
-                'SOCKET="inet:12345@localhost"',
-            ]))
+            pattern = r"s/^(SOCKET=.*)/#\1/"
+            utils.exec_cmd(
+                "perl -pi -e '{}' {}".format(pattern, params_file))
+            with open(params_file, "a") as f:
+                f.write('\n'.join([
+                    "",
+                    'SOCKET="inet:12345@localhost"',
+                ]))
 
         # Make sure opendkim is started after postgresql and mysql,
         # respectively.

@@ -238,7 +238,10 @@ def main(input_args):
         ssl_backend.generate_cert()
     for appname in PRIMARY_APPS:
         scripts.install(appname, config, args.upgrade, args.restore)
-    system.restart_service("cron")
+    if package.backend.FORMAT == "deb":
+        system.restart_service("cron")
+    else:
+        system.restart_service("crond")
     package.backend.restore_system()
     if not args.restore:
         utils.success(
