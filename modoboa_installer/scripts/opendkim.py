@@ -115,8 +115,7 @@ class Opendkim(base.Installer):
         """Restore keys."""
         dkim_keys_backup = os.path.join(
             self.archive_path, "custom/dkim")
-        keys_storage_dir = self.config.get(
-            "opendkim", "keys_storage_dir", fallback="/var/lib/dkim")
+        keys_storage_dir = self.app_config["keys_storage_dir"]
         if os.path.isdir(dkim_keys_backup):
             for file in os.listdir(dkim_keys_backup):
                 file_path = os.path.join(dkim_keys_backup, file)
@@ -129,9 +128,7 @@ class Opendkim(base.Installer):
 
     def custom_backup(self, path):
         """Backup DKIM keys."""
-        storage_dir = self.config.get(
-            "opendkim", "keys_storage_dir", fallback="/var/lib/dkim")
-        if os.path.isdir(storage_dir):
-            shutil.copytree(storage_dir, os.path.join(path, "dkim"))
+        if os.path.isdir(self.app_config["keys_storage_dir"]):
+            shutil.copytree(self.app_config["keys_storage_dir"], os.path.join(path, "dkim"))
             utils.printcolor(
                 "DKIM keys saved!", utils.GREEN)
