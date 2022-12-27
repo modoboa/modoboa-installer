@@ -52,7 +52,6 @@ class Postwhite(base.Installer):
         self.postw_bin = os.path.join(self.postw_dir, "postwhite")
         utils.exec_cmd("{} /etc/postwhite.conf".format(self.postw_bin))
 
-
     def custom_backup(self, path):
         """Backup custom configuration if any."""
         postswhite_custom = "/etc/postwhite.conf"
