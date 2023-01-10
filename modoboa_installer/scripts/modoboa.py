@@ -243,7 +243,7 @@ class Modoboa(base.Installer):
             self.instance_path, "media", "webmail")
         pw = pwd.getpwnam(self.user)
         for d in [rrd_root_dir, pdf_storage_dir, webmail_media_dir]:
-            utils.mkdir(d, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
+            utils.mkdir_safe(d, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
         settings = {
             "admin": {
                 "handle_mailboxes": True,
