@@ -57,7 +57,7 @@ class Clamav(base.Installer):
             # Check if not present before
             path = "/usr/lib/systemd/system/clamd@.service"
             code, output = utils.exec_cmd(
-                "grep 'WantedBy=multi-user.target' {}".format(path))
+                r"grep 'WantedBy\s*=\s*multi-user.target' {}".format(path))
             if code:
                 utils.exec_cmd(
                     """cat <<EOM >> {}
