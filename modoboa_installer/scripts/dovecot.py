@@ -91,6 +91,7 @@ class Dovecot(base.Installer):
             "db_driver": self.db_driver,
             "mailboxes_owner_uid": pw_mailbox[2],
             "mailboxes_owner_gid": pw_mailbox[3],
+            "mailbox_owner": self.mailboxes_owner,
             "modoboa_user": self.config.get("modoboa", "user"),
             "modoboa_dbname": self.config.get("modoboa", "dbname"),
             "modoboa_dbuser": self.config.get("modoboa", "dbuser"),
@@ -125,10 +126,7 @@ class Dovecot(base.Installer):
         utils.exec_cmd("chmod +x /usr/local/bin/postlogin.sh")
         # Add mailboxes user to dovecot group for modoboa mailbox commands.
         # See https://github.com/modoboa/modoboa/issues/2157.
-        system.add_user_to_group(
-            self.config.get("dovecot", "mailboxes_owner"),
-            'dovecot'
-        )
+        system.add_user_to_group(self.mailboxes_owner, 'dovecot')
 
     def restart_daemon(self):
         """Restart daemon process.

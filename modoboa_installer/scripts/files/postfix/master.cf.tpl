@@ -78,7 +78,7 @@ scache    unix  -       -       -       -       1       scache
 # Also specify in main.cf: maildrop_destination_recipient_limit=1
 #
 maildrop  unix  -       n       n       -       -       pipe
-  flags=DRhu user=vmail argv=/usr/bin/maildrop -d ${recipient}
+  flags=DRhu user=%{dovecot_mailboxes_owner} argv=/usr/bin/maildrop -d ${recipient}
 #
 # ====================================================================
 #
