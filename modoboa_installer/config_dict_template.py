@@ -256,7 +256,7 @@ ConfigDictTemplate = [
             },
             {
                 "option": "user",
-                "default": "vmail",
+                "default": "dovecot",
             },
             {
                 "option": "home_dir",

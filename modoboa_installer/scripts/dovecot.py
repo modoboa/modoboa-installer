@@ -30,6 +30,12 @@ class Dovecot(base.Installer):
         "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try"]
     with_user = True
 
+    def setup_user(self):
+        """Setup mailbox user."""
+        super().setup_user()
+        self.mailboxes_owner = self.app_config["mailboxes_owner"]
+        system.create_user(self.mailbox_owner, self.home_dir)
+
     def get_config_files(self):
         """Additional config files."""
         return self.config_files + [
@@ -58,7 +64,7 @@ class Dovecot(base.Installer):
     def get_template_context(self):
         """Additional variables."""
         context = super(Dovecot, self).get_template_context()
-        pw = pwd.getpwnam(self.user)
+        pw_mailbox = pwd.getpwnam(self.mailboxes_owner)
         dovecot_package = {"deb": "dovecot-core", "rpm": "dovecot"}
         ssl_protocol_parameter = "ssl_protocols"
         if package.backend.get_installed_version(dovecot_package[package.backend.FORMAT]) > "2.3":
@@ -79,8 +85,9 @@ class Dovecot(base.Installer):
             protocols = ""
         context.update({
             "db_driver": self.db_driver,
-            "mailboxes_owner_uid": pw[2],
-            "mailboxes_owner_gid": pw[3],
+            "mailboxes_owner_uid": pw_mailbox[2],
+            "mailboxes_owner_gid": pw_mailbox[3],
+            "mailbox_owner": self.mailboxes_owner,
             "modoboa_user": self.config.get("modoboa", "user"),
             "modoboa_dbname": self.config.get("modoboa", "dbname"),
             "modoboa_dbuser": self.config.get("modoboa", "dbuser"),
@@ -115,10 +122,7 @@ class Dovecot(base.Installer):
         utils.exec_cmd("chmod +x /usr/local/bin/postlogin.sh")
         # Add mailboxes user to dovecot group for modoboa mailbox commands.
         # See https://github.com/modoboa/modoboa/issues/2157.
-        system.add_user_to_group(
-            self.config.get("dovecot", "mailboxes_owner"),
-            'dovecot'
-        )
+        system.add_user_to_group(self.mailboxes_owner, 'dovecot')
 
     def restart_daemon(self):
         """Restart daemon process.
@@ -161,10 +165,10 @@ class Dovecot(base.Installer):
             shutil.copytree(mail_dir, home_dir)
             # Resetting permission for vmail
             for dirpath, dirnames, filenames in os.walk(home_dir):
-                shutil.chown(dirpath, self.user, self.user)
+                shutil.chown(dirpath, self.mailboxes_owner, self.mailboxes_owner)
                 for filename in filenames:
                     shutil.chown(os.path.join(dirpath, filename),
-                                 self.user, self.user)
+                                 self.mailboxes_owner, self.mailboxes_owner)
         else:
             utils.printcolor(
                 "It seems that emails were not backed up, skipping restoration.",
