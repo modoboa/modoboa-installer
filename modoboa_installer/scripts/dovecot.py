@@ -32,13 +32,9 @@ class Dovecot(base.Installer):
 
     def setup_user(self):
         """Setup mailbox user."""
+        super().setup_user()
         self.mailboxes_owner = self.app_config["mailboxes_owner"]
-        if self.config.has_option(self.appname, "home_dir"):
-            self.home_dir = self.config.get(self.appname, "home_dir")
-        else:
-            self.home_dir = None
         system.create_user(self.mailbox_owner, self.home_dir)
-        super(Dovecot, self).setup_user()
 
     def get_config_files(self):
         """Additional config files."""
