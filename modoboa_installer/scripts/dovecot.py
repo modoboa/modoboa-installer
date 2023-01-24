@@ -34,7 +34,7 @@ class Dovecot(base.Installer):
         """Setup mailbox user."""
         super().setup_user()
         self.mailboxes_owner = self.app_config["mailboxes_owner"]
-        system.create_user(self.mailbox_owner, self.home_dir)
+        system.create_user(self.mailboxes_owner, self.home_dir)
 
     def get_config_files(self):
         """Additional config files."""
