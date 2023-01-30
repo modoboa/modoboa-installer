@@ -22,6 +22,7 @@ from modoboa_installer import utils
 
 PRIMARY_APPS = [
     "amavis",
+    "fail2ban",
     "modoboa",
     "automx",
     "radicale",
