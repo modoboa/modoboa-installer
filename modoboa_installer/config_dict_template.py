@@ -119,6 +119,31 @@ ConfigDictTemplate = [
         ]
     },
     {
+        "name": "fail2ban",
+        "values": [
+            {
+                "option": "enabled",
+                "default": "true",
+            },
+            {
+                "option": "config_dir",
+                "default": "/etc/fail2ban"
+            },
+            {
+                "option": "max_retry",
+                "default": "20"
+            },
+            {
+                "option": "ban_time",
+                "default": "3600"
+            },
+            {
+                "option": "find_time",
+                "default": "30"
+            },
+        ]
+    },
+    {
         "name": "modoboa",
         "values": [
             {
