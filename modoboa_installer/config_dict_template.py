@@ -147,7 +147,7 @@ ConfigDictTemplate = [
             },
             {
                 "option": "postfix_dovecot_filter",
-                "default": True
+                "default": "true"
             }
         ]
     },

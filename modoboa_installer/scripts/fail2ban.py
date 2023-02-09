@@ -19,7 +19,7 @@ class Fail2ban(base.Installer):
     def get_config_files(self):
         config_files = super().get_config_files()
 
-        if self.app_config["postfix_dovecot_filter"]:
+        if self.app_config["postfix_dovecot_filter"].lower() == "true":
             config_files += ["jail.d/postfix.conf",
                             "jail.d/dovecot.conf", 
                             "filter.d/postfix-modoboa.conf",
