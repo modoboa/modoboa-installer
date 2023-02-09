@@ -141,6 +141,14 @@ ConfigDictTemplate = [
                 "option": "find_time",
                 "default": "30"
             },
+            {
+                "option": "ports_blocked",
+                "default": "http,https,pop3,pop3s,imap,imaps,587"
+            },
+            {
+                "option": "postfix_dovecot_filter",
+                "default": True
+            }
         ]
     },
     {
