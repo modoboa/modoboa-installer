@@ -175,7 +175,7 @@ class Modoboa(base.Installer):
         if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
             # Restore view previously deleted
             self.backend.load_sql_file(
-                self.dbname, self.dbuser, self.dbpassword,
+                self.dbname, self.dbuser, self.dbpasswd,
                 self.get_file_path("dkim_view_{}.sql".format(self.dbengine))
             )
             self.backend.grant_right_on_table(
