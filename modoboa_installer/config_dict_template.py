@@ -1,6 +1,8 @@
 import random
 import string
 
+from .constants import DEFAULT_BACKUP_DIRECTORY
+
 
 def make_password(length=16):
     """Create a random password."""
@@ -117,6 +119,31 @@ ConfigDictTemplate = [
         ]
     },
     {
+        "name": "fail2ban",
+        "values": [
+            {
+                "option": "enabled",
+                "default": "true",
+            },
+            {
+                "option": "config_dir",
+                "default": "/etc/fail2ban"
+            },
+            {
+                "option": "max_retry",
+                "default": "20"
+            },
+            {
+                "option": "ban_time",
+                "default": "3600"
+            },
+            {
+                "option": "find_time",
+                "default": "30"
+            },
+        ]
+    },
+    {
         "name": "modoboa",
         "values": [
             {
@@ -158,7 +185,7 @@ ConfigDictTemplate = [
                 "default": (
                     "modoboa-amavis modoboa-pdfcredentials "
                     "modoboa-postfix-autoreply modoboa-sievefilters "
-                    "modoboa-stats modoboa-webmail modoboa-contacts "
+                    "modoboa-webmail modoboa-contacts "
                     "modoboa-radicale"
                 ),
             },
@@ -210,7 +237,7 @@ ConfigDictTemplate = [
             },
             {
                 "option": "max_servers",
-                "default": "1",
+                "default": "2",
             },
             {
                 "option": "dbname",
@@ -254,7 +281,7 @@ ConfigDictTemplate = [
             },
             {
                 "option": "user",
-                "default": "vmail",
+                "default": "dovecot",
             },
             {
                 "option": "home_dir",
@@ -439,4 +466,13 @@ ConfigDictTemplate = [
 
         ]
     },
+    {
+        "name": "backup",
+        "values": [
+            {
+                "option": "default_path",
+                "default": DEFAULT_BACKUP_DIRECTORY
+            }
+        ]
+    }
 ]

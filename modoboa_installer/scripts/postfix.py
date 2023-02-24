@@ -10,7 +10,7 @@ from .. import package
 from .. import utils
 
 from . import base
-from . import install
+from . import backup, install
 
 
 class Postfix(base.Installer):
@@ -35,9 +35,9 @@ class Postfix(base.Installer):
     def install_packages(self):
         """Preconfigure postfix package installation."""
         if "centos" in utils.dist_name():
-            config = configparser.SafeConfigParser()
+            config = configparser.ConfigParser()
             with open("/etc/yum.repos.d/CentOS-Base.repo") as fp:
-                config.readfp(fp)
+                config.read_file(fp)
             config.set("centosplus", "enabled", "1")
             config.set("centosplus", "includepkgs", "postfix-*")
             config.set("base", "exclude", "postfix-*")
@@ -97,4 +97,8 @@ class Postfix(base.Installer):
             utils.exec_cmd("postalias {}".format(aliases_file))
 
         # Postwhite
-        install("postwhite", self.config, self.upgrade)
+        install("postwhite", self.config, self.upgrade, self.archive_path)
+
+    def backup(self, path):
+        """Launch postwhite backup."""
+        backup("postwhite", self.config, path)

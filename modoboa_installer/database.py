@@ -1,7 +1,6 @@
 """Database related tools."""
 
 import os
-import platform
 import pwd
 import stat
 
@@ -14,6 +13,7 @@ class Database(object):
 
     """Common database backend."""
 
+    default_port = None
     packages = None
     service = None
 
@@ -22,6 +22,8 @@ class Database(object):
         self.config = config
         engine = self.config.get("database", "engine")
         self.dbhost = self.config.get("database", "host")
+        self.dbport = self.config.getint(
+            "database", "port", fallback=self.default_port)
         self.dbuser = config.get(engine, "user")
         self.dbpassword = config.get(engine, "password")
         if self.config.getboolean("database", "install"):
@@ -37,6 +39,7 @@ class PostgreSQL(Database):
 
     """Postgres."""
 
+    default_port = 5432
     packages = {
         "deb": ["postgresql", "postgresql-server-dev-all"],
         "rpm": ["postgresql-server", "postgresql-devel"]
@@ -44,17 +47,33 @@ class PostgreSQL(Database):
     service = "postgresql"
 
     def __init__(self, config):
-        super(PostgreSQL, self).__init__(config)
+        super().__init__(config)
         self._pgpass_done = False
 
     def install_package(self):
         """Install database if required."""
-        package.backend.install_many(self.packages[package.backend.FORMAT])
-        if package.backend.FORMAT == "rpm":
-            utils.exec_cmd("postgresql-setup initdb")
+        name, version = utils.dist_info()
+        if "CentOS" in name:
+            if version.startswith("7"):
+                # Install newer version of postgres in this case
+                package.backend.install(
+                    "https://download.postgresql.org/pub/repos/yum/"
+                    "reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
+                )
+                self.packages["rpm"] = [
+                    "postgresql10-server", "postgresql10-devel"]
+                self.service = "postgresql-10"
+                initdb_cmd = "/usr/pgsql-10/bin/postgresql-10-setup initdb"
+                cfgfile = "/var/lib/pgsql/10/data/pg_hba.conf"
+            else:
+                initdb_cmd = "postgresql-setup initdb"
+                cfgfile = "/var/lib/pgsql/data/pg_hba.conf"
+            package.backend.install_many(self.packages[package.backend.FORMAT])
+            utils.exec_cmd(initdb_cmd)
             pattern = "s/^host(.+)ident$/host$1md5/"
-            cfgfile = "/var/lib/pgsql/data/pg_hba.conf"
             utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfgfile))
+        else:
+            package.backend.install_many(self.packages[package.backend.FORMAT])
         system.enable_and_start_service(self.service)
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
@@ -64,7 +83,8 @@ class PostgreSQL(Database):
             cmd += " -d {}".format(dbname)
             if dbuser:
                 self._setup_pgpass(dbname, dbuser, dbpassword)
-                cmd += " -h {} -U {} -w".format(self.dbhost, dbuser)
+                cmd += " -h {} -p {} -U {} -w".format(
+                    self.dbhost, self.dbport, dbuser)
         query = query.replace("'", "'\"'\"'")
         cmd = "{} -c '{}' ".format(cmd, query)
         utils.exec_cmd(cmd, sudo_user=self.dbuser)
@@ -122,7 +142,16 @@ class PostgreSQL(Database):
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""
         self._setup_pgpass(dbname, dbuser, dbpassword)
-        cmd = "psql -h {} -d {} -U {} -w < {}".format(
+        cmd = "psql -h {} -p {} -d {} -U {} -w < {}".format(
+            self.dbhost, self.dbport, dbname, dbuser, path)
+        utils.exec_cmd(cmd, sudo_user=self.dbuser)
+
+    def dump_database(self, dbname, dbuser, dbpassword, path):
+        """Dump DB to SQL file."""
+        # Reset pgpass since we backup multiple db (different secret set)
+        self._pgpass_done = False
+        self._setup_pgpass(dbname, dbuser, dbpassword)
+        cmd = "pg_dump -h {} -d {} -U {} -O  -w > {}".format(
             self.dbhost, dbname, dbuser, path)
         utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
@@ -131,6 +160,7 @@ class MySQL(Database):
 
     """MySQL backend."""
 
+    default_port = 3306
     packages = {
         "deb": ["mariadb-server"],
         "rpm": ["mariadb", "mariadb-devel", "mariadb-server"],
@@ -143,38 +173,52 @@ class MySQL(Database):
 
     def install_package(self):
         """Preseed package installation."""
-        name, version, _id = platform.linux_distribution()
+        name, version = utils.dist_info()
         name = name.lower()
-        if name == "debian":
-            mysql_name = "mysql" if version.startswith("8") else "mariadb"
-            self.packages["deb"].append("lib{}client-dev".format(mysql_name))
+        if name.startswith("debian"):
+            if version.startswith("8"):
+                self.packages["deb"].append("libmysqlclient-dev")
+            elif version.startswith("11"):
+                self.packages["deb"].append("libmariadb-dev")
+            else:
+                self.packages["deb"].append("libmariadbclient-dev")
         elif name == "ubuntu":
             self.packages["deb"].append("libmysqlclient-dev")
         super(MySQL, self).install_package()
-        if name == "debian" and version.startswith("8"):
-            package.backend.preconfigure(
-                "mariadb-server", "root_password", "password",
-                self.dbpassword)
-            package.backend.preconfigure(
-                "mariadb-server", "root_password_again", "password",
-                self.dbpassword)
-        else:
+        queries = []
+        if name.startswith("debian"):
+            if version.startswith("8"):
+                package.backend.preconfigure(
+                    "mariadb-server", "root_password", "password",
+                    self.dbpassword)
+                package.backend.preconfigure(
+                    "mariadb-server", "root_password_again", "password",
+                    self.dbpassword)
+                return
+            if version.startswith("11"):
+                queries = [
+                    "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}')"
+                    .format(self.dbpassword),
+                    "flush privileges"
+                ]
+        if not queries:
             queries = [
                 "UPDATE user SET plugin='' WHERE user='root'",
                 "UPDATE user SET password=PASSWORD('{}') WHERE USER='root'"
                 .format(self.dbpassword),
                 "flush privileges"
             ]
-            for query in queries:
-                utils.exec_cmd(
-                    "mysql -D mysql -e '{}'".format(self._escape(query)))
+        for query in queries:
+            utils.exec_cmd(
+                "mysql -D mysql -e '{}'".format(self._escape(query)))
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a mysql query."""
         if dbuser is None and dbpassword is None:
             dbuser = self.dbuser
             dbpassword = self.dbpassword
-        cmd = "mysql -h {} -u {}".format(self.dbhost, dbuser)
+        cmd = "mysql -h {} -P {} -u {}".format(
+            self.dbhost, self.dbport, dbuser)
         if dbpassword:
             cmd += " -p{}".format(dbpassword)
         if dbname:
@@ -219,9 +263,15 @@ class MySQL(Database):
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""
         utils.exec_cmd(
-            "mysql -h {} -u {} -p{} {} < {}".format(
-                self.dbhost, dbuser, dbpassword, dbname, path)
+            "mysql -h {} -P {} -u {} -p{} {} < {}".format(
+                self.dbhost, self.dbport, dbuser, dbpassword, dbname, path)
         )
+
+    def dump_database(self, dbname, dbuser, dbpassword, path):
+        """Dump DB to SQL file."""
+        cmd = "mysqldump -h {} -u {} -p{} {} > {}".format(
+            self.dbhost, dbuser, dbpassword, dbname, path)
+        utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
 
 def get_backend(config):

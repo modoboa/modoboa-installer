@@ -3,6 +3,7 @@
 import json
 import os
 import pwd
+import random
 import shutil
 import stat
 import sys
@@ -10,6 +11,7 @@ import sys
 from .. import compatibility_matrix
 from .. import package
 from .. import python
+from .. import system
 from .. import utils
 
 from . import base
@@ -24,11 +26,12 @@ class Modoboa(base.Installer):
         "deb": [
             "build-essential", "python3-dev", "libxml2-dev", "libxslt-dev",
             "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron",
-            "libssl-dev"
+            "libssl-dev", "redis-server", "supervisor"
         ],
         "rpm": [
             "gcc", "gcc-c++", "python3-devel", "libxml2-devel", "libxslt-devel",
             "libjpeg-turbo-devel", "rrdtool-devel", "rrdtool", "libffi-devel",
+            "supervisor", "redis"
         ]
     }
     config_files = [
@@ -56,6 +59,7 @@ class Modoboa(base.Installer):
             if not self.config.getboolean("radicale", "enabled"):
                 self.extensions.remove("modoboa-radicale")
         self.dovecot_enabled = self.config.getboolean("dovecot", "enabled")
+        self.opendkim_enabled = self.config.getboolean("opendkim", "enabled")
 
     def is_extension_ok_for_version(self, extension, version):
         """Check if extension can be installed with this modo version."""
@@ -73,11 +77,10 @@ class Modoboa(base.Installer):
         packages = ["rrdtool"]
         version = self.config.get("modoboa", "version")
         if version == "latest":
-            modoboa_package = "modoboa"
-            packages += self.extensions
+            packages += ["modoboa"] + self.extensions
         else:
             matrix = compatibility_matrix.COMPATIBILITY_MATRIX[version]
-            modoboa_package = "modoboa=={}".format(version)
+            packages.append("modoboa=={}".format(version))
             for extension in list(self.extensions):
                 if not self.is_extension_ok_for_version(extension, version):
                     self.extensions.remove(extension)
@@ -89,24 +92,23 @@ class Modoboa(base.Installer):
                     packages.append("{}{}".format(extension, req_version))
                 else:
                     packages.append(extension)
-        # Temp fix for https://github.com/modoboa/modoboa-installer/issues/197
+        # Temp fix for django-braces
         python.install_package(
-            modoboa_package, self.venv_path,
-            upgrade=self.upgrade, binary=False, sudo_user=self.user)
+            "django-braces", self.venv_path, upgrade=self.upgrade,
+            sudo_user=self.user
+        )
         if self.dbengine == "postgres":
-            packages.append("psycopg2-binary")
+            packages.append("psycopg2-binary\<2.9")
         else:
             packages.append("mysqlclient")
         if sys.version_info.major == 2 and sys.version_info.micro < 9:
             # Add extra packages to fix the SNI issue
             packages += ["pyOpenSSL"]
-        if "modoboa-radicale" in self.extensions:
-            # Temp. fix
-            packages += [
-                "https://github.com/modoboa/caldav/tarball/master#egg=caldav"]
         python.install_packages(
-            packages, self.venv_path, upgrade=self.upgrade,
-            sudo_user=self.user
+            packages, self.venv_path,
+            upgrade=self.upgrade,
+            sudo_user=self.user,
+            beta=self.config.getboolean("modoboa", "install_beta")
         )
         if self.devmode:
             # FIXME: use dev-requirements instead
@@ -142,29 +144,44 @@ class Modoboa(base.Installer):
             "--domain", self.config.get("general", "hostname"),
             "--extensions", " ".join(self.extensions),
             "--dont-install-extensions",
-            "--dburl", "'default:{}://{}:{}@{}/{}'".format(
+            "--dburl", "'default:{}://{}:{}@{}:{}/{}'".format(
                 self.config.get("database", "engine"),
-                self.dbuser, self.dbpasswd, self.dbhost, self.dbname
+                self.dbuser, self.dbpasswd, self.dbhost, self.dbport,
+                self.dbname
             )
         ]
         if self.devmode:
             args = ["--devel"] + args
         if self.amavis_enabled:
             args += [
-                "'amavis:{}://{}:{}@{}/{}'".format(
+                "'amavis:{}://{}:{}@{}:{}/{}'".format(
                     self.config.get("database", "engine"),
                     self.config.get("amavis", "dbuser"),
                     self.config.get("amavis", "dbpassword"),
                     self.dbhost,
+                    self.dbport,
                     self.config.get("amavis", "dbname")
                 )
             ]
+        if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
+            # Drop dkim view to prevent an error during migration (2.0)
+            self.backend._exec_query("DROP VIEW IF EXISTS dkim")
         code, output = utils.exec_cmd(
             "bash -c '{} modoboa-admin.py deploy instance {}'".format(
                 prefix, " ".join(args)),
             sudo_user=self.user, cwd=self.home_dir)
         if code:
             raise utils.FatalError(output)
+        if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
+            # Restore view previously deleted
+            self.backend.load_sql_file(
+                self.dbname, self.dbuser, self.dbpasswd,
+                self.get_file_path("dkim_view_{}.sql".format(self.dbengine))
+            )
+            self.backend.grant_right_on_table(
+                self.dbname, "dkim", self.config.get("opendkim", "dbuser"),
+                "SELECT"
+            )
 
     def setup_database(self):
         """Additional config."""
@@ -186,11 +203,22 @@ class Modoboa(base.Installer):
             packages += ["openssl-devel"]
         return packages
 
+    def get_config_files(self):
+        """Return appropriate path."""
+        config_files = super().get_config_files()
+        if package.backend.FORMAT == "deb":
+            path = "supervisor=/etc/supervisor/conf.d/policyd.conf"
+        else:
+            path = "supervisor=/etc/supervisord.d/policyd.ini"
+        config_files.append(path)
+        return config_files
+
     def get_template_context(self):
         """Additional variables."""
         context = super(Modoboa, self).get_template_context()
         extensions = self.config.get("modoboa", "extensions")
         extensions = extensions.split()
+        random_hour = random.randint(0, 6)
         context.update({
             "sudo_user": (
                 "uwsgi" if package.backend.FORMAT == "rpm" else context["user"]
@@ -200,6 +228,8 @@ class Modoboa(base.Installer):
             "radicale_enabled": (
                 "" if "modoboa-radicale" in extensions else "#"),
             "opendkim_user": self.config.get("opendkim", "user"),
+            "minutes": random.randint(1, 59),
+            "hours" : f"{random_hour},{random_hour+12}"
         })
         return context
 
@@ -211,7 +241,7 @@ class Modoboa(base.Installer):
             self.instance_path, "media", "webmail")
         pw = pwd.getpwnam(self.user)
         for d in [rrd_root_dir, pdf_storage_dir, webmail_media_dir]:
-            utils.mkdir(d, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
+            utils.mkdir_safe(d, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
         settings = {
             "admin": {
                 "handle_mailboxes": True,
@@ -220,7 +250,7 @@ class Modoboa(base.Installer):
             "modoboa_amavis": {
                 "am_pdp_mode": "inet",
             },
-            "modoboa_stats": {
+            "maillog": {
                 "rrd_rootdir": rrd_root_dir,
             },
             "modoboa_pdfcredentials": {
@@ -235,7 +265,7 @@ class Modoboa(base.Installer):
         }
         for path in ["/var/log/maillog", "/var/log/mail.log"]:
             if os.path.exists(path):
-                settings["modoboa_stats"]["logfile"] = path
+                settings["maillog"]["logfile"] = path
         if self.config.getboolean("opendkim", "enabled"):
             settings["admin"]["dkim_keys_storage_dir"] = (
                 self.config.get("opendkim", "keys_storage_dir"))
@@ -253,3 +283,14 @@ class Modoboa(base.Installer):
         self._deploy_instance()
         if not self.upgrade:
             self.apply_settings()
+
+        if 'centos' in utils.dist_name():
+            supervisor = "supervisord"
+            system.enable_and_start_service("redis")
+        else:
+            supervisor = "supervisor"
+            system.enable_and_start_service("redis-server")
+        # Restart supervisor
+        system.enable_service(supervisor)
+        utils.exec_cmd("service {} stop".format(supervisor))
+        utils.exec_cmd("service {} start".format(supervisor))

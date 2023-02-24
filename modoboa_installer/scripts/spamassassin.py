@@ -45,23 +45,19 @@ class Spamassassin(base.Installer):
         context = super(Spamassassin, self).get_template_context()
         if self.dbengine == "postgres":
             store_module = "Mail::SpamAssassin::BayesStore::PgSQL"
-            dsn = "DBI:Pg:dbname={};host={}".format(self.dbname, self.dbhost)
+            dsn = "DBI:Pg:dbname={};host={};port={}".format(
+                self.dbname, self.dbhost, self.dbport)
         else:
             store_module = "Mail::SpamAssassin::BayesStore::MySQL"
-            dsn = "DBI:mysql:{}:{}".format(self.dbname, self.dbhost)
+            dsn = "DBI:mysql:{}:{}:{}".format(
+                self.dbname, self.dbhost, self.dbport)
         context.update({
             "store_module": store_module, "dsn": dsn, "dcc_enabled": "#"})
         return context
 
     def post_run(self):
         """Additional tasks."""
-        amavis_user = self.config.get("amavis", "user")
-        pw = pwd.getpwnam(amavis_user)
-        utils.exec_cmd(
-            "pyzor --homedir {} discover".format(pw[5]),
-            sudo_user=amavis_user, login=False
-        )
-        install("razor", self.config, self.upgrade)
+        install("razor", self.config, self.upgrade, self.restore)
         if utils.dist_name() in ["debian", "ubuntu"]:
             utils.exec_cmd(
                 "perl -pi -e 's/^CRON=0/CRON=1/' /etc/cron.daily/spamassassin")

@@ -24,10 +24,11 @@ def get_pip_path(venv):
 
 def install_package(name, venv=None, upgrade=False, binary=True, **kwargs):
     """Install a Python package using pip."""
-    cmd = "{} install{}{} {}".format(
+    cmd = "{} install{}{}{} {}".format(
         get_pip_path(venv),
         " -U" if upgrade else "",
         " --no-binary :all:" if not binary else "",
+        " --pre" if kwargs.pop("beta", False) else "",
         name
     )
     utils.exec_cmd(cmd, **kwargs)
@@ -35,8 +36,12 @@ def install_package(name, venv=None, upgrade=False, binary=True, **kwargs):
 
 def install_packages(names, venv=None, upgrade=False, **kwargs):
     """Install a Python package using pip."""
-    cmd = "{} install {}{}".format(
-        get_pip_path(venv), " -U " if upgrade else "", " ".join(names))
+    cmd = "{} install{}{} {}".format(
+        get_pip_path(venv),
+        " -U " if upgrade else "",
+        " --pre" if kwargs.pop("beta", False) else "",
+        " ".join(names)
+    )
     utils.exec_cmd(cmd, **kwargs)
 
 
@@ -71,4 +76,4 @@ def setup_virtualenv(path, sudo_user=None, python_version=2):
             utils.exec_cmd("virtualenv {}".format(path))
         else:
             utils.exec_cmd("{} -m venv {}".format(python_binary, path))
-        install_packages(["pip", "setuptools"], venv=path, upgrade=True)
+        install_packages(["pip", "setuptools\<58.0.0"], venv=path, upgrade=True)

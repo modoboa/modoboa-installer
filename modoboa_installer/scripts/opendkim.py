@@ -2,6 +2,7 @@
 
 import os
 import pwd
+import shutil
 import stat
 
 from .. import database
@@ -46,7 +47,7 @@ class Opendkim(base.Installer):
                     stat.S_IROTH | stat.S_IXOTH,
                     target[1], target[2]
                 )
-        super(Opendkim, self).install_config_files()
+        super().install_config_files()
 
     def get_template_context(self):
         """Additional variables."""
@@ -97,7 +98,8 @@ class Opendkim(base.Installer):
                 'SOCKET="inet:12345@localhost"',
             ]))
 
-        """ Make sure opendkim is started after postgresql and mysql, respectively. """
+        # Make sure opendkim is started after postgresql and mysql,
+        # respectively.
         if (self.dbengine != "postgres" and package.backend.FORMAT == "deb"):
             dbservice = "mysql.service"
         elif (self.dbengine != "postgres" and package.backend.FORMAT != "deb"):
@@ -108,3 +110,25 @@ class Opendkim(base.Installer):
             "s/^After=(.*)$/After=$1 {}/".format(dbservice))
         utils.exec_cmd(
             "perl -pi -e '{}' /lib/systemd/system/opendkim.service".format(pattern))
+
+    def restore(self):
+        """Restore keys."""
+        dkim_keys_backup = os.path.join(
+            self.archive_path, "custom/dkim")
+        keys_storage_dir = self.app_config["keys_storage_dir"]
+        if os.path.isdir(dkim_keys_backup):
+            for file in os.listdir(dkim_keys_backup):
+                file_path = os.path.join(dkim_keys_backup, file)
+                if os.path.isfile(file_path):
+                    utils.copy_file(file_path, keys_storage_dir)
+            utils.success("DKIM keys restored from backup")
+        # Setup permissions
+        user = self.config.get("opendkim", "user")
+        utils.exec_cmd(f"chown -R {user}:{user} {keys_storage_dir}")
+
+    def custom_backup(self, path):
+        """Backup DKIM keys."""
+        if os.path.isdir(self.app_config["keys_storage_dir"]):
+            shutil.copytree(self.app_config["keys_storage_dir"], os.path.join(path, "dkim"))
+            utils.printcolor(
+                "DKIM keys saved!", utils.GREEN)

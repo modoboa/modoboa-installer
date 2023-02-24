@@ -16,6 +16,12 @@ class Package(object):
         """Empty method."""
         pass
 
+    def prepare_system(self):
+        pass
+
+    def restore_system(self):
+        pass
+
 
 class DEBPackage(Package):
     """DEB based operations."""
@@ -25,6 +31,16 @@ class DEBPackage(Package):
     def __init__(self, dist_name):
         super(DEBPackage, self).__init__(dist_name)
         self.index_updated = False
+        self.policy_file = "/usr/sbin/policy-rc.d"
+
+    def prepare_system(self):
+        """Make sure services don't start at installation."""
+        with open(self.policy_file, "w") as fp:
+            fp.write("exit 101\n")
+        utils.exec_cmd("chmod +x {}".format(self.policy_file))
+
+    def restore_system(self):
+        utils.exec_cmd("rm -f {}".format(self.policy_file))
 
     def update(self):
         """Update local cache."""
@@ -92,7 +108,7 @@ def get_backend():
     """Return the appropriate package backend."""
     distname = utils.dist_name()
     backend = None
-    if distname in ["debian", "ubuntu"]:
+    if distname in ["debian", "debian gnu/linux", "ubuntu"]:
         backend = DEBPackage
     elif "centos" in distname:
         backend = RPMPackage

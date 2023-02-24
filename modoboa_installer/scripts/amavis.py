@@ -1,13 +1,12 @@
 """Amavis related functions."""
 
 import os
-import platform
 
 from .. import package
 from .. import utils
 
 from . import base
-from . import install
+from . import backup, install
 
 
 class Amavis(base.Installer):
@@ -22,8 +21,7 @@ class Amavis(base.Installer):
             "unrar-free",
         ],
         "rpm": [
-            "amavisd-new", "arj", "cabextract", "lz4", "lrzip",
-            "lzop", "p7zip", "unar", "unzoo"
+            "amavisd-new", "arj", "lz4", "lzop", "p7zip",
         ],
     }
     with_db = True
@@ -61,13 +59,22 @@ class Amavis(base.Installer):
             db_driver = "MySQL"
         else:
             raise NotImplementedError("DB driver not supported")
-        return packages + ["perl-DBD-{}".format(db_driver)]
+        packages += ["perl-DBD-{}".format(db_driver)]
+        name, version = utils.dist_info()
+        if version.startswith('7'):
+            packages += ["cabextract", "lrzip", "unar", "unzoo"]
+        elif version.startswith('8'):
+            packages += ["perl-IO-stringy"]
+        return packages
 
     def get_sql_schema_path(self):
         """Return schema path."""
         version = package.backend.get_installed_version("amavisd-new")
         if version is None:
-            raise utils.FatalError("Amavis is not installed")
+            # Fallback to amavis...
+            version = package.backend.get_installed_version("amavis")
+            if version is None:
+                raise utils.FatalError("Amavis is not installed")
         path = self.get_file_path(
             "amavis_{}_{}.sql".format(self.dbengine, version))
         if not os.path.exists(path):
@@ -75,7 +82,7 @@ class Amavis(base.Installer):
             path = self.get_file_path(
                 "amavis_{}_{}.sql".format(self.dbengine, version))
             if not os.path.exists(path):
-               raise utils.FatalError("Failed to find amavis database schema")
+                raise utils.FatalError("Failed to find amavis database schema")
         return path
 
     def pre_run(self):
@@ -85,5 +92,25 @@ class Amavis(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        install("spamassassin", self.config, self.upgrade)
-        install("clamav", self.config, self.upgrade)
+        install("spamassassin", self.config, self.upgrade, self.archive_path)
+        install("clamav", self.config, self.upgrade, self.archive_path)
+
+    def custom_backup(self, path):
+        """Backup custom configuration if any."""
+        if package.backend.FORMAT == "deb":
+            amavis_custom = f"{self.config_dir}/conf.d/99-custom"
+            if os.path.isfile(amavis_custom):
+                utils.copy_file(amavis_custom, path)
+                utils.success("Amavis custom configuration saved!")
+        backup("spamassassin", self.config, os.path.dirname(path))
+
+    def restore(self):
+        """Restore custom config files."""
+        if package.backend.FORMAT != "deb":
+            return
+        amavis_custom_configuration = os.path.join(
+            self.archive_path, "custom/99-custom")
+        if os.path.isfile(amavis_custom_configuration):
+            utils.copy_file(amavis_custom_configuration, os.path.join(
+                self.config_dir, "conf.d"))
+            utils.success("Custom amavis configuration restored.")

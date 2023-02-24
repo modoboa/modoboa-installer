@@ -78,7 +78,7 @@ scache    unix  -       -       -       -       1       scache
 # Also specify in main.cf: maildrop_destination_recipient_limit=1
 #
 maildrop  unix  -       n       n       -       -       pipe
-  flags=DRhu user=vmail argv=/usr/bin/maildrop -d ${recipient}
+  flags=DRhu user=%{dovecot_mailboxes_owner} argv=/usr/bin/maildrop -d ${recipient}
 #
 # ====================================================================
 #
@@ -148,5 +148,5 @@ autoreply unix        -       n       n       -       -       pipe
 %{amavis_enabled}        -o smtpd_hard_error_limit=1000 
 %{amavis_enabled}        -o smtpd_client_connection_count_limit=0 
 %{amavis_enabled}        -o smtpd_client_connection_rate_limit=0 
-%{amavis_enabled}        -o receive_override_options=no_header_body_checks,no_unknown_recipient_checks 
+%{amavis_enabled}        -o receive_override_options=no_header_body_checks,no_unknown_recipient_checks
 %{amavis_enabled}        -o local_header_rewrite_clients=

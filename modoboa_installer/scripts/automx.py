@@ -33,11 +33,12 @@ class Automx(base.Installer):
     def get_template_context(self):
         """Additional variables."""
         context = super(Automx, self).get_template_context()
-        sql_dsn = "{}://{}:{}@{}/{}".format(
-            self.dbengine,
+        sql_dsn = "{}://{}:{}@{}:{}/{}".format(
+            "postgresql" if self.dbengine == "postgres" else self.dbengine,
             self.config.get("modoboa", "dbuser"),
             self.config.get("modoboa", "dbpassword"),
             self.dbhost,
+            self.dbport,
             self.config.get("modoboa", "dbname"))
         if self.db_driver == "pgsql":
             sql_query = (

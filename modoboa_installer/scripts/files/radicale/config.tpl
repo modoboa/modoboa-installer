@@ -145,9 +145,6 @@ type = none
 # http://docs.python.org/library/logging.config.html
 #config = /etc/radicale/logging
 
-# Set the default logging level to debug
-debug = False 
-
 # Store all environment variables (including those set in the shell)
 #full_environment = False
 

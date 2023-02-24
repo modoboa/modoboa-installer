@@ -1,7 +1,7 @@
 modoboa-installer
 =================
 
-|travis| |codecov|
+|workflow| |codecov|
 
 An installer which deploy a complete mail server based on Modoboa.
 
@@ -9,8 +9,8 @@ An installer which deploy a complete mail server based on Modoboa.
 
    This tool is still in beta stage, it has been tested on:
 
-   * Debian Jessie (8) / Stretch (9) / Buster (10)
-   * Ubuntu Trusty (14.04) and upper
+   * Debian Buster (10) / Bullseye (11)
+   * Ubuntu Bionic Beaver (18.04) and upper
    * CentOS 7
 
 .. warning::
@@ -22,13 +22,17 @@ An installer which deploy a complete mail server based on Modoboa.
    The server (physical or virtual) running Modoboa needs at least 2GB
    of RAM in order to compile the required dependencies during the
    installation process. Passwords should not contain any special characters
-   as they may cause the installation to fail
+   as they may cause the installation to fail. It's important to set a FQDN
+   before, otherwise the installation will break.
 
 Usage::
 
   $ git clone https://github.com/modoboa/modoboa-installer
   $ cd modoboa-installer
-  $ sudo ./run.py <your domain>
+  $ sudo python3 run.py <your domain>
+
+
+If ``python3`` is not installed on your system, please install it.
 
 A configuration file will be automatically generated the first time
 you run the installer, please don't copy the
@@ -65,6 +69,10 @@ a previous one using the ``--version`` option::
 
    Version selection is available only for Modoboa >= 1.8.1.
 
+You can also install beta releases using the ``--beta`` flag::
+
+  $ sudo ./run.py --beta <your domain>
+
 If you want more information about the installation process, add the
 ``--debug`` option to your command line.
 
@@ -83,6 +91,54 @@ You can activate it as follows::
   $ sudo ./run.py --upgrade <your domain>
 
 It will automatically install latest versions of modoboa and its plugins.
+
+Backup mode 
+------------
+
+An experimental backup mode is available.
+
+.. warning::
+
+   You must keep the original configuration file, i.e. the one used for
+   the installation. Otherwise, you will need to recreate it manually with the right information!
+
+You can start the process as follows::
+
+  $ sudo ./run.py --backup <your domain>
+
+Then follow the step on the console.
+
+There is also a non-interactive mode:
+
+1. Silent mode
+
+Command::
+
+  $ sudo ./run.py --silent-backup <your domain>
+
+This mode will run silently. When executed, it will create
+/modoboa_backup/ and each time you execute it, it will create a new
+backup directory with current date and time.
+
+You can supply a custom path if needed::
+
+  $ sudo ./run.py --silent-backup --backup-path /path/of/backup/directory <your domain>
+
+If you want to disable emails backup, disable dovecot in the
+configuration file (set enabled to False).
+
+This can be useful for larger instance.
+
+Restore mode
+------------
+
+An experimental restore mode is available.
+
+You can start the process as follows::
+
+  $ sudo ./run.py --restore /path/to/backup/directory/ <your domain>
+
+Then wait for the process to finish.
 
 Change the generated hostname
 -----------------------------
@@ -127,7 +183,6 @@ modify the following settings::
 Change the ``email`` setting to a valid value since it will be used
 for account recovery.
 
-.. |travis| image:: https://travis-ci.org/modoboa/modoboa-installer.png?branch=master
-   :target: https://travis-ci.org/modoboa/modoboa-installer
+.. |workflow| image:: https://github.com/modoboa/modoboa-installer/workflows/Modoboa%20installer/badge.svg
 .. |codecov| image:: http://codecov.io/github/modoboa/modoboa-installer/coverage.svg?branch=master
    :target: http://codecov.io/github/modoboa/modoboa-installer?branch=master
