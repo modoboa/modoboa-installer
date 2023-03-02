@@ -6,8 +6,13 @@ import sys
 import tempfile
 import unittest
 
-from six import StringIO
-from six.moves import configparser
+from io import StringIO
+from pathlib import Path
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 try:
     from unittest.mock import patch
 except ImportError:
@@ -26,7 +31,11 @@ class ConfigFileTestCase(unittest.TestCase):
 
     def tearDown(self):
         """Delete temp dir."""
-        shutil.rmtree(self.workdir)
+        out = StringIO()
+        sys.stdout = out
+        print(self.workdir)
+        #shutil.rmtree(self.workdir)
+        pass
 
     def test_configfile_generation(self):
         """Check simple case."""
@@ -56,6 +65,37 @@ class ConfigFileTestCase(unittest.TestCase):
         config.read(self.cfgfile)
         self.assertEqual(config.get("certificate", "type"), "self-signed")
         self.assertEqual(config.get("database", "engine"), "postgres")
+
+    def test_updating_configfile(self):
+        """Check configfile update mechanism."""
+        cfgfile_temp = os.path.join(self.workdir, "installer_old.cfg")
+
+        out = StringIO()
+        sys.stdout = out
+        run.main([
+            "--stop-after-configfile-check",
+            "--configfile", cfgfile_temp,
+            "example.test"])
+        self.assertTrue(os.path.exists(cfgfile_temp))
+
+        # Adding a dummy section
+        with open(cfgfile_temp, "a") as fp:
+            fp.write(
+"""
+[dummy]
+    weird_old_option = "hey
+""")
+        print("here")
+        print(os.path.isfile(cfgfile_temp))
+
+        out = StringIO()
+        sys.stdout = out
+        run.main([
+            "--update-configfile",
+            "--configfile", cfgfile_temp,
+            "example.test"])
+        self.assertIn("dummy", out.getvalue())
+        self.assertTrue(Path(self.workdir).glob("*.old"))
 
     @patch("modoboa_installer.utils.user_input")
     def test_interactive_mode_letsencrypt(self, mock_user_input):

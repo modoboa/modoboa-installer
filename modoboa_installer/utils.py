@@ -320,8 +320,8 @@ def get_entry_value(entry, interactive):
     return user_value if user_value else default_value
 
 
-def gen_config(dest, interactive=False):
-    """Create config file from dict template"""
+def load_config_template(interactive):
+    """Instanciate a configParser object with the predefined template."""
     tpl_dict = config_dict_template.ConfigDictTemplate
     config = configparser.ConfigParser()
     # only ask about options we need, else still generate default
@@ -337,6 +337,72 @@ def gen_config(dest, interactive=False):
         for config_entry in section["values"]:
             value = get_entry_value(config_entry, interactive_section)
             config.set(section["name"], config_entry["option"], value)
+    return config
+
+
+def update_config(path):
+    """Update an existing config file."""
+    config = configparser.ConfigParser()
+    with open(path) as fp:
+        config.read_file(fp)
+    new_config = load_config_template(False)
+
+    old_sections = config.sections()
+    new_sections = new_config.sections()
+
+    update = False
+
+    dropped_sections = list(set(old_sections) - set(new_sections))
+
+    if len(dropped_sections) > 0:
+        printcolor("Follow section(s) will not be ported "
+                   "due to being deleted or renamed: " +
+                   ', '.join(dropped_sections),
+                   RED)
+
+    for section in new_sections:
+        if section in old_sections:
+            new_options = new_config.options(section)
+            old_options = config.options(section)
+
+            dropped_options = list(set(old_options) - set(new_options))
+
+            if len(dropped_options) > 0:
+                printcolor(f"Following option(s) from section: {section}, "
+                           "will not be ported due to being "
+                           "deleted or renamed: " +
+                           ', '.join(dropped_options),
+                           RED)
+
+            for option in new_options:
+                if option in old_options:
+                    value = config.get(section, option, raw=True)
+                    if value != new_config.get(section, option, raw=True):
+                        update = True
+                        new_config.set(section, option, value)
+
+    if update:
+        # Backing up old config file
+        date = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+        dest = f"{os.path.splitext(path)[0]}_{date}.old"
+        shutil.copy(path, dest)
+
+        # Overwritting old config file
+        with open(path, "w") as configfile:
+            new_config.write(configfile)
+
+        # Set file owner to running user and group, and set config file permission to 600
+        current_username = getpass.getuser()
+        current_user = pwd.getpwnam(current_username)
+        os.chown(dest, current_user[2], current_user[3])
+        os.chmod(dest, stat.S_IRUSR | stat.S_IWUSR)
+
+        return dest
+
+
+def gen_config(dest, interactive=False):
+    """Create config file from dict template"""
+    config = load_config_template(interactive)
 
     with open(dest, "w") as configfile:
         config.write(configfile)

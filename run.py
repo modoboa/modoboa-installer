@@ -135,6 +135,10 @@ def main(input_args):
         "--stop-after-configfile-check", action="store_true", default=False,
         help="Check configuration, generate it if needed and exit")
     parser.add_argument(
+        "--update-configfile", action="store_true", default=False,
+        help="Attempt to update the config file. "
+        "Installer will stop after performing the update.")
+    parser.add_argument(
         "--interactive", action="store_true", default=False,
         help="Generate configuration file with user interaction")
     parser.add_argument(
@@ -153,7 +157,8 @@ def main(input_args):
     parser.add_argument(
         "--silent-backup", action="store_true", default=False,
         help="For script usage, do not require user interaction "
-        "backup will be saved at ./modoboa_backup/Backup_M_Y_d_H_M if --backup-path is not provided")
+        "backup will be saved at ./modoboa_backup/Backup_M_Y_d_H_M "
+        "if --backup-path is not provided")
     parser.add_argument(
         "--restore", type=str, metavar="path",
         help="Restore a previously backup up modoboa instance on a NEW machine. "
@@ -178,6 +183,18 @@ def main(input_args):
             sys.exit(1)
 
     utils.success("Welcome to Modoboa installer!\n")
+
+    # Update configfile
+    if args.update_configfile:
+        backup_location = utils.update_config(args.configfile)
+        utils.printcolor("Update complete. It seems successful.",
+                         utils.BLUE)
+        if backup_location is not None:
+            utils.printcolor("You will find your old config file "
+                             f"here: {backup_location}",
+                             utils.BLUE)
+        return
+
     is_config_file_available = utils.check_config_file(
         args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
 
