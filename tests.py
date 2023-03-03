@@ -31,11 +31,7 @@ class ConfigFileTestCase(unittest.TestCase):
 
     def tearDown(self):
         """Delete temp dir."""
-        out = StringIO()
-        sys.stdout = out
-        print(self.workdir)
-        #shutil.rmtree(self.workdir)
-        pass
+        shutil.rmtree(self.workdir)
 
     def test_configfile_generation(self):
         """Check simple case."""

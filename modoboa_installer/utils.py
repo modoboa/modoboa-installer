@@ -355,7 +355,7 @@ def update_config(path):
     dropped_sections = list(set(old_sections) - set(new_sections))
 
     if len(dropped_sections) > 0:
-        printcolor("Follow section(s) will not be ported "
+        printcolor("Following section(s) will not be ported "
                    "due to being deleted or renamed: " +
                    ', '.join(dropped_sections),
                    RED)
