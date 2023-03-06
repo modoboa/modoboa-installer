@@ -59,7 +59,7 @@ class Automx(base.Installer):
         python.setup_virtualenv(
             self.venv_path, sudo_user=self.user, python_version=3)
         packages = [
-            "future", "lxml", "ipaddress", "sqlalchemy", "python-memcached",
+            "future", "lxml", "ipaddress", "sqlalchemy < 2.0", "python-memcached",
             "python-dateutil", "configparser"
         ]
         if self.dbengine == "postgres":
