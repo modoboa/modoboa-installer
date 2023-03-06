@@ -42,7 +42,7 @@ def installation_disclaimer(args, config):
         "Before you start the installation, please make sure the following "
         "DNS records exist for domain '{}':\n"
         "  {} IN A   <IP ADDRESS OF YOUR SERVER>\n"
-        "       IN MX  {}.\n".format(
+        "     @ IN MX  {}.\n".format(
             args.domain,
             hostname.replace(".{}".format(args.domain), ""),
             hostname
