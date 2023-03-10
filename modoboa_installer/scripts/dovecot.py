@@ -120,6 +120,9 @@ class Dovecot(base.Installer):
             utils.copy_file(f, "{}/conf.d".format(self.config_dir))
         # Make postlogin script executable
         utils.exec_cmd("chmod +x /usr/local/bin/postlogin.sh")
+        # Only root should have read access to the 10-ssl-keys.try
+        # See https://github.com/modoboa/modoboa/issues/2570
+        utils.exec_cmd("chmod 600 /etc/dovecot/conf.d/10-ssl-keys.try")
         # Add mailboxes user to dovecot group for modoboa mailbox commands.
         # See https://github.com/modoboa/modoboa/issues/2157.
         system.add_user_to_group(self.mailboxes_owner, 'dovecot')
