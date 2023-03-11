@@ -321,7 +321,7 @@ def get_entry_value(entry, interactive):
 
 
 def load_config_template(interactive):
-    """Instanciate a configParser object with the predefined template."""
+    """Instantiate a configParser object with the predefined template."""
     tpl_dict = config_dict_template.ConfigDictTemplate
     config = configparser.ConfigParser()
     # only ask about options we need, else still generate default
@@ -398,6 +398,7 @@ def update_config(path):
         os.chmod(dest, stat.S_IRUSR | stat.S_IWUSR)
 
         return dest
+    return None
 
 
 def gen_config(dest, interactive=False):
