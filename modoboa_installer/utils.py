@@ -354,7 +354,7 @@ def update_config(path, apply_update=True):
 
     dropped_sections = list(set(old_sections) - set(new_sections))
     added_sections = list(set(new_sections) - set(old_sections))
-    if len(dropped_sections) > 0 and not apply_update:
+    if len(dropped_sections) > 0 and apply_update:
         printcolor("Following section(s) will not be ported "
                    "due to being deleted or renamed: " +
                    ', '.join(dropped_sections),
@@ -369,8 +369,8 @@ def update_config(path, apply_update=True):
             old_options = config.options(section)
 
             dropped_options = list(set(old_options) - set(new_options))
-            added_options = list(set(new_options) - set(old_sections))
-            if len(dropped_options) > 0 and not apply_update:
+            added_options = list(set(new_options) - set(old_options))
+            if len(dropped_options) > 0 and apply_update:
                 printcolor(f"Following option(s) from section: {section}, "
                            "will not be ported due to being "
                            "deleted or renamed: " +

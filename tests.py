@@ -18,6 +18,7 @@ try:
 except ImportError:
     from mock import patch
 
+from modoboa_installer import utils
 import run
 
 
@@ -81,15 +82,9 @@ class ConfigFileTestCase(unittest.TestCase):
 [dummy]
     weird_old_option = "hey
 """)
-        print("here")
-        print(os.path.isfile(cfgfile_temp))
-
         out = StringIO()
         sys.stdout = out
-        run.main([
-            "--update-configfile",
-            "--configfile", cfgfile_temp,
-            "example.test"])
+        utils.update_config(cfgfile_temp)
         self.assertIn("dummy", out.getvalue())
         self.assertTrue(Path(self.workdir).glob("*.old"))
 
@@ -127,6 +122,9 @@ class ConfigFileTestCase(unittest.TestCase):
             "modoboa automx amavis clamav dovecot nginx razor postfix"
             " postwhite spamassassin uwsgi",
             out.getvalue()
+        )
+        self.assertNotIn("It seems that your config file is outdated.",
+                         out.getvalue()
         )
 
     @patch("modoboa_installer.utils.user_input")
