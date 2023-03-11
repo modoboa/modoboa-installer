@@ -177,7 +177,7 @@ def check_config_file(dest, interactive=False, upgrade=False, backup=False, rest
     """Create a new installer config file if needed."""
     is_present = True
     if os.path.exists(dest):
-        return is_present
+        return is_present, update_config(dest, False)
     if upgrade:
         printcolor(
             "You cannot upgrade an existing installation without a "
@@ -198,7 +198,7 @@ def check_config_file(dest, interactive=False, upgrade=False, backup=False, rest
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)
     gen_config(dest, interactive)
-    return is_present
+    return is_present, None
 
 
 def has_colours(stream):
@@ -340,7 +340,7 @@ def load_config_template(interactive):
     return config
 
 
-def update_config(path):
+def update_config(path, apply_update=True):
     """Update an existing config file."""
     config = configparser.ConfigParser()
     with open(path) as fp:
@@ -353,12 +353,15 @@ def update_config(path):
     update = False
 
     dropped_sections = list(set(old_sections) - set(new_sections))
-
-    if len(dropped_sections) > 0:
+    added_sections = list(set(new_sections) - set(old_sections))
+    if len(dropped_sections) > 0 and not apply_update:
         printcolor("Following section(s) will not be ported "
                    "due to being deleted or renamed: " +
                    ', '.join(dropped_sections),
                    RED)
+
+    if len(dropped_sections) + len(added_sections) > 0:
+        update = True
 
     for section in new_sections:
         if section in old_sections:
@@ -366,22 +369,25 @@ def update_config(path):
             old_options = config.options(section)
 
             dropped_options = list(set(old_options) - set(new_options))
-
-            if len(dropped_options) > 0:
+            added_options = list(set(new_options) - set(old_sections))
+            if len(dropped_options) > 0 and not apply_update:
                 printcolor(f"Following option(s) from section: {section}, "
                            "will not be ported due to being "
                            "deleted or renamed: " +
                            ', '.join(dropped_options),
                            RED)
+            if len(dropped_options) + len(added_options) > 0:
+                update = True
 
-            for option in new_options:
-                if option in old_options:
-                    value = config.get(section, option, raw=True)
-                    if value != new_config.get(section, option, raw=True):
-                        update = True
-                        new_config.set(section, option, value)
+            if apply_update:
+                for option in new_options:
+                    if option in old_options:
+                        value = config.get(section, option, raw=True)
+                        if value != new_config.get(section, option, raw=True):
+                            update = True
+                            new_config.set(section, option, value)
 
-    if update:
+    if update and apply_update:
         # Backing up old config file
         date = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
         dest = f"{os.path.splitext(path)[0]}_{date}.old"
@@ -391,13 +397,19 @@ def update_config(path):
         with open(path, "w") as configfile:
             new_config.write(configfile)
 
-        # Set file owner to running user and group, and set config file permission to 600
+        # Set file owner to running u+g, and set config file permission to 600
         current_username = getpass.getuser()
         current_user = pwd.getpwnam(current_username)
         os.chown(dest, current_user[2], current_user[3])
         os.chmod(dest, stat.S_IRUSR | stat.S_IWUSR)
 
         return dest
+    elif update and not apply_update:
+        # Simply check if current config file is outdated
+        return True
+    elif not update and not apply_update:
+        return False
+
     return None
 
 

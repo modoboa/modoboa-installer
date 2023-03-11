@@ -54,12 +54,6 @@ run the following command::
 
   $ ./run.py --stop-after-configfile-check <your domain>
 
-If you updated your installer, your config file might be outdated.
-The program will exit after the update, so you can check the config file
-before continuing. To perform the update, run the following command::
-
-  $ ./run.py --update-configfile <your domain>
-
 An interactive mode is also available::
 
   $ ./run.py --interactive <your domain>
