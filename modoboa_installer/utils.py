@@ -386,31 +386,30 @@ def update_config(path, apply_update=True):
                         if value != new_config.get(section, option, raw=True):
                             update = True
                             new_config.set(section, option, value)
+    if apply_update:
+        if update:
+            # Backing up old config file
+            date = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+            dest = f"{os.path.splitext(path)[0]}_{date}.old"
+            shutil.copy(path, dest)
 
-    if update and apply_update:
-        # Backing up old config file
-        date = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-        dest = f"{os.path.splitext(path)[0]}_{date}.old"
-        shutil.copy(path, dest)
+            # Overwritting old config file
+            with open(path, "w") as configfile:
+                new_config.write(configfile)
 
-        # Overwritting old config file
-        with open(path, "w") as configfile:
-            new_config.write(configfile)
+            # Set file owner to running u+g, and set config file permission to 600
+            current_username = getpass.getuser()
+            current_user = pwd.getpwnam(current_username)
+            os.chown(dest, current_user[2], current_user[3])
+            os.chmod(dest, stat.S_IRUSR | stat.S_IWUSR)
 
-        # Set file owner to running u+g, and set config file permission to 600
-        current_username = getpass.getuser()
-        current_user = pwd.getpwnam(current_username)
-        os.chown(dest, current_user[2], current_user[3])
-        os.chmod(dest, stat.S_IRUSR | stat.S_IWUSR)
-
-        return dest
-    elif update and not apply_update:
-        # Simply check if current config file is outdated
-        return True
-    elif not update and not apply_update:
+            return dest
+        return None
+    else:
+        if update:
+            # Simply check if current config file is outdated
+            return True
         return False
-
-    return None
 
 
 def gen_config(dest, interactive=False):
