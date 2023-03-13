@@ -203,9 +203,10 @@ def main(input_args):
                                   "Would you like to update it? (Y/n) ")
         if answer.lower().startswith("y"):
             config_file_update_complete(utils.update_config(args.configfile))
-            answer = utils.user_input("Would you like to stop to review the updated config? (Y/n)")
-            if answer.lower().startswith("y"):
-                return
+            if not args.stop_after_configfile_check:
+                answer = utils.user_input("Would you like to stop to review the updated config? (Y/n)")
+                if answer.lower().startswith("y"):
+                    return
         else:
             utils.error("You might encounter unexpected errors ! "
                         "Make sur to update your config before opening an issue!")

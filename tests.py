@@ -18,7 +18,6 @@ try:
 except ImportError:
     from mock import patch
 
-from modoboa_installer import utils
 import run
 
 
@@ -63,7 +62,8 @@ class ConfigFileTestCase(unittest.TestCase):
         self.assertEqual(config.get("certificate", "type"), "self-signed")
         self.assertEqual(config.get("database", "engine"), "postgres")
 
-    def test_updating_configfile(self):
+    @patch("modoboa_installer.utils.user_input")
+    def test_updating_configfile(self, mock_user_input):
         """Check configfile update mechanism."""
         cfgfile_temp = os.path.join(self.workdir, "installer_old.cfg")
 
@@ -82,11 +82,18 @@ class ConfigFileTestCase(unittest.TestCase):
 [dummy]
     weird_old_option = "hey
 """)
+        mock_user_input.side_effect = ["y"]
         out = StringIO()
         sys.stdout = out
-        utils.update_config(cfgfile_temp)
+        run.main([
+            "--stop-after-configfile-check",
+            "--configfile", cfgfile_temp,
+            "example.test"])
         self.assertIn("dummy", out.getvalue())
         self.assertTrue(Path(self.workdir).glob("*.old"))
+        self.assertIn("Update complete",
+                      out.getvalue()
+        )
 
     @patch("modoboa_installer.utils.user_input")
     def test_interactive_mode_letsencrypt(self, mock_user_input):
