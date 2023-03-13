@@ -406,10 +406,8 @@ def update_config(path, apply_update=True):
             return dest
         return None
     else:
-        if update:
-            # Simply check if current config file is outdated
-            return True
-        return False
+        # Simply check if current config file is outdated
+        return update
 
 
 def gen_config(dest, interactive=False):
