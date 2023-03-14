@@ -6,8 +6,13 @@ import sys
 import tempfile
 import unittest
 
-from six import StringIO
-from six.moves import configparser
+from io import StringIO
+from pathlib import Path
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 try:
     from unittest.mock import patch
 except ImportError:
@@ -58,6 +63,39 @@ class ConfigFileTestCase(unittest.TestCase):
         self.assertEqual(config.get("database", "engine"), "postgres")
 
     @patch("modoboa_installer.utils.user_input")
+    def test_updating_configfile(self, mock_user_input):
+        """Check configfile update mechanism."""
+        cfgfile_temp = os.path.join(self.workdir, "installer_old.cfg")
+
+        out = StringIO()
+        sys.stdout = out
+        run.main([
+            "--stop-after-configfile-check",
+            "--configfile", cfgfile_temp,
+            "example.test"])
+        self.assertTrue(os.path.exists(cfgfile_temp))
+
+        # Adding a dummy section
+        with open(cfgfile_temp, "a") as fp:
+            fp.write(
+"""
+[dummy]
+    weird_old_option = "hey
+""")
+        mock_user_input.side_effect = ["y"]
+        out = StringIO()
+        sys.stdout = out
+        run.main([
+            "--stop-after-configfile-check",
+            "--configfile", cfgfile_temp,
+            "example.test"])
+        self.assertIn("dummy", out.getvalue())
+        self.assertTrue(Path(self.workdir).glob("*.old"))
+        self.assertIn("Update complete",
+                      out.getvalue()
+        )
+
+    @patch("modoboa_installer.utils.user_input")
     def test_interactive_mode_letsencrypt(self, mock_user_input):
         """Check interactive mode."""
         mock_user_input.side_effect = [
@@ -91,6 +129,9 @@ class ConfigFileTestCase(unittest.TestCase):
             "modoboa automx amavis clamav dovecot nginx razor postfix"
             " postwhite spamassassin uwsgi",
             out.getvalue()
+        )
+        self.assertNotIn("It seems that your config file is outdated.",
+                         out.getvalue()
         )
 
     @patch("modoboa_installer.utils.user_input")

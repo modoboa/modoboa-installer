@@ -131,7 +131,7 @@ class Installer(object):
             return
         exitcode, output = package.backend.install_many(packages)
         if exitcode:
-            utils.printcolor("Failed to install dependencies", utils.RED)
+            utils.error("Failed to install dependencies")
             sys.exit(1)
 
     def get_config_files(self):

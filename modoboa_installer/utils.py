@@ -177,7 +177,7 @@ def check_config_file(dest, interactive=False, upgrade=False, backup=False, rest
     """Create a new installer config file if needed."""
     is_present = True
     if os.path.exists(dest):
-        return is_present
+        return is_present, update_config(dest, False)
     if upgrade:
         printcolor(
             "You cannot upgrade an existing installation without a "
@@ -198,7 +198,7 @@ def check_config_file(dest, interactive=False, upgrade=False, backup=False, rest
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)
     gen_config(dest, interactive)
-    return is_present
+    return is_present, None
 
 
 def has_colours(stream):
@@ -320,8 +320,8 @@ def get_entry_value(entry, interactive):
     return user_value if user_value else default_value
 
 
-def gen_config(dest, interactive=False):
-    """Create config file from dict template"""
+def load_config_template(interactive):
+    """Instantiate a configParser object with the predefined template."""
     tpl_dict = config_dict_template.ConfigDictTemplate
     config = configparser.ConfigParser()
     # only ask about options we need, else still generate default
@@ -337,6 +337,82 @@ def gen_config(dest, interactive=False):
         for config_entry in section["values"]:
             value = get_entry_value(config_entry, interactive_section)
             config.set(section["name"], config_entry["option"], value)
+    return config
+
+
+def update_config(path, apply_update=True):
+    """Update an existing config file."""
+    config = configparser.ConfigParser()
+    with open(path) as fp:
+        config.read_file(fp)
+    new_config = load_config_template(False)
+
+    old_sections = config.sections()
+    new_sections = new_config.sections()
+
+    update = False
+
+    dropped_sections = list(set(old_sections) - set(new_sections))
+    added_sections = list(set(new_sections) - set(old_sections))
+    if len(dropped_sections) > 0 and apply_update:
+        printcolor("Following section(s) will not be ported "
+                   "due to being deleted or renamed: " +
+                   ', '.join(dropped_sections),
+                   RED)
+
+    if len(dropped_sections) + len(added_sections) > 0:
+        update = True
+
+    for section in new_sections:
+        if section in old_sections:
+            new_options = new_config.options(section)
+            old_options = config.options(section)
+
+            dropped_options = list(set(old_options) - set(new_options))
+            added_options = list(set(new_options) - set(old_options))
+            if len(dropped_options) > 0 and apply_update:
+                printcolor(f"Following option(s) from section: {section}, "
+                           "will not be ported due to being "
+                           "deleted or renamed: " +
+                           ', '.join(dropped_options),
+                           RED)
+            if len(dropped_options) + len(added_options) > 0:
+                update = True
+
+            if apply_update:
+                for option in new_options:
+                    if option in old_options:
+                        value = config.get(section, option, raw=True)
+                        if value != new_config.get(section, option, raw=True):
+                            update = True
+                            new_config.set(section, option, value)
+    if apply_update:
+        if update:
+            # Backing up old config file
+            date = datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+            dest = f"{os.path.splitext(path)[0]}_{date}.old"
+            shutil.copy(path, dest)
+
+            # Overwritting old config file
+            with open(path, "w") as configfile:
+                new_config.write(configfile)
+
+            # Set file owner to running u+g, and set config file permission to 600
+            current_username = getpass.getuser()
+            current_user = pwd.getpwnam(current_username)
+            os.chown(dest, current_user[2], current_user[3])
+            os.chmod(dest, stat.S_IRUSR | stat.S_IWUSR)
+
+            return dest
+        return None
+    else:
+        # Simply check if current config file is outdated
+        return update
+
+
+def gen_config(dest, interactive=False):
+    """Create config file from dict template"""
+    config = load_config_template(interactive)
 
     with open(dest, "w") as configfile:
         config.write(configfile)

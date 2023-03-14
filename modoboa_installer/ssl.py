@@ -90,7 +90,7 @@ class LetsEncryptCertificate(CertificateBackend):
         elif "centos" in name:
             package.backend.install("certbot")
         else:
-            utils.printcolor("Failed to install certbot, aborting.", utils.RED)
+            utils.printcolor("Failed to install certbot, aborting.")
             sys.exit(1)
         # Nginx plugin certbot
         if (

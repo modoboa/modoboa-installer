@@ -44,8 +44,7 @@ class Backup:
         path_exists = os.path.exists(path)
 
         if path_exists and os.path.isfile(path):
-            utils.printcolor(
-                "Error, you provided a file instead of a directory!", utils.RED)
+            utils.error("Error, you provided a file instead of a directory!")
             return False
 
         if not path_exists:
@@ -58,9 +57,7 @@ class Backup:
                 utils.mkdir_safe(path, stat.S_IRWXU |
                                  stat.S_IRWXG, pw[2], pw[3])
             else:
-                utils.printcolor(
-                    "Error, backup directory not present.", utils.RED
-                )
+                utils.error("Error, backup directory not present.")
                 return False
 
         if len(os.listdir(path)) != 0:
@@ -80,9 +77,7 @@ class Backup:
                 shutil.rmtree(os.path.join(path, "databases"),
                               ignore_errors=False)
             else:
-                utils.printcolor(
-                    "Error: backup directory not clean.", utils.RED
-                )
+                utils.error("Error: backup directory not clean.")
                 return False
 
         self.backup_path = path
@@ -131,8 +126,8 @@ class Backup:
         home_path = self.config.get("dovecot", "home_dir")
 
         if not os.path.exists(home_path) or os.path.isfile(home_path):
-            utils.printcolor("Error backing up Email, provided path "
-                             f" ({home_path}) seems not right...", utils.RED)
+            utils.error("Error backing up Email, provided path "
+                        f" ({home_path}) seems not right...")
 
         else:
             dst = os.path.join(self.backup_path, "mails/")

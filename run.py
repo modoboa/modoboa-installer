@@ -116,6 +116,15 @@ def backup_system(config, args):
         scripts.backup(app, config, backup_path)
 
 
+def config_file_update_complete(backup_location):
+    utils.printcolor("Update complete. It seems successful.",
+                     utils.BLUE)
+    if backup_location is not None:
+        utils.printcolor("You will find your old config file "
+                         f"here: {backup_location}",
+                         utils.BLUE)
+
+
 def main(input_args):
     """Install process."""
     parser = argparse.ArgumentParser()
@@ -153,7 +162,8 @@ def main(input_args):
     parser.add_argument(
         "--silent-backup", action="store_true", default=False,
         help="For script usage, do not require user interaction "
-        "backup will be saved at ./modoboa_backup/Backup_M_Y_d_H_M if --backup-path is not provided")
+        "backup will be saved at ./modoboa_backup/Backup_M_Y_d_H_M "
+        "if --backup-path is not provided")
     parser.add_argument(
         "--restore", type=str, metavar="path",
         help="Restore a previously backup up modoboa instance on a NEW machine. "
@@ -178,13 +188,28 @@ def main(input_args):
             sys.exit(1)
 
     utils.success("Welcome to Modoboa installer!\n")
-    is_config_file_available = utils.check_config_file(
+
+    is_config_file_available, outdate_config = utils.check_config_file(
         args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
 
     if not is_config_file_available and (
             args.upgrade or args.backup or args.silent_backup):
         utils.error("No config file found.")
         return
+
+    # Check if config is outdated and ask user if it needs to be updated
+    if is_config_file_available and outdate_config:
+        answer = utils.user_input("It seems that your config file is outdated. "
+                                  "Would you like to update it? (Y/n) ")
+        if answer.lower().startswith("y"):
+            config_file_update_complete(utils.update_config(args.configfile))
+            if not args.stop_after_configfile_check:
+                answer = utils.user_input("Would you like to stop to review the updated config? (Y/n)")
+                if answer.lower().startswith("y"):
+                    return
+        else:
+            utils.error("You might encounter unexpected errors ! "
+                        "Make sur to update your config before opening an issue!")
 
     if args.stop_after_configfile_check:
         return
