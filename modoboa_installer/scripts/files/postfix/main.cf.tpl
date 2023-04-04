@@ -124,6 +124,7 @@ strict_rfc821_envelopes = yes
 
 # Rspamd setup
 %{rspamd_enabled}smtpd_milters = inet:localhost:11332
+%{rspamd_enabled}non_smtpd_milters = inet:localhost:11332
 %{rspamd_enabled}milter_default_action = accept
 %{rspamd_enabled}milter_protocol = 6
 
@@ -160,14 +161,14 @@ smtpd_recipient_restrictions =
 %{rspamd_disabled}postscreen_dnsbl_threshold = 3
 %{rspamd_disabled}postscreen_dnsbl_action = enforce
 
-postscreen_greet_banner = Welcome, please wait... 
-postscreen_greet_action = enforce
+%{rspamd_disabled}postscreen_greet_banner = Welcome, please wait...
+%{rspamd_disabled}postscreen_greet_action = enforce
 
-postscreen_pipelining_enable = yes
-postscreen_pipelining_action = enforce
+%{rspamd_disabled}postscreen_pipelining_enable = yes
+%{rspamd_disabled}postscreen_pipelining_action = enforce
 
-postscreen_non_smtp_command_enable = yes
-postscreen_non_smtp_command_action = enforce
+%{rspamd_disabled}postscreen_non_smtp_command_enable = yes
+%{rspamd_disabled}postscreen_non_smtp_command_action = enforce
 
-postscreen_bare_newline_enable = yes
-postscreen_bare_newline_action = enforce
+%{rspamd_disabled}postscreen_bare_newline_enable = yes
+%{rspamd_disabled}postscreen_bare_newline_action = enforce

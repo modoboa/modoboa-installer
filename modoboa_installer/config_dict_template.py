@@ -283,8 +283,6 @@ ConfigDictTemplate = [
             {
                 "option": "dbpassword",
                 "default": make_password,
-                "customizable": True,
-                "question": "Please enter amavis db password"
             },
         ],
     },
