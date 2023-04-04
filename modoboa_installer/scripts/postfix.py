@@ -60,7 +60,9 @@ class Postfix(base.Installer):
             "modoboa_instance_path": self.config.get(
                 "modoboa", "instance_path"),
             "opendkim_port": self.config.get(
-                "opendkim", "port")
+                "opendkim", "port"),
+            "rspamd_disabled": "" if not self.config.get(
+                "rspamd", "enabled") else "#"
         })
         return context
 

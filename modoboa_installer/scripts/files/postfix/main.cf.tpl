@@ -122,6 +122,11 @@ strict_rfc821_envelopes = yes
 %{opendkim_enabled}milter_default_action = accept
 %{opendkim_enabled}milter_content_timeout = 30s
 
+# Rspamd setup
+%{rspamd_enabled}smtpd_milters = inet:localhost:11332
+%{rspamd_enabled}milter_default_action = accept
+%{rspamd_enabled}milter_protocol = 6
+
 # List of authorized senders
 smtpd_sender_login_maps =
         proxy:%{db_driver}:/etc/postfix/sql-sender-login-map.cf
@@ -142,18 +147,18 @@ smtpd_recipient_restrictions =
 
 ## Postcreen settings
 #
-postscreen_access_list =
-       permit_mynetworks
-       cidr:/etc/postfix/postscreen_spf_whitelist.cidr
-postscreen_blacklist_action = enforce 
+%{rspamd_disabled}postscreen_access_list =
+%{rspamd_disabled}       permit_mynetworks
+%{rspamd_disabled}      cidr:/etc/postfix/postscreen_spf_whitelist.cidr
+%{rspamd_disabled}postscreen_blacklist_action = enforce
 
 # Use some DNSBL
-postscreen_dnsbl_sites = 
-	zen.spamhaus.org=127.0.0.[2..11]*3
-	bl.spameatingmonkey.net=127.0.0.2*2
-	bl.spamcop.net=127.0.0.2
-postscreen_dnsbl_threshold = 3 
-postscreen_dnsbl_action = enforce 
+%{rspamd_disabled}postscreen_dnsbl_sites =
+%{rspamd_disabled}	zen.spamhaus.org=127.0.0.[2..11]*3
+%{rspamd_disabled}	bl.spameatingmonkey.net=127.0.0.2*2
+%{rspamd_disabled}	bl.spamcop.net=127.0.0.2
+%{rspamd_disabled}postscreen_dnsbl_threshold = 3
+%{rspamd_disabled}postscreen_dnsbl_action = enforce
 
 postscreen_greet_banner = Welcome, please wait... 
 postscreen_greet_action = enforce
