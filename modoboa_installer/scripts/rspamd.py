@@ -31,6 +31,23 @@ class Rspamd(base.Installer):
         """Return appropriate config dir."""
         return "/etc/rspamd"
 
+    def install_config_files(self):
+        """Make sure config directory exists."""
+        user = self.config.get("modoboa", "user")
+        pw = pwd.getpwnam(user)
+        targets = [
+            [self.app_config["dkim_keys_storage_dir"], pw[2], pw[3]]
+        ]
+        for target in targets:
+            if not os.path.exists(target[0]):
+                utils.mkdir(
+                    target[0],
+                    stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
+                    stat.S_IROTH | stat.S_IXOTH,
+                    target[1], target[2]
+                )
+        super().install_config_files()
+
     def get_config_files(self):
         """Return appropriate config files."""
         _config_files = self.config_files
