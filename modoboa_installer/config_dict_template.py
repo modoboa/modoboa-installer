@@ -229,11 +229,44 @@ ConfigDictTemplate = [
         ]
     },
     {
-        "name": "amavis",
+        "name": "rspamd",
         "values": [
             {
                 "option": "enabled",
                 "default": "true",
+            },
+            {
+                "option": "password",
+                "default": make_password,
+            }
+            {
+                "option": "dnsbl",
+                "default": "true",
+            },
+            {
+                "option": "dkim_keys_storage_dir",
+                "default": "/var/lib/dkim"
+            },
+            {
+                "option": "keys_path_map",
+                "default": "/var/lib/dkim/keys.path.map"
+            },
+            {
+                "option": "selectors_path_map",
+                "default": "/var/lib/dkim/selectors.path.map"
+            },
+            {
+                "option": "greylisting",
+                "default": "true"
+            }
+        ],
+    },
+    {
+        "name": "amavis",
+        "values": [
+            {
+                "option": "enabled",
+                "default": "false",
             },
             {
                 "option": "user",
@@ -374,7 +407,7 @@ ConfigDictTemplate = [
         "values": [
             {
                 "option": "enabled",
-                "default": "true",
+                "default": "false",
             },
             {
                 "option": "config_dir",
@@ -443,7 +476,7 @@ ConfigDictTemplate = [
         "values": [
             {
                 "option": "enabled",
-                "default": "true",
+                "default": "false",
             },
             {
                 "option": "user",
