@@ -58,3 +58,5 @@ target/
 
 # PyCharm
 .idea/
+
+installer.cfg
