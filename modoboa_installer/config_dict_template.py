@@ -189,6 +189,7 @@ ConfigDictTemplate = [
                 "option": "extensions",
                 "default": (
                     "modoboa-amavis "
+                    "modoboa-rspamd "
                     "modoboa-webmail modoboa-contacts "
                     "modoboa-radicale"
                 ),
@@ -238,7 +239,7 @@ ConfigDictTemplate = [
             {
                 "option": "password",
                 "default": make_password,
-            }
+            },
             {
                 "option": "dnsbl",
                 "default": "true",
