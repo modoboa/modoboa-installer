@@ -24,7 +24,10 @@ class Rspamd(base.Installer):
                     "local.d/spf.conf",
                     "local.d/worker-controller.inc",
                     "local.d/worker-normal.inc",
-                    "local.d/worker-proxy.inc"]
+                    "local.d/worker-proxy.inc",
+                    "local.d/greylist.conf",
+                    "local.d/milter_headers.conf",
+                    "local.d/metrics.conf"]
 
     @property
     def config_dir(self):
@@ -51,11 +54,9 @@ class Rspamd(base.Installer):
     def get_config_files(self):
         """Return appropriate config files."""
         _config_files = self.config_files
-        if self.config.get("clamav", "enabled"):
+        if self.config.getboolean("clamav", "enabled"):
             _config_files.append("local.d/antivirus.conf")
-        if self.app_config["dnsbl"]:
-            _config_files.append("local.d/greylisting.conf")
-        if not self.app_config["dnsbl"]:
+        if self.app_config["dnsbl"].lower() == "true":
             _config_files.append("local.d/rbl.conf")
         return _config_files
 
@@ -71,7 +72,15 @@ class Rspamd(base.Installer):
             _context["controller_password"] = password
         else:
             _context["controller_password"] = controller_password
+        _context["greylisting_disabled"] = "" if not self.app_config["greylisting"] else "#"
+        if not self.app_config["greylisting"]:
+            _context["postwhite_enabled"] = "#"
         return _context
+
+    def post_run(self):
+        """Additional tasks."""
+        if self.config("clamav", "enabled"):
+            install("clamav", self.config, self.upgrade, self.archive_path)
 
     def custom_backup(self, path):
         """Backup custom configuration if any."""

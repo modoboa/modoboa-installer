@@ -1,11 +1,14 @@
 clamav {
+  scan_mime_parts = true;
+  scan_text_mime = true;
+  scan_image_mime = true;
+
   symbol = "CLAM_VIRUS";
   type = "clamav";
-  servers = "127.0.0.1:3310";
+  servers = "/var/run/clamd.amavisd/clamd.sock";
+
   patterns {
     # symbol_name = "pattern";
-    JUST_EICAR = '^Eicar-Test-Signature$';
+    JUST_EICAR = "Test.EICAR";
   }
 }
-
-
