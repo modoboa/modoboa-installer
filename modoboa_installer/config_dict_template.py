@@ -234,7 +234,7 @@ ConfigDictTemplate = [
             {
                 "option": "password",
                 "default": make_password,
-            }
+            },
             {
                 "option": "dnsbl",
                 "default": "true",
