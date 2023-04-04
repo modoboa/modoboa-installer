@@ -48,6 +48,13 @@ server {
         try_files $uri $uri/ /index.html = 404;
     }
 
+%{rspamd_enabled}    location /rspamd/ {
+%{rspamd_enabled}        proxy_pass       http://localhost:11334/;
+%{rspamd_enabled}
+%{rspamd_enabled}        proxy_set_header Host      $host;
+%{rspamd_enabled}        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+%{rspamd_enabled}    }
+
     location / {
         include uwsgi_params;
         uwsgi_param UWSGI_SCRIPT instance.wsgi:application;
