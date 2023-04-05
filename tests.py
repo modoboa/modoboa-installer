@@ -99,7 +99,7 @@ class ConfigFileTestCase(unittest.TestCase):
     def test_interactive_mode_letsencrypt(self, mock_user_input):
         """Check interactive mode."""
         mock_user_input.side_effect = [
-            "1", "admin@example.test", "0", "", "", "", "", ""
+            "1", "admin@example.test", "0", "", "", "", ""
         ]
         with open(os.devnull, "w") as fp:
             sys.stdout = fp
@@ -126,8 +126,8 @@ class ConfigFileTestCase(unittest.TestCase):
             "example.test"])
         self.assertTrue(os.path.exists(self.cfgfile))
         self.assertIn(
-            "modoboa automx amavis clamav dovecot nginx razor postfix"
-            " postwhite spamassassin uwsgi",
+            "fail2ban modoboa automx rspamd clamav dovecot nginx razor "
+            "postfix postwhite uwsgi radicale",
             out.getvalue()
         )
         self.assertNotIn("It seems that your config file is outdated.",
