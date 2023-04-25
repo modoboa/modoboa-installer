@@ -199,13 +199,10 @@ class MySQL(Database):
                     "mariadb-server", "root_password_again", "password",
                     self.dbpassword)
                 return
-            if version.startswith("11"):
-                queries = [
-                    "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}')"
-                    .format(self.dbpassword),
-                    "flush privileges"
-                ]
-        if name.startswith("ubuntu") and version.startswith("22"):
+        if (
+            (name.startswith("debian") and version.startswith("11")) or
+            (name.startswith("ubuntu") and version.startswith("22"))
+        ):
             queries = [
                 "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}')"
                 .format(self.dbpassword),
