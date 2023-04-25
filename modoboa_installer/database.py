@@ -183,7 +183,11 @@ class MySQL(Database):
             else:
                 self.packages["deb"].append("libmariadbclient-dev")
         elif name == "ubuntu":
-            self.packages["deb"].append("libmysqlclient-dev")
+            if version.startswith("2"):
+                # Works for Ubuntu 22 and 20
+                self.packages["deb"].append("libmariadb-dev")
+            else:
+                self.packages["deb"].append("libmysqlclient-dev")
         super(MySQL, self).install_package()
         queries = []
         if name.startswith("debian"):
@@ -195,12 +199,15 @@ class MySQL(Database):
                     "mariadb-server", "root_password_again", "password",
                     self.dbpassword)
                 return
-            if version.startswith("11"):
-                queries = [
-                    "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}')"
-                    .format(self.dbpassword),
-                    "flush privileges"
-                ]
+        if (
+            (name.startswith("debian") and version.startswith("11")) or
+            (name.startswith("ubuntu") and version.startswith("22"))
+        ):
+            queries = [
+                "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}')"
+                .format(self.dbpassword),
+                "flush privileges"
+            ]
         if not queries:
             queries = [
                 "UPDATE user SET plugin='' WHERE user='root'",
