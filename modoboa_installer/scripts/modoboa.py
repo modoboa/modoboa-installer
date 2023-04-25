@@ -45,6 +45,15 @@ class Modoboa(base.Installer):
     def __init__(self, *args, **kwargs):
         """Get configuration."""
         super(Modoboa, self).__init__(*args, **kwargs)
+        # Check if modoboa version > 2.2
+        self.modoboa_2_2_or_greater = False
+        condition = (
+            (modoboa_version[0] == 2 and modoboa_version[1] >= 2) or
+            modoboa_version[0] > 2
+            )
+        if condition:
+            self.modoboa_2_2_or_greater = True
+
         self.venv_path = self.config.get("modoboa", "venv_path")
         self.instance_path = self.config.get("modoboa", "instance_path")
         self.extensions = self.config.get("modoboa", "extensions").split()
@@ -61,6 +70,9 @@ class Modoboa(base.Installer):
                 self.extensions.remove("modoboa-radicale")
         self.dovecot_enabled = self.config.getboolean("dovecot", "enabled")
         self.opendkim_enabled = self.config.getboolean("opendkim", "enabled")
+        self.dkim_cron_enabled = False
+        if not self.modoboa_2_2_or_greater and self.opendkim_enabled:
+            self.dkim_cron_enabled = True
 
     def is_extension_ok_for_version(self, extension, version):
         """Check if extension can be installed with this modo version."""
@@ -214,6 +226,20 @@ class Modoboa(base.Installer):
         else:
             path = "supervisor=/etc/supervisord.d/policyd.ini"
         config_files.append(path)
+
+        # Add worker for dkim if needed
+        modoboa_version = python.get_package_version(
+            "modoboa",
+            self.venv_path,
+            sudo_user=self.user
+            )
+        condition = (
+            (modoboa_version[0] == 2 and modoboa_version[1] >= 2) or
+            modoboa_version[0] > 2
+            )
+        if condition:
+            config_files.append(
+                "supervisor-rq=/etc/supervisor/conf.d/modoboa-worker.conf")
         return config_files
 
     def get_template_context(self):
@@ -232,7 +258,9 @@ class Modoboa(base.Installer):
                 "" if "modoboa-radicale" in extensions else "#"),
             "opendkim_user": self.config.get("opendkim", "user"),
             "minutes": random.randint(1, 59),
-            "hours" : f"{random_hour},{random_hour+12}"
+            "hours": f"{random_hour},{random_hour+12}",
+            "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
+            "dkim_cron_enabled": "" if self.dkim_cron_enabled else "#"
         })
         return context
 

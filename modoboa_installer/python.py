@@ -45,6 +45,29 @@ def install_packages(names, venv=None, upgrade=False, **kwargs):
     utils.exec_cmd(cmd, **kwargs)
 
 
+def get_package_version(name, venv=None, **kwargs):
+    """Returns the version of an installed package."""
+    cmd = "{} show {}".format(
+        get_pip_path(venv),
+        name
+    )
+    status, output = utils.exec_cmd(cmd, **kwargs)
+
+    output_list = output.split("\n")
+    version_item_list = output_list[1].split(":")
+    version_list = version_item_list[1].split(".")
+    version_list_clean = []
+    for element in version_list:
+        try:
+            version_list_clean.append(int(version_list[i]))
+        except ValueError:
+            utils.printcolor(
+                f"Failed to decode some part of the version of {name}",
+                utils.YELLOW)
+            version_list_clean.append(element)
+    return version_list_clean
+
+
 def install_package_from_repository(name, url, vcs="git", venv=None, **kwargs):
     """Install a Python package from its repository."""
     if vcs == "git":
