@@ -20,7 +20,12 @@ COMPATIBILITY_MATRIX = {
         "modoboa-pdfcredentials": ">=1.1.1",
         "modoboa-sievefilters": ">=1.1.1",
         "modoboa-webmail": ">=1.2.0",
-    }
+    },
+    "2.1.0": {
+        "modoboa-pdfcredentials": None,
+        "modoboa-dmarc": None,
+        "modoboa-imap-migration": None,
+    },
 }
 
 EXTENSIONS_AVAILABILITY = {

@@ -87,6 +87,8 @@ class Modoboa(base.Installer):
                     continue
                 if extension in matrix:
                     req_version = matrix[extension]
+                    if req_version is None:
+                        continue
                     req_version = req_version.replace("<", "\<")
                     req_version = req_version.replace(">", "\>")
                     packages.append("{}{}".format(extension, req_version))
