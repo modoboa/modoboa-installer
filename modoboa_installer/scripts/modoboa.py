@@ -255,7 +255,7 @@ class Modoboa(base.Installer):
             "maillog": {
                 "rrd_rootdir": rrd_root_dir,
             },
-            "modoboa_pdfcredentials": {
+            "pdfcredentials": {
                 "storage_dir": pdf_storage_dir
             },
             "modoboa_radicale": {
