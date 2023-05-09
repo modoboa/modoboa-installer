@@ -44,12 +44,12 @@ class Automx(base.Installer):
             sql_query = (
                 "SELECT first_name || ' ' || last_name AS display_name, email"
                 ", SPLIT_PART(email, '@', 2) AS domain "
-                "FROM core_user WHERE email='%s' AND is_active")
+                "FROM core_user WHERE email='%s' AND is_active;")
         else:
             sql_query = (
                 "SELECT concat(first_name, ' ', last_name) AS display_name, "
                 "email, SUBSTRING_INDEX(email, '@', -1) AS domain "
-                "FROM core_user WHERE email='%s' AND is_active=1"
+                "FROM core_user WHERE email='%s' AND is_active=1;"
             )
         context.update({"sql_dsn": sql_dsn, "sql_query": sql_query})
         return context
