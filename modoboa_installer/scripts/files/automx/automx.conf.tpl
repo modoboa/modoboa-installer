@@ -2,6 +2,9 @@
 provider = %domain
 domains = *
 
+#debug=yes
+#logfile = /srv/automx/automx.log
+
 # Protect against DoS
 memcache = 127.0.0.1:11211
 memcache_ttl = 600
@@ -15,6 +18,8 @@ account_type = email
 host = %sql_dsn
 query = %sql_query
 result_attrs = display_name, email
+
+display_name = ${display_name}
 
 smtp = yes
 smtp_server = %hostname
@@ -32,10 +37,3 @@ imap_encryption = starttls
 imap_auth = plaintext
 imap_auth_identity = ${email}
 imap_refresh_ttl = 6
-
-pop = yes
-pop_server = %hostname
-pop_port = 110
-pop_encryption = starttls
-pop_auth = plaintext
-pop_auth_identity = ${email}

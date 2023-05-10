@@ -26,7 +26,8 @@ class Modoboa(base.Installer):
         "deb": [
             "build-essential", "python3-dev", "libxml2-dev", "libxslt-dev",
             "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron",
-            "libssl-dev", "redis-server", "supervisor"
+            "libssl-dev", "redis-server", "supervisor", "pkg-config",
+            "libcairo2-dev"
         ],
         "rpm": [
             "gcc", "gcc-c++", "python3-devel", "libxml2-devel", "libxslt-devel",
