@@ -31,6 +31,10 @@ ConfigDictTemplate = [
         "name": "certificate",
         "values": [
             {
+                "option": "generate",
+                "default": "true",
+            },
+            {
                 "option": "type",
                 "default": "self-signed",
                 "customizable": True,

@@ -148,6 +148,10 @@ class LetsEncryptCertificate(CertificateBackend):
 def get_backend(config):
     """Return the appropriate backend."""
     cert_type = config.get("certificate", "type")
+    condition = (not config.getboolean("certificate", "generate") and
+                 cert_type != "manual")
+    if condition:
+        return None
     if cert_type == "letsencrypt":
         return LetsEncryptCertificate(config)
     if cert_type == "manual":
