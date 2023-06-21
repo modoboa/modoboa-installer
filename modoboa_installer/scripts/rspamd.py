@@ -4,6 +4,7 @@ import os
 
 from .. import package
 from .. import utils
+from .. import system
 
 from . import base
 from . import backup, install
@@ -34,6 +35,29 @@ class Rspamd(base.Installer):
         """Return appropriate config dir."""
         return "/etc/rspamd"
 
+    def install_packages(self):
+        status, codename = utils.exec_cmd("lsb_release -c -s")
+
+        if codename.lower() in ["bionic", "bookworm", "bullseye", "buster",
+                                "focal", "jammy", "jessie", "sid", "stretch",
+                                "trusty", "wheezy", "xenial"]:
+            utils.mkdir_safe("/etc/apt/keyrings")
+
+            if codename.lower() == "bionic":
+                package.backend.install("software-properties-common")
+                utils.exec_cmd("add-apt-repository ppa:ubuntu-toolchain-r/test")
+
+            utils.exec_cmd("wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -")
+            utils.exec_cmd(f"echo \"deb http://apt.llvm.org/{codename}/ llvm-toolchain-{codename}-16 main\" | sudo tee /etc/apt/sources.list.d/llvm-16.list")
+            utils.exec_cmd(f"echo \"deb-src http://apt.llvm.org/{codename}/ llvm-toolchain-{codename}-16 main\"  | sudo tee -a /etc/apt/sources.list.d/llvm-16.list")
+
+            utils.exec_cmd("wget -O- https://rspamd.com/apt-stable/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/rspamd.gpg > /dev/null")
+            utils.exec_cmd(f"echo \"deb [arch=amd64 signed-by=/etc/apt/keyrings/rspamd.gpg] http://rspamd.com/apt-stable/ {codename} main\" | sudo tee /etc/apt/sources.list.d/rspamd.list")
+            utils.exec_cmd(f"echo \"deb-src [arch=amd64 signed-by=/etc/apt/keyrings/rspamd.gpg] http://rspamd.com/apt-stable/ {codename} main\"  | sudo tee -a /etc/apt/sources.list.d/rspamd.list")
+            package.backend.update()
+
+        return super().install_packages()
+
     def install_config_files(self):
         """Make sure config directory exists."""
         user = self.config.get("modoboa", "user")
@@ -58,6 +82,8 @@ class Rspamd(base.Installer):
             _config_files.append("local.d/antivirus.conf")
         if self.app_config["dnsbl"].lower() == "true":
             _config_files.append("local.d/rbl.conf")
+        if self.app_config["whitelist_auth"].lower() == "true":
+            _config_files.append("local.d/groups.conf")
         return _config_files
 
     def get_template_context(self):
@@ -72,13 +98,16 @@ class Rspamd(base.Installer):
             _context["controller_password"] = password
         else:
             _context["controller_password"] = controller_password
-        _context["greylisting_disabled"] = "" if not self.app_config["greylisting"] else "#"
-        if not self.app_config["greylisting"]:
-            _context["postwhite_enabled"] = "#"
+        _context["greylisting_disabled"] = "" if not self.app_config["greylisting"].lower() == "true" else "#"
+        _context["whitelist_auth_enabled"] = "" if self.app_config["whitelist_auth"].lower() == "true" else "#"
         return _context
 
     def post_run(self):
         """Additional tasks."""
+        system.add_user_to_group(
+            self.config.get("modoboa", "user"),
+            "_rspamd"
+            )
         if self.config("clamav", "enabled"):
             install("clamav", self.config, self.upgrade, self.archive_path)
 
