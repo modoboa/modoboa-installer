@@ -25,6 +25,34 @@ class CertificateBackend(object):
         return True
 
 
+class ManualCertification(CertificateBackend):
+    """Use certificate provided."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        path_correct = True
+        self.tls_cert_file_path = self.config.get("certificate",
+                                                  "tls_key_file_path")
+        self.tls_key_file_path = self.config.get("certificate",
+                                                 "tls_cert_file_path")
+
+        if not os.path.exists(self.tls_key_file_path):
+            utils.error("'tls_key_file_path' path is not accessible")
+            path_correct = False
+        if not os.path.exists(self.tls_cert_file_path):
+            utils.error("'tls_cert_file_path' path is not accessible")
+            path_correct = False
+
+        if not path_correct:
+            sys.exit(1)
+
+    def generate_cert(self):
+        self.config.set("general", "tls_key_file",
+                        self.tls_key_file_path)
+        self.config.set("general", "tls_cert_file",
+                        self.tls_cert_file_path)
+
+
 class SelfSignedCertificate(CertificateBackend):
     """Create a self signed certificate."""
 
@@ -119,8 +147,9 @@ class LetsEncryptCertificate(CertificateBackend):
 
 def get_backend(config):
     """Return the appropriate backend."""
-    if not config.getboolean("certificate", "generate"):
-        return None
-    if config.get("certificate", "type") == "letsencrypt":
+    cert_type = config.get("certificate", "type")
+    if cert_type == "letsencrypt":
         return LetsEncryptCertificate(config)
+    if cert_type == "manual":
+        return ManualCertification(config)
     return SelfSignedCertificate(config)

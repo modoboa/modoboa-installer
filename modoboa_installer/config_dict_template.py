@@ -31,15 +31,24 @@ ConfigDictTemplate = [
         "name": "certificate",
         "values": [
             {
-                "option": "generate",
-                "default": "true",
-            },
-            {
                 "option": "type",
                 "default": "self-signed",
                 "customizable": True,
                 "question": "Please choose your certificate type",
-                "values": ["self-signed", "letsencrypt"],
+                "value_return": ["manual"],
+                "values": ["self-signed", "letsencrypt", "manual"],
+            },
+            {
+                "option": "tls_cert_file_path",
+                "customizable": True,
+                "question": "Please enter your certificate fullchain path",
+                "default": ""
+            },
+            {
+                "option": "tls_key_file_path",
+                "customizable": True,
+                "question": "Please enter your certificate key path",
+                "default": ""
             }
         ],
     },
