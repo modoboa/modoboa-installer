@@ -259,6 +259,14 @@ ConfigDictTemplate = [
             {
                 "option": "greylisting",
                 "default": "true"
+            },
+            {
+                "option": "whitelist_auth",
+                "default": "true"
+            },
+            {
+                "option": "whitelist_auth_weigth",
+                "default": "-5"
             }
         ],
     },
