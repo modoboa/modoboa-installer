@@ -324,7 +324,7 @@ def get_entry_value(entry, interactive):
         if condition:
             error(f"{user_value} cannot be set interactively, "
                   "Please configure installer.cfg manually by running "
-                  "'python3 run.py ----stop-after-configfile-check domain'. "
+                  "'python3 run.py --stop-after-configfile-check domain'. "
                   "Check modoboa-installer Readme for more information."
                   )
             sys.exit(1)

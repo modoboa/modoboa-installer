@@ -44,14 +44,10 @@ ConfigDictTemplate = [
             },
             {
                 "option": "tls_cert_file_path",
-                "customizable": True,
-                "question": "Please enter your certificate fullchain path",
                 "default": ""
             },
             {
                 "option": "tls_key_file_path",
-                "customizable": True,
-                "question": "Please enter your certificate key path",
                 "default": ""
             }
         ],
