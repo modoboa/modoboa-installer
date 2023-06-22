@@ -187,6 +187,7 @@ If you want to generate a valid certificate using `Let's Encrypt
 modify the following settings::
 
   [certificate]
+  generate = true
   type = letsencrypt
   tls_cert_file_path =
   tls_key_file_path =
@@ -211,6 +212,7 @@ If you want to use already generated certs, simply edit the
 ``installer.cfg`` file and modify the following settings::
 
     [certificate]
+    generate = true
     type = manual
     tls_cert_file_path = *path to tls key file*
     tls_key_file_path = * path to tls fullchain file*
