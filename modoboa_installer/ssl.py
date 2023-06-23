@@ -24,6 +24,10 @@ class CertificateBackend(object):
                     return False
         return True
 
+    def generate_cert(self):
+        """Create a certificate."""
+        pass
+
 
 class ManualCertification(CertificateBackend):
     """Use certificate provided."""
@@ -46,7 +50,6 @@ class ManualCertification(CertificateBackend):
         if not path_correct:
             sys.exit(1)
 
-    def generate_cert(self):
         self.config.set("general", "tls_key_file",
                         self.tls_key_file_path)
         self.config.set("general", "tls_cert_file",
