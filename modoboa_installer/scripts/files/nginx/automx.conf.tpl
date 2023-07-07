@@ -3,8 +3,8 @@ upstream automx {
 }
 
 server {
-    listen 80 http2;
-    listen [::]:80 http2;
+    listen 80;
+    listen [::]:80;
     server_name %hostname;
     root /srv/automx/instance;
 
