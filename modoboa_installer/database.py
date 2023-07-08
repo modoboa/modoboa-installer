@@ -200,7 +200,7 @@ class MySQL(Database):
                     self.dbpassword)
                 return
         if (
-            (name.startswith("debian") and version.startswith("11")) or
+            (name.startswith("debian") and (version.startswith("11") or version.startswith("12"))) or
             (name.startswith("ubuntu") and version.startswith("22"))
         ):
             queries = [
