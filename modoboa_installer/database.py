@@ -178,7 +178,7 @@ class MySQL(Database):
         if name.startswith("debian"):
             if version.startswith("8"):
                 self.packages["deb"].append("libmysqlclient-dev")
-            elif version.startswith("11"):
+            elif version.startswith("11") or version.startswith("12"):
                 self.packages["deb"].append("libmariadb-dev")
             else:
                 self.packages["deb"].append("libmariadbclient-dev")
@@ -200,7 +200,7 @@ class MySQL(Database):
                     self.dbpassword)
                 return
         if (
-            (name.startswith("debian") and version.startswith("11")) or
+            (name.startswith("debian") and (version.startswith("11") or version.startswith("12"))) or
             (name.startswith("ubuntu") and version.startswith("22"))
         ):
             queries = [
