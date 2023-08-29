@@ -46,6 +46,11 @@ class Modoboa(base.Installer):
         """Get configuration."""
         super(Modoboa, self).__init__(*args, **kwargs)
         # Check if modoboa version > 2.2
+        modoboa_version = python.get_package_version(
+            "modoboa",
+            self.venv_path,
+            sudo_user=self.user
+            )
         self.modoboa_2_2_or_greater = False
         condition = (
             (modoboa_version[0] == 2 and modoboa_version[1] >= 2) or
