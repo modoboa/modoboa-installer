@@ -1,6 +1,7 @@
 """Python related tools."""
 
 import os
+import sys
 
 from . import package
 from . import utils
@@ -51,7 +52,11 @@ def get_package_version(name, venv=None, **kwargs):
         get_pip_path(venv),
         name
     )
-    status, output = utils.exec_cmd(cmd, **kwargs)
+    exit_code, output = utils.exec_cmd(cmd, **kwargs)
+    if exit_code != 0:
+        utils.error(f"Failed to get version of {name}. "
+                    f"Output is: {output}")
+        sys.exit(1)
 
     output_list = output.split("\n")
     version_item_list = output_list[1].split(":")

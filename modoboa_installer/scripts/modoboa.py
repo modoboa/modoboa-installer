@@ -228,16 +228,7 @@ class Modoboa(base.Installer):
         config_files.append(path)
 
         # Add worker for dkim if needed
-        modoboa_version = python.get_package_version(
-            "modoboa",
-            self.venv_path,
-            sudo_user=self.user
-            )
-        condition = (
-            (modoboa_version[0] == 2 and modoboa_version[1] >= 2) or
-            modoboa_version[0] > 2
-            )
-        if condition:
+        if self.modoboa_2_2_or_greater:
             config_files.append(
                 "supervisor-rq=/etc/supervisor/conf.d/modoboa-worker.conf")
         return config_files
