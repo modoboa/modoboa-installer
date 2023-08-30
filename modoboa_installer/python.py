@@ -58,7 +58,7 @@ def get_package_version(name, venv=None, **kwargs):
                     f"Output is: {output}")
         sys.exit(1)
 
-    output_list = output.split("\n")
+    output_list = output.decode().split("\n")
     version_item_list = output_list[1].split(":")
     version_list = version_item_list[1].split(".")
     version_list_clean = []

@@ -207,6 +207,10 @@ class Modoboa(base.Installer):
             packages += ["openssl-devel"]
         return packages
 
+    def setup_user(self):
+        super().setup_user()
+        self._setup_venv()
+
     def get_config_files(self):
         """Return appropriate path."""
         config_files = super().get_config_files()
@@ -292,7 +296,6 @@ class Modoboa(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        self._setup_venv()
         self._deploy_instance()
         if not self.upgrade:
             self.apply_settings()
