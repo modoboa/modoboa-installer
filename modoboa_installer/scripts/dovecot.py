@@ -36,7 +36,7 @@ class Dovecot(base.Installer):
         # Check if modoboa version > 2.2
         modoboa_version = python.get_package_version(
             "modoboa",
-            self.venv_path,
+            self.config.get("modoboa", "venv_path"),
             sudo_user=self.user
             )
         self.modoboa_2_2_or_greater = False
