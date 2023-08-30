@@ -64,7 +64,7 @@ def get_package_version(name, venv=None, **kwargs):
     version_list_clean = []
     for element in version_list:
         try:
-            version_list_clean.append(int(version_list[i]))
+            version_list_clean.append(int(element))
         except ValueError:
             utils.printcolor(
                 f"Failed to decode some part of the version of {name}",
