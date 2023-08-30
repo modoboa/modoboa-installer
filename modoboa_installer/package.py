@@ -68,7 +68,7 @@ class DEBPackage(Package):
     def get_installed_version(self, name):
         """Get installed package version."""
         code, output = utils.exec_cmd(
-            "dpkg -s {} | grep Version".format(name), capture_output=True)
+            "dpkg -s {} | grep Version".format(name))
         match = re.match(r"Version: (\d:)?(.+)-\d", output.decode())
         if match:
             return match.group(2)
@@ -97,7 +97,7 @@ class RPMPackage(Package):
     def get_installed_version(self, name):
         """Get installed package version."""
         code, output = utils.exec_cmd(
-            "rpm -qi {} | grep Version".format(name), capture_output=True)
+            "rpm -qi {} | grep Version".format(name))
         match = re.match(r"Version\s+: (.+)", output.decode())
         if match:
             return match.group(1)
