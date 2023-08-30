@@ -63,22 +63,6 @@ class Modoboa(base.Installer):
         self.opendkim_enabled = self.config.getboolean("opendkim", "enabled")
         self.dkim_cron_enabled = False
 
-        # Check if modoboa version > 2.2
-        modoboa_version = python.get_package_version(
-            "modoboa",
-            self.venv_path,
-            sudo_user=self.user
-            )
-        self.modoboa_2_2_or_greater = False
-        condition = (
-            (modoboa_version[0] == 2 and modoboa_version[1] >= 2) or
-            modoboa_version[0] > 2
-            )
-        if condition:
-            self.modoboa_2_2_or_greater = True
-        if not self.modoboa_2_2_or_greater and self.opendkim_enabled:
-            self.dkim_cron_enabled = True
-
     def is_extension_ok_for_version(self, extension, version):
         """Check if extension can be installed with this modo version."""
         if extension not in compatibility_matrix.EXTENSIONS_AVAILABILITY:
@@ -244,6 +228,8 @@ class Modoboa(base.Installer):
         extensions = self.config.get("modoboa", "extensions")
         extensions = extensions.split()
         random_hour = random.randint(0, 6)
+        self.dkim_cron_enabled = (not self.modoboa_2_2_or_greater and
+                                  self.opendkim_enabled)
         context.update({
             "sudo_user": (
                 "uwsgi" if package.backend.FORMAT == "rpm" else context["user"]

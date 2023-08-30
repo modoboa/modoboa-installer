@@ -31,22 +31,6 @@ class Dovecot(base.Installer):
         "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try"]
     with_user = True
 
-    def __init__(self, *args, **kwargs):
-        super.__init__(*args, **kwargs)
-        # Check if modoboa version > 2.2
-        modoboa_version = python.get_package_version(
-            "modoboa",
-            self.config.get("modoboa", "venv_path"),
-            sudo_user=self.user
-            )
-        self.modoboa_2_2_or_greater = False
-        condition = (
-            (modoboa_version[0] == 2 and modoboa_version[1] >= 2) or
-            modoboa_version[0] > 2
-            )
-        if condition:
-            self.modoboa_2_2_or_greater = True
-
     def setup_user(self):
         """Setup mailbox user."""
         super().setup_user()
