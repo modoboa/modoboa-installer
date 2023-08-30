@@ -7,7 +7,6 @@ import shutil
 
 from .. import database
 from .. import package
-from .. import python
 from .. import system
 from .. import utils
 
