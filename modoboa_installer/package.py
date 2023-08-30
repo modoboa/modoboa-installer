@@ -46,7 +46,7 @@ class DEBPackage(Package):
         """Update local cache."""
         if self.index_updated:
             return
-        utils.exec_cmd("apt-get update --quiet")
+        utils.exec_cmd("apt-get -o Dpkg::Progress-Fancy=0 update --quiet")
         self.index_updated = True
 
     def preconfigure(self, name, question, qtype, answer):
@@ -57,18 +57,18 @@ class DEBPackage(Package):
     def install(self, name):
         """Install a package."""
         self.update()
-        utils.exec_cmd("apt-get install --quiet --assume-yes {}".format(name))
+        utils.exec_cmd("apt-get -o Dpkg::Progress-Fancy=0 install --quiet --assume-yes {}".format(name))
 
     def install_many(self, names):
         """Install many packages."""
         self.update()
-        return utils.exec_cmd("apt-get install --quiet --assume-yes {}".format(
+        return utils.exec_cmd("apt-get -o Dpkg::Progress-Fancy=0 install --quiet --assume-yes {}".format(
             " ".join(names)))
 
     def get_installed_version(self, name):
         """Get installed package version."""
         code, output = utils.exec_cmd(
-            "dpkg -s {} | grep Version".format(name), capture_output=True)
+            "dpkg -s {} | grep Version".format(name))
         match = re.match(r"Version: (\d:)?(.+)-\d", output.decode())
         if match:
             return match.group(2)
@@ -97,7 +97,7 @@ class RPMPackage(Package):
     def get_installed_version(self, name):
         """Get installed package version."""
         code, output = utils.exec_cmd(
-            "rpm -qi {} | grep Version".format(name), capture_output=True)
+            "rpm -qi {} | grep Version".format(name))
         match = re.match(r"Version\s+: (.+)", output.decode())
         if match:
             return match.group(1)

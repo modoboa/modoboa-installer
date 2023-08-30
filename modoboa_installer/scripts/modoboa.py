@@ -61,6 +61,7 @@ class Modoboa(base.Installer):
                 self.extensions.remove("modoboa-radicale")
         self.dovecot_enabled = self.config.getboolean("dovecot", "enabled")
         self.opendkim_enabled = self.config.getboolean("opendkim", "enabled")
+        self.dkim_cron_enabled = False
 
     def is_extension_ok_for_version(self, extension, version):
         """Check if extension can be installed with this modo version."""
@@ -206,6 +207,10 @@ class Modoboa(base.Installer):
             packages += ["openssl-devel"]
         return packages
 
+    def setup_user(self):
+        super().setup_user()
+        self._setup_venv()
+
     def get_config_files(self):
         """Return appropriate path."""
         config_files = super().get_config_files()
@@ -214,6 +219,11 @@ class Modoboa(base.Installer):
         else:
             path = "supervisor=/etc/supervisord.d/policyd.ini"
         config_files.append(path)
+
+        # Add worker for dkim if needed
+        if self.modoboa_2_2_or_greater:
+            config_files.append(
+                "supervisor-rq=/etc/supervisor/conf.d/modoboa-worker.conf")
         return config_files
 
     def get_template_context(self):
@@ -222,6 +232,8 @@ class Modoboa(base.Installer):
         extensions = self.config.get("modoboa", "extensions")
         extensions = extensions.split()
         random_hour = random.randint(0, 6)
+        self.dkim_cron_enabled = (not self.modoboa_2_2_or_greater and
+                                  self.opendkim_enabled)
         context.update({
             "sudo_user": (
                 "uwsgi" if package.backend.FORMAT == "rpm" else context["user"]
@@ -232,7 +244,9 @@ class Modoboa(base.Installer):
                 "" if "modoboa-radicale" in extensions else "#"),
             "opendkim_user": self.config.get("opendkim", "user"),
             "minutes": random.randint(1, 59),
-            "hours" : f"{random_hour},{random_hour+12}"
+            "hours": f"{random_hour},{random_hour+12}",
+            "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
+            "dkim_cron_enabled": "" if self.dkim_cron_enabled else "#"
         })
         return context
 
@@ -282,7 +296,6 @@ class Modoboa(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        self._setup_venv()
         self._deploy_instance()
         if not self.upgrade:
             self.apply_settings()

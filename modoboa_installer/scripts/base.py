@@ -5,6 +5,7 @@ import sys
 
 from .. import database
 from .. import package
+from .. import python
 from .. import system
 from .. import utils
 
@@ -41,6 +42,20 @@ class Installer(object):
         self.dbname = self.config.get(self.appname, "dbname")
         self.dbuser = self.config.get(self.appname, "dbuser")
         self.dbpasswd = self.config.get(self.appname, "dbpassword")
+
+    @property
+    def modoboa_2_2_or_greater(self):
+        # Check if modoboa version > 2.2
+        modoboa_version = python.get_package_version(
+            "modoboa",
+            self.config.get("modoboa", "venv_path"),
+            sudo_user=self.config.get("modoboa", "user")
+            )
+        condition = (
+            (modoboa_version[0] == 2 and modoboa_version[1] >= 2) or
+            modoboa_version[0] > 2
+            )
+        return condition
 
     @property
     def config_dir(self):

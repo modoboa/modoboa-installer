@@ -42,13 +42,15 @@ def user_input(message):
     return answer
 
 
-def exec_cmd(cmd, sudo_user=None, pinput=None, login=True, **kwargs):
-    """Execute a shell command.
+def exec_cmd(cmd, sudo_user=None, login=True, **kwargs):
+    """
+    Execute a shell command.
+
     Run a command using the current user. Set :keyword:`sudo_user` if
     you need different privileges.
+
     :param str cmd: the command to execute
     :param str sudo_user: a valid system username
-    :param str pinput: data to send to process's stdin
     :rtype: tuple
     :return: return code, command output
     """
@@ -57,23 +59,21 @@ def exec_cmd(cmd, sudo_user=None, pinput=None, login=True, **kwargs):
         cmd = "sudo {}-u {} {}".format("-i " if login else "", sudo_user, cmd)
     if "shell" not in kwargs:
         kwargs["shell"] = True
-    if pinput is not None:
-        kwargs["stdin"] = subprocess.PIPE
-    capture_output = False
+    capture_output = True
     if "capture_output" in kwargs:
         capture_output = kwargs.pop("capture_output")
-    elif not ENV.get("debug"):
-        capture_output = True
     if capture_output:
-        kwargs.update(stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    output = None
-    process = subprocess.Popen(cmd, **kwargs)
-    if pinput or capture_output:
-        c_args = [pinput] if pinput is not None else []
-        output = process.communicate(*c_args)[0]
-    else:
-        process.wait()
-    return process.returncode, output
+        kwargs.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    kwargs["universal_newlines"] = True
+    output: str = ""
+    with subprocess.Popen(cmd, **kwargs) as process:
+        if capture_output:
+            for line in process.stdout:
+                output += line
+                if ENV.get("debug"):
+                    sys.stdout.write(line)
+
+    return process.returncode, output.encode()
 
 
 def dist_info():
@@ -135,7 +135,6 @@ def settings(**kwargs):
 
 
 class ConfigFileTemplate(string.Template):
-
     """Custom class for configuration files."""
 
     delimiter = "%"

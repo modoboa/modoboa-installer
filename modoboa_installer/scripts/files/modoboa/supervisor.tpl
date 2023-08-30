@@ -6,3 +6,4 @@ directory=%{home_dir}
 redirect_stderr=true
 user=%{user}
 numprocs=1
+

@@ -83,6 +83,7 @@ class Dovecot(base.Installer):
         else:
             # Protocols are automatically guessed on debian/ubuntu
             protocols = ""
+
         context.update({
             "db_driver": self.db_driver,
             "mailboxes_owner_uid": pw_mailbox[2],
@@ -97,7 +98,9 @@ class Dovecot(base.Installer):
             "ssl_protocol_parameter": ssl_protocol_parameter,
             "radicale_user": self.config.get("radicale", "user"),
             "radicale_auth_socket_path": os.path.basename(
-                self.config.get("dovecot", "radicale_auth_socket_path"))
+                self.config.get("dovecot", "radicale_auth_socket_path")),
+            "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
+            "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#"
         })
         return context
 
