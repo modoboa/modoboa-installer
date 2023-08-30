@@ -124,7 +124,7 @@ connect = host=%dbhost port=%dbport dbname=%modoboa_dbname user=%modoboa_dbuser 
 #  SELECT home, uid, gid \
 #  FROM users WHERE username = '%%n' AND domain = '%%d'
 %{not_modoboa_2_2_or_greater}user_query = SELECT '%{home_dir}/%%d/%%n' AS home, %mailboxes_owner_uid as uid, %mailboxes_owner_gid as gid, CONCAT('*:bytes=', mb.quota, 'M') AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id INNER JOIN core_user u ON u.id=mb.user_id WHERE mb.address='%%n' AND dom.name='%%d'
-%{modoboa_2_2_or_greater}user_query = SELECT '%{home_dir}/%%d/%%n' AS home, %mailboxes_owner_uid as uid, %mailboxes_owner_gid as gid, CONCAT('*:bytes=', mb.quota, 'M') AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id INNER JOIN core_user u ON u.id=mb.user_id WHERE (mb.is_send_only=0 OR '%s' NOT IN ('imap', 'pop3', 'lmtp')) AND mb.address='%%n' AND dom.name='%%d'
+%{modoboa_2_2_or_greater}user_query = SELECT '%{home_dir}/%%d/%%n' AS home, %mailboxes_owner_uid as uid, %mailboxes_owner_gid as gid, CONCAT('*:bytes=', mb.quota, 'M') AS quota_rule FROM admin_mailbox mb INNER JOIN admin_domain dom ON mb.domain_id=dom.id INNER JOIN core_user u ON u.id=mb.user_id WHERE (mb.is_send_only=0 OR '%%s' NOT IN ('imap', 'pop3', 'lmtp')) AND mb.address='%%n' AND dom.name='%%d'
 
 # If you wish to avoid two SQL lookups (passdb + userdb), you can use
 # userdb prefetch instead of userdb sql in dovecot.conf. In that case you'll
@@ -135,7 +135,7 @@ connect = host=%dbhost port=%dbport dbname=%modoboa_dbname user=%modoboa_dbuser 
 #    home AS userdb_home, uid AS userdb_uid, gid AS userdb_gid \
 #  FROM users WHERE userid = '%%u'
 %{not_modoboa_2_2_or_greater}password_query = SELECT email AS user, password, '%{home_dir}/%%d/%%n' AS userdb_home, %mailboxes_owner_uid AS userdb_uid, %mailboxes_owner_gid AS userdb_gid, CONCAT('*:bytes=', mb.quota, 'M') AS userdb_quota_rule FROM core_user u INNER JOIN admin_mailbox mb ON u.id=mb.user_id INNER JOIN admin_domain dom ON mb.domain_id=dom.id WHERE u.email='%%u' AND u.is_active=1 AND dom.enabled=1
-%{modoboa_2_2_or_greater}password_query = SELECT email AS user, password, '%{home_dir}/%%d/%%n' AS userdb_home, %mailboxes_owner_uid AS userdb_uid, %mailboxes_owner_gid AS userdb_gid, CONCAT('*:bytes=', mb.quota, 'M') AS userdb_quota_rule FROM core_user u INNER JOIN admin_mailbox mb ON u.id=mb.user_id INNER JOIN admin_domain dom ON mb.domain_id=dom.id WHERE (mb.is_send_only=0 OR '%s' NOT IN ('imap', 'pop3')) AND u.email='%%u' AND u.is_active=1 AND dom.enabled=1
+%{modoboa_2_2_or_greater}password_query = SELECT email AS user, password, '%{home_dir}/%%d/%%n' AS userdb_home, %mailboxes_owner_uid AS userdb_uid, %mailboxes_owner_gid AS userdb_gid, CONCAT('*:bytes=', mb.quota, 'M') AS userdb_quota_rule FROM core_user u INNER JOIN admin_mailbox mb ON u.id=mb.user_id INNER JOIN admin_domain dom ON mb.domain_id=dom.id WHERE (mb.is_send_only=0 OR '%%s' NOT IN ('imap', 'pop3')) AND u.email='%%u' AND u.is_active=1 AND dom.enabled=1
 
 # Query to get a list of all usernames.
 #iterate_query = SELECT username AS user FROM users
