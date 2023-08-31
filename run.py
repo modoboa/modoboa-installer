@@ -209,7 +209,7 @@ def main(input_args):
                     return
         else:
             utils.error("You might encounter unexpected errors ! "
-                        "Make sur to update your config before opening an issue!")
+                        "Make sure to update your config before opening an issue!")
 
     if args.stop_after_configfile_check:
         return
