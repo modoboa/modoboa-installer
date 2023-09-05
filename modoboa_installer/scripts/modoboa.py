@@ -50,14 +50,14 @@ class Modoboa(base.Installer):
         self.extensions = self.config.get("modoboa", "extensions").split()
         self.devmode = self.config.getboolean("modoboa", "devmode")
         # Sanity check for amavis and rspamd
-        self.amavis_enabled = sanity_check("modoboa-amavis", "amavis")
-        sanity_check("modoboa-rspamd", "rspamd")
+        self.amavis_enabled = self.sanity_check("modoboa-amavis", "amavis")
+        self.sanity_check("modoboa-rspamd", "rspamd")
 
         self.dovecot_enabled = self.config.getboolean("dovecot", "enabled")
         self.opendkim_enabled = self.config.getboolean("opendkim", "enabled")
         self.dkim_cron_enabled = False
 
-    def sanity_check(extension, plugin):
+    def sanity_check(self, extension, plugin):
         # Sanity check for plugin requirements
         enabled = False
         if extension in self.extensions:
