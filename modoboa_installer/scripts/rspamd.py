@@ -60,8 +60,7 @@ class Rspamd(base.Installer):
 
     def install_config_files(self):
         """Make sure config directory exists."""
-        user = self.config.get("modoboa", "user")
-        pw = pwd.getpwnam(user)
+        pw = pwd.getpwnam("_rspamd")
         targets = [
             [self.app_config["dkim_keys_storage_dir"], pw[2], pw[3]]
         ]
