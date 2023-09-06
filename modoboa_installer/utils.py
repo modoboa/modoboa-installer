@@ -18,6 +18,7 @@ except ImportError:
     import ConfigParser as configparser
 
 from . import config_dict_template
+from . import compatibility_matrix.APP_INCOMPATIBILITY
 
 
 ENV = {}
@@ -485,3 +486,15 @@ def validate_backup_path(path: str, silent_mode: bool):
         mkdir_safe(os.path.join(backup_path, dir),
                    stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
     return backup_path
+
+def check_app_compatibility(section, config):
+    """Check that the app can be installed in regards to other enabled apps."""
+    incompatible_app = []
+    if section in APP_INCOMPATIBILITY.keys():
+        for app in APP_INCOMPATIBILITY[section]:
+            if config.getboolean(app, "enabled"):
+                error(f"{section} cannont be installed if {app} is enabled. "
+                      "Please disable one of them.")
+                incompatible_app.append(app)
+    return len(incompatible_app) == 0
+
