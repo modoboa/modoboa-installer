@@ -19,6 +19,7 @@ except ImportError:
     import ConfigParser as configparser
 
 from . import config_dict_template
+from . import compatibility_matrix.APP_INCOMPATIBILITY
 
 
 ENV = {}
@@ -504,3 +505,15 @@ def create_oauth2_app(app_name: str, client_id: str, config) -> tuple[str, str]:
     )
     exec_cmd(cmd)
     return client_id, client_secret
+
+
+def check_app_compatibility(section, config):
+    """Check that the app can be installed in regards to other enabled apps."""
+    incompatible_app = []
+    if section in APP_INCOMPATIBILITY.keys():
+        for app in APP_INCOMPATIBILITY[section]:
+            if config.getboolean(app, "enabled"):
+                error(f"{section} cannont be installed if {app} is enabled. "
+                      "Please disable one of them.")
+                incompatible_app.append(app)
+    return len(incompatible_app) == 0
