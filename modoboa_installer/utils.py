@@ -18,7 +18,7 @@ except ImportError:
     import ConfigParser as configparser
 
 from . import config_dict_template
-from . import compatibility_matrix.APP_INCOMPATIBILITY
+from .compatibility_matrix import APP_INCOMPATIBILITY
 
 
 ENV = {}
