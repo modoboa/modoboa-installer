@@ -34,3 +34,10 @@ REMOVED_EXTENSIONS = {
     "modoboa-sievefilters": "2.3.0",
     "modoboa-postfix-autoreply": "2.3.0"
 }
+
+APP_INCOMPATIBILITY = {
+    "opendkim": ["rspamd"],
+    "amavis": ["rspamd"],
+    "postwhite": ["rspamd"],
+    "spamassassin": ["rspamd"]
+}
