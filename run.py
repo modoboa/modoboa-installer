@@ -260,7 +260,6 @@ def main(input_args):
 
     # Show concerned components
     components = []
-    incompatible_app_detected = False
     for section in config.sections():
         if section in ["general", "database", "mysql", "postgres",
                        "certificate", "letsencrypt", "backup"]:
@@ -268,10 +267,10 @@ def main(input_args):
         if (config.has_option(section, "enabled") and
                 not config.getboolean(section, "enabled")):
             continue
-        incompatible_app_detected = utils.check_app_compatibility(section, config)
+        incompatible_app_detected = not utils.check_app_compatibility(section, config)
+        if incompatible_app_detected:
+            sys.exit(0)
         components.append(section)
-    if incompatible_app_detected:
-        sys.exit(0)
     utils.printcolor(" ".join(components), utils.YELLOW)
     if not args.force:
         answer = utils.user_input("Do you confirm? (Y/n) ")

@@ -248,7 +248,7 @@ class Modoboa(base.Installer):
             "dovecot_mailboxes_owner": (
                 self.config.get("dovecot", "mailboxes_owner")),
             "opendkim_user": self.config.get("opendkim", "user"),
-            "dkim_user":  "_rspamd" if self.config.getboolean("rspamd", "enabled") else self.config.get("opendkim", "user")
+            "dkim_user": "_rspamd" if self.config.getboolean("rspamd", "enabled") else self.config.get("opendkim", "user"),
             "minutes": random.randint(1, 59),
             "hours": f"{random_hour},{random_hour+12}",
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
