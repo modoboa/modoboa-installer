@@ -140,8 +140,8 @@ class Modoboa(base.Installer):
         db_package = []
         # We need to install db package afterward to check for installed modoboa version
         if self.dbengine == "postgres":
-             if self.modoboa_2_2_or_greater:
-                 db_package = ["psycopg[binary]\>3.1.7"]
+            if self.modoboa_2_2_or_greater:
+                db_package = ["psycopg[binary]\>3.1.7"]
             else:
                 db_package = ["psycopg2-binary\<2.9"]
         else:
@@ -283,7 +283,7 @@ class Modoboa(base.Installer):
             "radicale_enabled": (
                 "" if "modoboa-radicale" in extensions else "#"),
             "opendkim_user": self.config.get("opendkim", "user"),
-            "dkim_user":  "_rspamd" if self.config.getboolean("rspamd", "enabled") else self.config.get("opendkim", "user")
+            "dkim_user": "_rspamd" if self.config.getboolean("rspamd", "enabled") else self.config.get("opendkim", "user"),
             "minutes": random.randint(1, 59),
             "hours": f"{random_hour},{random_hour+12}",
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
