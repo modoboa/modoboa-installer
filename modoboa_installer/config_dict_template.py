@@ -248,11 +248,11 @@ ConfigDictTemplate = [
                 "default": "/var/lib/dkim"
             },
             {
-                "option": "key_map_path",
+                "option": "keys_map_path",
                 "default": "/var/lib/dkim/keys.path.map"
             },
             {
-                "option": "selector_map_path",
+                "option": "selectors_map_path",
                 "default": "/var/lib/dkim/selectors.path.map"
             },
             {
