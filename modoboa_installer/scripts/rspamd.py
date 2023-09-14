@@ -107,7 +107,7 @@ class Rspamd(base.Installer):
             self.config.get("modoboa", "user"),
             user
         )
-        if self.config("clamav", "enabled"):
+        if self.config.getboolean("clamav", "enabled"):
             install("clamav", self.config, self.upgrade, self.archive_path)
 
     def custom_backup(self, path):
