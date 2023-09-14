@@ -296,10 +296,10 @@ class Modoboa(base.Installer):
         if self.config.getboolean("rspamd", "enabled"):
             settings["admin"]["dkim_keys_storage_dir"] = (
                 self.config.get("rspamd", "dkim_keys_storage_dir"))
-            settings["modoboa_rspamd"]["key_map_path"] = (
-                self.config.get("rspamd", "key_map_path"))
-            settings["modoboa_rspamd"]["selector_map_path"] = (
-                self.config.get("rspamd", "selector_map_path"))
+            settings["modoboa_rspamd"] = {
+                "key_map_path": self.config.get("rspamd", "key_map_path"),
+                "selector_map_path": self.config.get("rspamd", "selector_map_path")
+            }
 
         settings = json.dumps(settings)
         query = (
