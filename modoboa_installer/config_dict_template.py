@@ -237,6 +237,10 @@ ConfigDictTemplate = [
                 "default": "true",
             },
             {
+                "option": "user",
+                "default": "_rspamd",
+            },
+            {
                 "option": "password",
                 "default": make_password,
             },

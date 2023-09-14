@@ -102,6 +102,17 @@ def dist_name():
     return dist_info()[0].lower()
 
 
+def is_dist_debian_based() -> (bool, str):
+    """Check if current OS is Debian based or not."""
+    status, codename = exec_cmd("lsb_release -c -s")
+    codename = codename.lower()
+    return codename in [
+        "bionic", "bookworm", "bullseye", "buster",
+        "focal", "jammy", "jessie", "sid", "stretch",
+        "trusty", "wheezy", "xenial"
+    ], codename
+
+
 def mkdir(path, mode, uid, gid):
     """Create a directory."""
     if not os.path.exists(path):
@@ -487,6 +498,7 @@ def validate_backup_path(path: str, silent_mode: bool):
                    stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
     return backup_path
 
+
 def check_app_compatibility(section, config):
     """Check that the app can be installed in regards to other enabled apps."""
     incompatible_app = []
@@ -497,4 +509,3 @@ def check_app_compatibility(section, config):
                       "Please disable one of them.")
                 incompatible_app.append(app)
     return len(incompatible_app) == 0
-
