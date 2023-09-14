@@ -127,11 +127,12 @@ class ConfigFileTestCase(unittest.TestCase):
         self.assertTrue(os.path.exists(self.cfgfile))
         self.assertIn(
             "fail2ban modoboa automx rspamd clamav dovecot nginx razor "
-            "postfix postwhite uwsgi radicale",
+            "postfix uwsgi radicale",
             out.getvalue()
         )
-        self.assertNotIn("It seems that your config file is outdated.",
-                         out.getvalue()
+        self.assertNotIn(
+            "It seems that your config file is outdated.",
+            out.getvalue()
         )
 
     @patch("modoboa_installer.utils.user_input")
