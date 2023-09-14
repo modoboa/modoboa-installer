@@ -1,17 +1,18 @@
 """Amavis related functions."""
 
 import os
+import pwd
+import stat
 
 from .. import package
 from .. import utils
 from .. import system
 
 from . import base
-from . import backup, install
+from . import install
 
 
 class Rspamd(base.Installer):
-
     """Rspamd installer."""
 
     appname = "rspamd"
@@ -36,11 +37,8 @@ class Rspamd(base.Installer):
         return "/etc/rspamd"
 
     def install_packages(self):
-        status, codename = utils.exec_cmd("lsb_release -c -s")
-
-        if codename.lower() in ["bionic", "bookworm", "bullseye", "buster",
-                                "focal", "jammy", "jessie", "sid", "stretch",
-                                "trusty", "wheezy", "xenial"]:
+        debian_based_dist, codename = utils.is_dist_debian_based()
+        if debian_based_dist:
             utils.mkdir_safe("/etc/apt/keyrings")
 
             if codename.lower() == "bionic":
@@ -60,7 +58,8 @@ class Rspamd(base.Installer):
 
     def install_config_files(self):
         """Make sure config directory exists."""
-        pw = pwd.getpwnam("_rspamd")
+        user = self.config.get(self.appname, "user")
+        pw = pwd.getpwnam(user)
         targets = [
             [self.app_config["dkim_keys_storage_dir"], pw[2], pw[3]]
         ]
@@ -94,7 +93,7 @@ class Rspamd(base.Installer):
                         "Please make sure it is not 'q1' or 'q2'."
                         "Storing the password in plain. See"
                         "https://rspamd.com/doc/quickstart.html#setting-the-controller-password")
-            _context["controller_password"] = password
+            _context["controller_password"] = self.app_config["password"]
         else:
             _context["controller_password"] = controller_password
         _context["greylisting_disabled"] = "" if not self.app_config["greylisting"].lower() == "true" else "#"
@@ -103,10 +102,11 @@ class Rspamd(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
+        user = self.config.get(self.appname, "user")
         system.add_user_to_group(
             self.config.get("modoboa", "user"),
-            "_rspamd"
-            )
+            user
+        )
         if self.config("clamav", "enabled"):
             install("clamav", self.config, self.upgrade, self.archive_path)
 
@@ -127,10 +127,11 @@ class Rspamd(base.Installer):
         """Restore custom config files."""
         custom_config_dir = os.path.join(self.config_dir,
                                          "/local.d/")
-        custom_backup_dir = os.path.join(path, "/rspamd/")
-        backed_up_files = [f for f in os.listdir(custom_backup_dir)
-                           if os.path.isfile(custom_backup_dir, f)
-                          ]
-        for file in backed_up_files:
-            utils.copy_file(file, custom_config_dir)
-            utils.success("Custom Rspamd configuration restored.")
+        custom_backup_dir = os.path.join(self.archive_path, "/rspamd/")
+        backed_up_files = [
+            f for f in os.listdir(custom_backup_dir)
+            if os.path.isfile(custom_backup_dir, f)
+        ]
+        for f in backed_up_files:
+            utils.copy_file(f, custom_config_dir)
+        utils.success("Custom Rspamd configuration restored.")
