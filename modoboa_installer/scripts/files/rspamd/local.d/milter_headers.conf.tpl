@@ -11,7 +11,7 @@ custom {
        -- return no error
        return nil,
        -- header(s) to add
-       {['X-Spam-Score'] = string.format('%.2f', sc[1])},
+       {['X-Spam-Score'] = string.format('%%.2f', sc[1])},
        -- header(s) to remove
        {['X-Spam-Score'] = 1},
        -- metadata to store
