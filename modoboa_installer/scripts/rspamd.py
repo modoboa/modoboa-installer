@@ -45,10 +45,6 @@ class Rspamd(base.Installer):
                 package.backend.install("software-properties-common")
                 utils.exec_cmd("add-apt-repository ppa:ubuntu-toolchain-r/test")
 
-            utils.exec_cmd("wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -")
-            utils.exec_cmd(f"echo \"deb http://apt.llvm.org/{codename}/ llvm-toolchain-{codename}-16 main\" | sudo tee /etc/apt/sources.list.d/llvm-16.list")
-            utils.exec_cmd(f"echo \"deb-src http://apt.llvm.org/{codename}/ llvm-toolchain-{codename}-16 main\"  | sudo tee -a /etc/apt/sources.list.d/llvm-16.list")
-
             utils.exec_cmd("wget -O- https://rspamd.com/apt-stable/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/rspamd.gpg > /dev/null")
             utils.exec_cmd(f"echo \"deb [arch=amd64 signed-by=/etc/apt/keyrings/rspamd.gpg] http://rspamd.com/apt-stable/ {codename} main\" | sudo tee /etc/apt/sources.list.d/rspamd.list")
             utils.exec_cmd(f"echo \"deb-src [arch=amd64 signed-by=/etc/apt/keyrings/rspamd.gpg] http://rspamd.com/apt-stable/ {codename} main\"  | sudo tee -a /etc/apt/sources.list.d/rspamd.list")
