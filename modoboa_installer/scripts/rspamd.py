@@ -39,7 +39,11 @@ class Rspamd(base.Installer):
     def install_packages(self):
         debian_based_dist, codename = utils.is_dist_debian_based()
         if debian_based_dist:
-            utils.mkdir_safe("/etc/apt/keyrings")
+            utils.mkdir_safe(
+                "/etc/apt/keyrings",
+                stat.S_IRWXU | stat.S_IRUSR | stat.S_IXUSR,
+                0, 0
+            )
 
             if codename.lower() == "bionic":
                 package.backend.install("software-properties-common")
