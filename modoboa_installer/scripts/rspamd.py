@@ -41,17 +41,21 @@ class Rspamd(base.Installer):
         if debian_based_dist:
             utils.mkdir_safe(
                 "/etc/apt/keyrings",
-                stat.S_IRWXU | stat.S_IRUSR | stat.S_IXUSR,
+                stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
+                stat.S_IROTH | stat.S_IXOTH,
                 0, 0
             )
 
-            if codename.lower() == "bionic":
+            if codename == "bionic":
                 package.backend.install("software-properties-common")
                 utils.exec_cmd("add-apt-repository ppa:ubuntu-toolchain-r/test")
 
-            utils.exec_cmd("wget -O- https://rspamd.com/apt-stable/gpg.key | gpg --dearmor | sudo tee /etc/apt/keyrings/rspamd.gpg > /dev/null")
-            utils.exec_cmd(f"echo \"deb [arch=amd64 signed-by=/etc/apt/keyrings/rspamd.gpg] http://rspamd.com/apt-stable/ {codename} main\" | sudo tee /etc/apt/sources.list.d/rspamd.list")
-            utils.exec_cmd(f"echo \"deb-src [arch=amd64 signed-by=/etc/apt/keyrings/rspamd.gpg] http://rspamd.com/apt-stable/ {codename} main\"  | sudo tee -a /etc/apt/sources.list.d/rspamd.list")
+            package.backend.add_custom_repository(
+                "rspamd",
+                "http://rspamd.com/apt-stable/",
+                "https://rspamd.com/apt-stable/gpg.key",
+                codename
+            )
             package.backend.update()
 
         return super().install_packages()
