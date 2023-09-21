@@ -105,7 +105,7 @@ def dist_name():
 def is_dist_debian_based() -> (bool, str):
     """Check if current OS is Debian based or not."""
     status, codename = exec_cmd("lsb_release -c -s")
-    codename = codename.strip().lower()
+    codename = codename.decode().strip().lower()
     return codename in [
         "bionic", "bookworm", "bullseye", "buster",
         "focal", "jammy", "jessie", "sid", "stretch",
