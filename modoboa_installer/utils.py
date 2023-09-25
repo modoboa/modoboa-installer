@@ -293,6 +293,16 @@ def random_key(l=16):
             return key
 
 
+def check_if_condition(config, entry):
+    """Check if the "if" directive is present and computes it"""
+    section_if = True
+    for condition in entry:
+        config_key, value = condition.split("=")
+        section_name, option = config_key.split(".")
+        section_if = config.get(section_name, option) == value
+    return section_if
+
+
 def validate(value, config_entry):
     if value is None:
         return False
@@ -362,15 +372,19 @@ def load_config_template(interactive):
     for section in tpl_dict:
         interactive_section = interactive
         if "if" in section:
-            for condition in section.get("if"):
-                config_key, value = condition.split("=")
-                section_name, option = config_key.split(".")
-                interactive_section = interactive_section and (
-                    config.get(section_name, option) == value)
+            condition = check_if_condition(config, section["if"])
+            interactive_section = condition and interactive
 
         config.add_section(section["name"])
         for config_entry in section["values"]:
-            value = get_entry_value(config_entry, interactive_section)
+            if config_entry.get("if") is not None:
+                interactive_section = (interactive_section and
+                                       check_if_condition(
+                                           config, config_entry["if"]
+                                           )
+                                       )
+            value = get_entry_value(config_entry,
+                                    interactive_section)
             config.set(section["name"], config_entry["option"], value)
     return config
 
