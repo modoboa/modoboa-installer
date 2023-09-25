@@ -59,4 +59,7 @@ target/
 # PyCharm
 .idea/
 
+#KDE
+*.kdev4
+
 installer.cfg

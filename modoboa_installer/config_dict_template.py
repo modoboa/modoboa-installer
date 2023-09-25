@@ -28,6 +28,22 @@ ConfigDictTemplate = [
         ]
     },
     {
+        "name": "antispam",
+        "values": [
+            {
+                "option": "enabled",
+                "default": "true",
+                "question": "Do you want to setup an antispam utility?"
+            },
+            {
+                "option": "type",
+                "default": "rspamd",
+                "question": "Please select your antispam utility",
+                "values": ["rspamd", "amavis"]
+            }
+        ]
+    },
+    {
         "name": "certificate",
         "values": [
             {
@@ -50,7 +66,7 @@ ConfigDictTemplate = [
     },
     {
         "name": "letsencrypt",
-        "if": "certificate.type=letsencrypt",
+        "if": ["certificate.type=letsencrypt"],
         "values": [
             {
                 "option": "email",
@@ -85,7 +101,7 @@ ConfigDictTemplate = [
     },
     {
         "name": "postgres",
-        "if": "database.engine=postgres",
+        "if": ["database.engine=postgres"],
         "values": [
             {
                 "option": "user",
@@ -101,7 +117,7 @@ ConfigDictTemplate = [
     },
     {
         "name": "mysql",
-        "if": "database.engine=mysql",
+        "if": ["database.engine=mysql"],
         "values": [
             {
                 "option": "user",
@@ -271,9 +287,11 @@ ConfigDictTemplate = [
     },
     {
         "name": "amavis",
+        "if": ["antispam.enabled=true", "antispam.type=amavis"],
         "values": [
             {
                 "option": "enabled",
+                "default-if": "true",
                 "default": "false",
             },
             {
@@ -362,7 +380,7 @@ ConfigDictTemplate = [
         "values": [
             {
                 "option": "enabled",
-                "default": "true",
+                "default": "false",
             },
             {
                 "option": "config_dir",
@@ -393,9 +411,11 @@ ConfigDictTemplate = [
     },
     {
         "name": "postwhite",
+        "if": ["antispam.enabled=true", "antispam.type=amavis"],
         "values": [
             {
                 "option": "enabled",
+                "default-if": "true",
                 "default": "false",
             },
             {
@@ -406,9 +426,11 @@ ConfigDictTemplate = [
     },
     {
         "name": "spamassassin",
+        "if": ["antispam.enabled=true", "antispam.type=amavis"],
         "values": [
             {
                 "option": "enabled",
+                "default-if": "true",
                 "default": "false",
             },
             {
@@ -475,9 +497,11 @@ ConfigDictTemplate = [
     },
     {
         "name": "opendkim",
+        "if": ["antispam.enabled=true", "antispam.type=amavis"],
         "values": [
             {
                 "option": "enabled",
+                "default-if": "true",
                 "default": "false",
             },
             {

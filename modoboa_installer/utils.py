@@ -185,25 +185,29 @@ def copy_from_template(template, dest, context):
         fp.write(ConfigFileTemplate(buf).substitute(context))
 
 
-def check_config_file(dest, interactive=False, upgrade=False, backup=False, restore=False):
+def check_config_file(dest,
+                      interactive=False,
+                      upgrade=False,
+                      backup=False,
+                      restore=False):
     """Create a new installer config file if needed."""
     is_present = True
     if os.path.exists(dest):
         return is_present, update_config(dest, False)
     if upgrade:
-        printcolor(
+        error(
             "You cannot upgrade an existing installation without a "
-            "configuration file.", RED)
+            "configuration file.")
         sys.exit(1)
     elif backup:
         is_present = False
-        printcolor(
+        error(
             "Your configuration file hasn't been found. A new one will be generated. "
-            "Please edit it with correct password for the databases !", RED)
+            "Please edit it with correct password for the databases !")
     elif restore:
-        printcolor(
+        error(
             "You cannot restore an existing installation without a "
-            f"configuration file. (file : {dest} has not been found...", RED)
+            f"configuration file. (file : {dest} has not been found...")
         sys.exit(1)
 
     printcolor(
@@ -310,10 +314,17 @@ def validate(value, config_entry):
 
 
 def get_entry_value(entry, interactive):
-    if callable(entry["default"]):
-        default_value = entry["default"]()
+    if entry.get("default-if") is not None and interactive:
+        # In case in interactive we try to look for a default-if
+        default_entry = entry["default-if"]
     else:
-        default_value = entry["default"]
+        default_entry = entry["default"]
+
+    if callable(default_entry):
+        default_value = default_entry()
+    else:
+        default_value = default_entry
+
     user_value = None
     if entry.get("customizable") and interactive:
         while (user_value != '' and not validate(user_value, entry)):
@@ -349,13 +360,14 @@ def load_config_template(interactive):
     config = configparser.ConfigParser()
     # only ask about options we need, else still generate default
     for section in tpl_dict:
+        interactive_section = interactive
         if "if" in section:
-            config_key, value = section.get("if").split("=")
-            section_name, option = config_key.split(".")
-            interactive_section = (
-                config.get(section_name, option) == value and interactive)
-        else:
-            interactive_section = interactive
+            for condition in section.get("if"):
+                config_key, value = condition.split("=")
+                section_name, option = config_key.split(".")
+                interactive_section = interactive_section and (
+                    config.get(section_name, option) == value)
+
         config.add_section(section["name"])
         for config_entry in section["values"]:
             value = get_entry_value(config_entry, interactive_section)
