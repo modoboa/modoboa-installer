@@ -33,11 +33,14 @@ ConfigDictTemplate = [
             {
                 "option": "enabled",
                 "default": "true",
+                "customizable": True,
+                "values": ["true", "false"],
                 "question": "Do you want to setup an antispam utility?"
             },
             {
                 "option": "type",
                 "default": "rspamd",
+                "customizable": True,
                 "question": "Please select your antispam utility",
                 "values": ["rspamd", "amavis"]
             }
@@ -200,6 +203,13 @@ ConfigDictTemplate = [
                 "default": make_password,
                 "customizable": True,
                 "question": "Please enter Modoboa db password",
+            },
+            {
+                "option": "cron_error_recipient",
+                "default": "root",
+                "customizable": True,
+                "question":
+                    "Please enter a mail recipient for cron error reports"
             },
             {
                 "option": "extensions",
