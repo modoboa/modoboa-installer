@@ -1,4 +1,4 @@
-"""Amavis related functions."""
+"""Rspamd related functions."""
 
 import os
 import pwd
