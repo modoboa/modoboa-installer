@@ -258,10 +258,11 @@ ConfigDictTemplate = [
     },
     {
         "name": "rspamd",
+        "if": ["antispam.enabled=true", "antispam.type=amavis"],
         "values": [
             {
                 "option": "enabled",
-                "default": "true",
+                "default": ["antispam.enabled=true", "antispam.type=amavis"],
             },
             {
                 "option": "user",
@@ -270,6 +271,8 @@ ConfigDictTemplate = [
             {
                 "option": "password",
                 "default": make_password,
+                "customizable": True,
+                "question": "Please enter Rspamd interface password",
             },
             {
                 "option": "dnsbl",
@@ -303,12 +306,10 @@ ConfigDictTemplate = [
     },
     {
         "name": "amavis",
-        "if": ["antispam.enabled=true", "antispam.type=amavis"],
         "values": [
             {
                 "option": "enabled",
-                "default-if": "true",
-                "default": "false",
+                "default": ["antispam.enabled=true", "antispam.type=amavis"],
             },
             {
                 "option": "user",
@@ -431,12 +432,10 @@ ConfigDictTemplate = [
     },
     {
         "name": "postwhite",
-        "if": ["antispam.enabled=true", "antispam.type=amavis"],
         "values": [
             {
                 "option": "enabled",
-                "default-if": "true",
-                "default": "false",
+                "default": ["antispam.enabled=true", "antispam.type=amavis"],
             },
             {
                 "option": "config_dir",
@@ -450,8 +449,7 @@ ConfigDictTemplate = [
         "values": [
             {
                 "option": "enabled",
-                "default-if": "true",
-                "default": "false",
+                "default": ["antispam.enabled=true", "antispam.type=amavis"],
             },
             {
                 "option": "config_dir",
@@ -521,8 +519,7 @@ ConfigDictTemplate = [
         "values": [
             {
                 "option": "enabled",
-                "default-if": "true",
-                "default": "false",
+                "default": ["antispam.enabled=true", "antispam.type=amavis"],
             },
             {
                 "option": "user",
