@@ -95,6 +95,7 @@ class Rspamd(base.Installer):
                         "https://rspamd.com/doc/quickstart.html#setting-the-controller-password")
             _context["controller_password"] = self.app_config["password"]
         else:
+            controller_password = controller_password.decode().replace("\n", "")
             _context["controller_password"] = controller_password
         _context["greylisting_disabled"] = "" if not self.app_config["greylisting"].lower() == "true" else "#"
         _context["whitelist_auth_enabled"] = "" if self.app_config["whitelist_auth"].lower() == "true" else "#"
