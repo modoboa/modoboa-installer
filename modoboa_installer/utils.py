@@ -1,5 +1,6 @@
 """Utility functions."""
 
+import configparser
 import contextlib
 import datetime
 import getpass
@@ -12,10 +13,6 @@ import stat
 import string
 import subprocess
 import sys
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 
 from . import config_dict_template
 from .compatibility_matrix import APP_INCOMPATIBILITY
@@ -34,12 +31,7 @@ class FatalError(Exception):
 
 def user_input(message):
     """Ask something to the user."""
-    try:
-        from builtins import input
-    except ImportError:
-        answer = raw_input(message)
-    else:
-        answer = input(message)
+    answer = input(message)
     return answer
 
 
@@ -322,8 +314,8 @@ def validate(value, config_entry):
         return True
 
 
-def get_entry_value(entry, interactive, config):
-    default_entry = entry("default")
+def get_entry_value(entry: dict, interactive: bool, config: configparser.ConfigParser) -> string:
+    default_entry = entry["default"]
     if type(default_entry) is type(list()):
         default_value = check_if_condition(config, default_entry)
     if callable(default_entry):
@@ -480,7 +472,7 @@ def validate_backup_path(path: str, silent_mode: bool):
     if not path_exists:
         if not silent_mode:
             create_dir = input(
-                f"\"{path}\" doesn't exist, would you like to create it? [Y/n]\n"
+                f"\"{path}\" doesn't exist, would you like to create it? [y/N]\n"
             ).lower()
 
         if silent_mode or (not silent_mode and create_dir.startswith("y")):
@@ -495,7 +487,7 @@ def validate_backup_path(path: str, silent_mode: bool):
     if len(os.listdir(path)) != 0:
         if not silent_mode:
             delete_dir = input(
-                "Warning: backup directory is not empty, it will be purged if you continue... [Y/n]\n").lower()
+                "Warning: backup directory is not empty, it will be purged if you continue... [y/N]\n").lower()
 
         if silent_mode or (not silent_mode and delete_dir.startswith("y")):
             try:
