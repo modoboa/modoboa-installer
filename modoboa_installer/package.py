@@ -2,6 +2,8 @@
 
 import re
 
+from os.path import isfile as file_exists
+
 from . import utils
 
 
@@ -61,7 +63,8 @@ class DEBPackage(Package):
                 f"{url} {codename} main"
             )
             target_file = f"/etc/apt/source.list.d/{name}.list"
-            utils.exec_cmd(f'echo "{line} | sude tee {target_file}')
+            tee_option = "-a" if file_exists(target_file) else ""
+            utils.exec_cmd(f'echo "{line}" | sude tee {tee_option} {target_file}')
         self.index_updated = False
 
     def update(self):
