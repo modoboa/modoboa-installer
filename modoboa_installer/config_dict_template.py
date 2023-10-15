@@ -253,7 +253,7 @@ ConfigDictTemplate = [
     },
     {
         "name": "rspamd",
-        "if": ["antispam.enabled=true", "antispam.type=amavis"],
+        "if": ["antispam.enabled=true", "antispam.type=rspamd"],
         "values": [
             {
                 "option": "enabled",
