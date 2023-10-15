@@ -257,7 +257,7 @@ ConfigDictTemplate = [
         "values": [
             {
                 "option": "enabled",
-                "default": ["antispam.enabled=true", "antispam.type=amavis"],
+                "default": ["antispam.enabled=true", "antispam.type=rspamd"],
             },
             {
                 "option": "user",

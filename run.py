@@ -239,7 +239,7 @@ def main(input_args):
     # Show concerned components
     components = []
     for section in config.sections():
-        if section in ["general", "database", "mysql", "postgres",
+        if section in ["general", "antispam", "database", "mysql", "postgres",
                        "certificate", "letsencrypt", "backup"]:
             continue
         if (config.has_option(section, "enabled") and
