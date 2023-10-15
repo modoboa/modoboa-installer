@@ -62,7 +62,7 @@ class DEBPackage(Package):
                 f"{line_type} [arch=amd64 signed-by={key_file}] "
                 f"{url} {codename} main"
             )
-            target_file = f"/etc/apt/source.list.d/{name}.list"
+            target_file = f"/etc/apt/sources.list.d/{name}.list"
             tee_option = "-a" if file_exists(target_file) else ""
             utils.exec_cmd(f'echo "{line}" | tee {tee_option} {target_file}')
         self.index_updated = False
