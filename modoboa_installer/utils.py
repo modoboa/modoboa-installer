@@ -317,8 +317,8 @@ def validate(value, config_entry):
 def get_entry_value(entry: dict, interactive: bool, config: configparser.ConfigParser) -> string:
     default_entry = entry["default"]
     if type(default_entry) is type(list()):
-        default_value = check_if_condition(config, default_entry)
-    if callable(default_entry):
+        default_value = str(check_if_condition(config, default_entry)).lower()
+    elif callable(default_entry):
         default_value = entry["default"]()
     else:
         default_value = default_entry
