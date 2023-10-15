@@ -50,7 +50,7 @@ class DEBPackage(Package):
                               with_source: bool = True):
         key_file = f"/etc/apt/keyrings/{name}.gpg"
         utils.exec_cmd(
-            f"wget -O - {key_url} | gpg --dearmor | sudo tee {key_file} > /dev/null"
+            f"wget -O - {key_url} | gpg --dearmor | tee {key_file} > /dev/null"
         )
         line_types = ["deb"]
         if with_source:
