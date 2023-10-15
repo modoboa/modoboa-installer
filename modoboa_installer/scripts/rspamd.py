@@ -46,10 +46,6 @@ class Rspamd(base.Installer):
                 0, 0
             )
 
-            if codename == "bionic":
-                package.backend.install("software-properties-common")
-                utils.exec_cmd("add-apt-repository ppa:ubuntu-toolchain-r/test")
-
             package.backend.add_custom_repository(
                 "rspamd",
                 "http://rspamd.com/apt-stable/",

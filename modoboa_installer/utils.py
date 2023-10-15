@@ -323,18 +323,14 @@ def validate(value, config_entry):
         return True
 
 
-def get_entry_value(entry, interactive):
-    if entry.get("default-if") is not None and interactive:
-        # In case in interactive we try to look for a default-if
-        default_entry = entry["default-if"]
-    else:
-        default_entry = entry["default"]
-
+def get_entry_value(entry, interactive, config):
+    default_entry = entry("default")
+    if type(default_entry) is type(list()):
+        default_value = check_if_condition(config, default_entry)
     if callable(default_entry):
-        default_value = default_entry()
+        default_value = entry["default"]()
     else:
         default_value = default_entry
-
     user_value = None
     if entry.get("customizable") and interactive:
         while (user_value != '' and not validate(user_value, entry)):
@@ -384,7 +380,8 @@ def load_config_template(interactive):
                                            )
                                        )
             value = get_entry_value(config_entry,
-                                    interactive_section)
+                                    interactive_section,
+                                    config)
             config.set(section["name"], config_entry["option"], value)
     return config
 
@@ -550,7 +547,7 @@ def check_app_compatibility(section, config):
     if section in APP_INCOMPATIBILITY.keys():
         for app in APP_INCOMPATIBILITY[section]:
             if config.getboolean(app, "enabled"):
-                error(f"{section} cannont be installed if {app} is enabled. "
+                error(f"{section} cannot be installed if {app} is enabled. "
                       "Please disable one of them.")
                 incompatible_app.append(app)
     return len(incompatible_app) == 0
