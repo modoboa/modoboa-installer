@@ -64,7 +64,7 @@ class DEBPackage(Package):
             )
             target_file = f"/etc/apt/source.list.d/{name}.list"
             tee_option = "-a" if file_exists(target_file) else ""
-            utils.exec_cmd(f'echo "{line}" | sude tee {tee_option} {target_file}')
+            utils.exec_cmd(f'echo "{line}" | tee {tee_option} {target_file}')
         self.index_updated = False
 
     def update(self):
