@@ -82,6 +82,16 @@ def install_package_from_repository(name, url, vcs="git", venv=None, **kwargs):
     utils.exec_cmd(cmd, **kwargs)
 
 
+def install_package_from_remote_requirements(url, venv=None, **kwargs):
+    """Install a Python package from a file."""
+    cmd = "{} install {} {}".format(
+        get_pip_path(venv),
+        "-r",
+        url
+    )
+    utils.exec_cmd(cmd, **kwargs)
+
+
 def setup_virtualenv(path, sudo_user=None, python_version=2):
     """Install a virtualenv if needed."""
     if os.path.exists(path):
