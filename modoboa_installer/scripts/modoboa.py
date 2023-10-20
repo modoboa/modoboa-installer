@@ -106,6 +106,25 @@ class Modoboa(base.Installer):
             beta=self.config.getboolean("modoboa", "install_beta")
         )
 
+        # Install version specific modules to the venv
+        modoboa_version = ".".join(str(i) for i in python.get_package_version(
+            "modoboa", self.venv_path, sudo_user=self.user
+        ))
+        # Database:
+        db_file = "postgresql"
+        if self.dbengine != "postgres":
+            db_file = "mysql"
+        db_file += "-requirements.txt"
+
+        python.install_package_from_remote_requirements(
+            f"https://raw.githubusercontent.com/modoboa/modoboa/{modoboa_version}/{db_file}",
+            venv=self.venv_path)
+        # Dev mode:
+        if self.devmode:
+            python.install_package_from_remote_requirements(
+                f"https://raw.githubusercontent.com/modoboa/modoboa/{modoboa_version}/dev-requirements.txt",
+                venv=self.venv_path)
+
     def _deploy_instance(self):
         """Deploy Modoboa."""
         target = os.path.join(self.home_dir, "instance")
@@ -196,24 +215,6 @@ class Modoboa(base.Installer):
     def setup_user(self):
         super().setup_user()
         self._setup_venv()
-        # Install version specific modules to the venv
-        modoboa_version = ".".join(str(i) for i in python.get_package_version(
-            "modoboa", self.venv_path, sudo_user=self.user
-        ))
-        # Database:
-        db_file = "postgresql"
-        if self.dbengine != "postgres":
-            db_file = "mysql"
-        db_file += "-requirements.txt"
-
-        python.install_package_from_remote_requirements(
-            f"https://raw.githubusercontent.com/modoboa/modoboa/{modoboa_version}/{db_file}",
-            venv=self.venv_path)
-        # Dev mode:
-        if self.devmode:
-            python.install_package_from_remote_requirements(
-                f"https://raw.githubusercontent.com/modoboa/modoboa/{modoboa_version}/dev-requirements.txt",
-                venv=self.venv_path)
 
     def get_config_files(self):
         """Return appropriate path."""
