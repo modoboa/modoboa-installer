@@ -96,15 +96,6 @@ class Modoboa(base.Installer):
                     packages.append("{}{}".format(extension, req_version))
                 else:
                     packages.append(extension)
-        # Temp fix for django-braces
-        python.install_package(
-            "django-braces", self.venv_path, upgrade=self.upgrade,
-            sudo_user=self.user
-        )
-        if self.dbengine == "postgres":
-            packages.append("psycopg2-binary\<2.9")
-        else:
-            packages.append("mysqlclient")
         if sys.version_info.major == 2 and sys.version_info.micro < 9:
             # Add extra packages to fix the SNI issue
             packages += ["pyOpenSSL"]
@@ -114,11 +105,25 @@ class Modoboa(base.Installer):
             sudo_user=self.user,
             beta=self.config.getboolean("modoboa", "install_beta")
         )
+
+        # Install version specific modules to the venv
+        modoboa_version = ".".join(str(i) for i in python.get_package_version(
+            "modoboa", self.venv_path, sudo_user=self.user
+        ))
+        # Database:
+        db_file = "postgresql"
+        if self.dbengine != "postgres":
+            db_file = "mysql"
+        db_file += "-requirements.txt"
+
+        python.install_package_from_remote_requirements(
+            f"https://raw.githubusercontent.com/modoboa/modoboa/{modoboa_version}/{db_file}",
+            venv=self.venv_path)
+        # Dev mode:
         if self.devmode:
-            # FIXME: use dev-requirements instead
-            python.install_packages(
-                ["django-bower", "django-debug-toolbar"], self.venv_path,
-                upgrade=self.upgrade, sudo_user=self.user)
+            python.install_package_from_remote_requirements(
+                f"https://raw.githubusercontent.com/modoboa/modoboa/{modoboa_version}/dev-requirements.txt",
+                venv=self.venv_path)
 
     def _deploy_instance(self):
         """Deploy Modoboa."""
