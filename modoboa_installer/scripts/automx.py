@@ -68,12 +68,13 @@ class Automx(base.Installer):
             packages.append("mysqlclient")
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
         target = "{}/master.zip".format(self.home_dir)
-        utils.download_remote_file("https://github.com/sys4/automx/archive/master.zip", target)
+        downloaded_file_path = utils.download_remote_file("https://github.com/sys4/automx/archive/master.zip", target)
         self.repo_dir = "{}/automx-master".format(self.home_dir)
         if os.path.exists(self.repo_dir):
             shutil.rmtree(self.repo_dir)
+        # Use the absolute path of the downloaded file for the unzip command
         utils.exec_cmd(
-            "unzip master.zip", sudo_user=self.user, cwd=self.home_dir)
+            f"unzip {downloaded_file_path}", sudo_user=self.user, cwd=self.home_dir)
         utils.exec_cmd(
             "{} setup.py install".format(
                 python.get_path("python", self.venv_path)),

@@ -504,7 +504,7 @@ def download_remote_file(path_to_remote_file: str, target: str, retries: int = 5
     for attempt in range(retries):
         try:
             exec_cmd(f"wget {path_to_remote_file}")
-            return target  # Return the path of the downloaded file if the download succeeds
+            return os.path.abspath(target)
         except:
             if attempt < retries - 1:  # Only log the error if this was not the last attempt
                 warning(f"Failed to download {path_to_remote_file}, retrying... ({attempt + 1}/{retries})")
