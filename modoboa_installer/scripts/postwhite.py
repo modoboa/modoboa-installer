@@ -87,6 +87,5 @@ class Postwhite(base.Installer):
             utils.copy_file(postwhite_backup_configuration, self.config_dir)
             utils.success("postwhite.conf restored from backup")
 
-
     def download_file(self, url, destination):
         urllib.request.urlretrieve(url, destination)
