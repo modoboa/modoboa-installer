@@ -2,6 +2,8 @@
 
 import os
 import shutil
+import zipfile
+import urllib.request
 
 from .. import utils
 
@@ -26,19 +28,36 @@ class Postwhite(base.Installer):
 
     def install_from_archive(self, repository, target_dir):
         """Install from an archive."""
-        url = "{}/archive/master.zip".format(repository)
-        target = os.path.join(target_dir, os.path.basename(url))
-        if os.path.exists(target):
-            os.unlink(target)
-        utils.exec_cmd("wget {}".format(url), cwd=target_dir)
+        url = f"{repository}/archive/master.zip"
+        target = os.path.join(target_dir, "master.zip")
+
+        # Download the archive
+        try:
+            self.download_file(url, target)
+        except Exception as e:
+            raise Exception(f"Failed to download {url}: {str(e)}")
+
+        # Extract the archive
         app_name = os.path.basename(repository)
         archive_dir = os.path.join(target_dir, app_name)
-        if os.path.exists(archive_dir):
-            shutil.rmtree(archive_dir)
-        utils.exec_cmd("unzip master.zip", cwd=target_dir)
-        utils.exec_cmd(
-            "mv {name}-master {name}".format(name=app_name), cwd=target_dir)
+        try:
+            with zipfile.ZipFile(target, 'r') as zip_ref:
+                zip_ref.extractall(target_dir)
+        except Exception as e:
+            os.unlink(target)  # Clean up partially downloaded file
+            raise Exception(f"Failed to extract {target}: {str(e)}")
+
+        # Rename the extracted directory
+        extracted_dir = os.path.join(target_dir, f"{app_name}-master")
+        try:
+            shutil.move(extracted_dir, archive_dir)
+        except Exception as e:
+            shutil.rmtree(extracted_dir)  # Clean up partially extracted directory
+            raise Exception(f"Failed to rename {extracted_dir} to {archive_dir}: {str(e)}")
+
+        # Clean up the archive file
         os.unlink(target)
+
         return archive_dir
 
     def post_run(self):
@@ -67,3 +86,7 @@ class Postwhite(base.Installer):
         if os.path.isfile(postwhite_backup_configuration):
             utils.copy_file(postwhite_backup_configuration, self.config_dir)
             utils.success("postwhite.conf restored from backup")
+
+
+    def download_file(self, url, destination):
+        urllib.request.urlretrieve(url, destination)
