@@ -68,24 +68,12 @@ class Automx(base.Installer):
             packages.append("mysqlclient")
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
         target = "{}/master.zip".format(self.home_dir)
-        if os.path.exists(target):
-            os.unlink(target)
-        utils.exec_cmd(
-            "wget https://github.com/sys4/automx/archive/master.zip",
-            sudo_user=self.user, cwd=self.home_dir)
+        utils.download_remote_file("https://github.com/sys4/automx/archive/master.zip", target)
         self.repo_dir = "{}/automx-master".format(self.home_dir)
         if os.path.exists(self.repo_dir):
             shutil.rmtree(self.repo_dir)
-        # Capture the output of the unzip command to verify the directory was created
-        unzip_output = utils.exec_cmd(
+        utils.exec_cmd(
             "unzip master.zip", sudo_user=self.user, cwd=self.home_dir)
-
-        # I'm not quite sure about what to do here. It seems the zip-file is sometimes not available
-        # without me being able to tell why.
-        if "creating: {}/automx-master/".format(self.home_dir) not in unzip_output:
-            raise Exception("Failed to extract automx-master directory from master.zip")
-
-        # Proceed with the installation
         utils.exec_cmd(
             "{} setup.py install".format(
                 python.get_path("python", self.venv_path)),

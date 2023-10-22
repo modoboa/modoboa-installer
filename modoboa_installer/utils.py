@@ -235,6 +235,16 @@ def success(message):
     printcolor(message, GREEN)
 
 
+def info(message):
+    """Print info message."""
+    printcolor(message, BLUE)
+
+
+def warning(message):
+    """Print info message."""
+    printcolor(message, YELLOW)
+
+
 def convert_version_to_int(version):
     """Convert a version string to an integer."""
     number_bits = (8, 8, 16)
@@ -474,3 +484,30 @@ def validate_backup_path(path: str, silent_mode: bool):
         mkdir_safe(os.path.join(backup_path, dir),
                    stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
     return backup_path
+
+
+def download_remote_file(path_to_remote_file: str, target: str, retries: int = 5):
+    """Downloads a file from a remote server with the specified number of retries.
+
+    Args:
+        path_to_remote_file (str): The URL of the file to download.
+        target (str): The path where to put the file
+        retries (int): The number of times to retry the download if it fails.
+
+    Returns:
+        str: The local path of the downloaded file.
+    """
+
+    # Ensure the directory exists, create it if it doesn't
+    os.makedirs(os.path.dirname(target), exist_ok=True)
+
+    for attempt in range(retries):
+        try:
+            exec_cmd(f"wget {path_to_remote_file}")
+            return target  # Return the path of the downloaded file if the download succeeds
+        except:
+            if attempt < retries - 1:  # Only log the error if this was not the last attempt
+                warning(f"Failed to download {path_to_remote_file}, retrying... ({attempt + 1}/{retries})")
+            else:
+                raise  # Re-raise the last exception if all retries fail
+    return target  # This line will not be reached due to the raise statement above
