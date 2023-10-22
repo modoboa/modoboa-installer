@@ -76,8 +76,16 @@ class Automx(base.Installer):
         self.repo_dir = "{}/automx-master".format(self.home_dir)
         if os.path.exists(self.repo_dir):
             shutil.rmtree(self.repo_dir)
-        utils.exec_cmd(
+        # Capture the output of the unzip command to verify the directory was created
+        unzip_output = utils.exec_cmd(
             "unzip master.zip", sudo_user=self.user, cwd=self.home_dir)
+
+        # I'm not quite sure about what to do here. It seems the zip-file is sometimes not available
+        # without me being able to tell why.
+        if "creating: {}/automx-master/".format(self.home_dir) not in unzip_output:
+            raise Exception("Failed to extract automx-master directory from master.zip")
+
+        # Proceed with the installation
         utils.exec_cmd(
             "{} setup.py install".format(
                 python.get_path("python", self.venv_path)),
