@@ -67,10 +67,10 @@ smtp_tls_exclude_ciphers = EXPORT, LOW
 #
 %{dovecot_enabled}virtual_transport = lmtp:unix:private/dovecot-lmtp
 
-virtual_mailbox_domains = proxy:%{db_driver}:/etc/postfix/sql-domains.cf
-virtual_alias_domains = proxy:%{db_driver}:/etc/postfix/sql-domain-aliases.cf
-virtual_alias_maps =
-        proxy:%{db_driver}:/etc/postfix/sql-aliases.cf
+%{dovecot_enabled}virtual_mailbox_domains = proxy:%{db_driver}:/etc/postfix/sql-domains.cf
+%{dovecot_enabled}virtual_alias_domains = proxy:%{db_driver}:/etc/postfix/sql-domain-aliases.cf
+%{dovecot_enabled}virtual_alias_maps =
+%{dovecot_enabled}        proxy:%{db_driver}:/etc/postfix/sql-aliases.cf
 
 ## Relay domains
 #
