@@ -10,7 +10,7 @@ from .. import system
 from .. import utils
 
 
-class Installer(object):
+class Installer:
     """Simple installer for one application."""
 
     appname = None
