@@ -14,7 +14,6 @@ from . import backup, install
 
 
 class Postfix(base.Installer):
-
     """Postfix installer."""
 
     appname = "postfix"
@@ -51,7 +50,7 @@ class Postfix(base.Installer):
 
     def get_template_context(self):
         """Additional variables."""
-        context = super(Postfix, self).get_template_context()
+        context = super().get_template_context()
         context.update({
             "db_driver": self.db_driver,
             "dovecot_mailboxes_owner": self.config.get(
@@ -64,6 +63,13 @@ class Postfix(base.Installer):
                 "opendkim", "port")
         })
         return context
+
+    def check_dhe_group_file(self):
+        group = self.config.get(self.appname, "dhe_group")
+        file_name = f"ffdhe{group}.pem"
+        if not os.path.exists(f"{self.config_dir}/{file_name}"):
+            url = f"https://raw.githubusercontent.com/internetstandards/dhe_groups/main/{file_name}"
+            utils.exec_cmd(f"wget {url}", cwd=self.config_dir)
 
     def post_run(self):
         """Additional tasks."""
@@ -86,10 +92,8 @@ class Postfix(base.Installer):
             if not os.path.exists(path):
                 utils.copy_file(os.path.join("/etc", f), path)
 
-        # Generate EDH parameters
-        if not os.path.exists("{}/dh2048.pem".format(self.config_dir)):
-            cmd = "openssl dhparam -dsaparam -out dh2048.pem 2048"
-            utils.exec_cmd(cmd, cwd=self.config_dir)
+        # Generate DHE group
+        self.check_dhe_group_file()
 
         # Generate /etc/aliases.db file to avoid warnings
         aliases_file = "/etc/aliases"
