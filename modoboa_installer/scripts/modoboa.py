@@ -44,7 +44,7 @@ class Modoboa(base.Installer):
 
     def __init__(self, *args, **kwargs):
         """Get configuration."""
-        super(Modoboa, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.venv_path = self.config.get("modoboa", "venv_path")
         self.instance_path = self.config.get("modoboa", "instance_path")
         self.extensions = self.config.get("modoboa", "extensions").split()
@@ -194,7 +194,7 @@ class Modoboa(base.Installer):
 
     def setup_database(self):
         """Additional config."""
-        super(Modoboa, self).setup_database()
+        super().setup_database()
         if not self.amavis_enabled:
             return
         self.backend.grant_access(
@@ -202,7 +202,7 @@ class Modoboa(base.Installer):
 
     def get_packages(self):
         """Include extra packages if needed."""
-        packages = super(Modoboa, self).get_packages()
+        packages = super().get_packages()
         condition = (
             package.backend.FORMAT == "rpm" and
             sys.version_info.major == 2 and
@@ -228,7 +228,9 @@ class Modoboa(base.Installer):
         # Add worker for dkim if needed
         if self.modoboa_2_2_or_greater:
             config_files.append(
-                "supervisor-rq=/etc/supervisor/conf.d/modoboa-worker.conf")
+                "supervisor-rq-dkim=/etc/supervisor/conf.d/modoboa-dkim-worker.conf")
+            config_files.append(
+                "supervisor-rq-base=/etc/supervisor/conf.d/modoboa-base-worker.conf")
         return config_files
 
     def get_template_context(self):
