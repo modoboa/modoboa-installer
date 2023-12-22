@@ -57,6 +57,11 @@ smtpd_tls_exclude_ciphers = aNULL, MD5 , DES, ADH, RC4, PSD, SRP, 3DES, eNULL
 # Enable elliptic curve cryptography
 smtpd_tls_eecdh_grade = strong
 
+# SMTP Smuggling prevention
+# See https://www.postfix.org/smtp-smuggling.html
+smtpd_data_restrictions = reject_unauth_pipelining
+smtpd_forbid_unauth_pipelining = yes
+
 # Use TLS if this is supported by the remote SMTP server, otherwise use plaintext.
 smtp_tls_CApath = /etc/ssl/certs
 smtp_tls_security_level = may
