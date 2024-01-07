@@ -99,6 +99,16 @@ class Modoboa(base.Installer):
         if sys.version_info.major == 2 and sys.version_info.micro < 9:
             # Add extra packages to fix the SNI issue
             packages += ["pyOpenSSL"]
+        for extension in list(self.extensions):
+            if extension in compatibility_matrix.REMOVED_EXTENSIONS.keys():
+                modoboa_version = self.config.get("modoboa", "version")
+                if modoboa_version != "latest":
+                    max_version = utils.convert_version_to_int(
+                        compatibility_matrix.REMOVED_EXTENSIONS[extension])
+                    modoboa_v_int = utils.convert_version_to_int(modoboa_version)
+                    if modoboa_v_int < max_version:
+                        continue
+                self.extensions.remove(extension)
         python.install_packages(
             packages, self.venv_path,
             upgrade=self.upgrade,
