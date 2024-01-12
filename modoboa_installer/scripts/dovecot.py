@@ -4,7 +4,6 @@ import glob
 import os
 import pwd
 import shutil
-import uuid
 
 from .. import database
 from .. import package
@@ -15,6 +14,7 @@ from . import base
 
 
 class Dovecot(base.Installer):
+
     """Dovecot installer."""
 
     appname = "dovecot"
@@ -27,9 +27,8 @@ class Dovecot(base.Installer):
     }
     config_files = [
         "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
-        "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try",
-        "conf.d/dovecot-oauth2.conf.ext"
-    ]
+        "conf.d/10-master.conf", "conf.d/20-lmtp.conf",
+        "conf.d/10-ssl-keys.try", "conf.d/90-sieve.conf"]
     with_user = True
 
     def setup_user(self):
@@ -43,8 +42,7 @@ class Dovecot(base.Installer):
         _config_files = self.config_files
 
         if self.app_config["move_spam_to_junk"]:
-            _config_files += ["conf.d/90-sieve.conf",
-                              "conf.d/custom_after_sieve/spam-to-junk.sieve"]
+            _config_files += ["conf.d/custom_after_sieve/spam-to-junk.sieve"]
 
         return _config_files + [
             "dovecot-sql-{}.conf.ext=dovecot-sql.conf.ext"
@@ -76,29 +74,11 @@ class Dovecot(base.Installer):
             self.backports_codename = "bookworm"
         package.backend.preconfigure(
             "dovecot-core", "create-ssl-cert", "boolean", "false")
-        super().install_packages()
-
-    def create_oauth2_app(self):
-        """Create a application for Oauth2 authentication."""
-        # FIXME: how can we check that application already exists ?
-        venv_path = self.config.get("modoboa", "venv_path")
-        python_path = os.path.join(venv_path, "bin", "python")
-        instance_path = self.config.get("modoboa", "instance_path")
-        script_path = os.path.join(instance_path, "manage.py")
-        client_id = "dovecot"
-        client_secret = str(uuid.uuid4())
-        cmd = (
-            f"{python_path} {script_path} createapplication "
-            f"--name=Dovecot --skip-authorization "
-            f"--client-id={client_id} --client-secret={client_secret} "
-            f"confidential client-credentials"
-        )
-        utils.exec_cmd(cmd)
-        return client_id, client_secret
+        super(Dovecot, self).install_packages()
 
     def get_template_context(self):
         """Additional variables."""
-        context = super().get_template_context()
+        context = super(Dovecot, self).get_template_context()
         pw_mailbox = pwd.getpwnam(self.mailboxes_owner)
         dovecot_package = {"deb": "dovecot-core", "rpm": "dovecot"}
         ssl_protocol_parameter = "ssl_protocols"
@@ -119,13 +99,6 @@ class Dovecot(base.Installer):
             # Protocols are automatically guessed on debian/ubuntu
             protocols = ""
 
-        oauth2_client_id, oauth2_client_secret = self.create_oauth2_app()
-        hostname = self.config.get("general", "hostname")
-        oauth2_introspection_url = (
-            f"https://{oauth2_client_id}:{oauth2_client_secret}"
-            f"@{hostname}/api/o/introspect/"
-        )
-
         context.update({
             "db_driver": self.db_driver,
             "mailboxes_owner_uid": pw_mailbox[2],
@@ -142,8 +115,7 @@ class Dovecot(base.Installer):
             "radicale_auth_socket_path": os.path.basename(
                 self.config.get("dovecot", "radicale_auth_socket_path")),
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
-            "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#",
-            "oauth2_introspection_url": oauth2_introspection_url
+            "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#"
         })
         return context
 
@@ -173,7 +145,7 @@ class Dovecot(base.Installer):
         # See https://github.com/modoboa/modoboa/issues/2157.
         if self.app_config["move_spam_to_junk"]:
             # Compile sieve script
-            sieve_file = "/etc/dovecot/conf.d/custom_after_sieve/spam-to-junk.sieve"
+            sieve_file = f"{self.config_dir}/conf.d/custom_after_sieve/spam-to-junk.sieve"
             utils.exec_cmd(f"/usr/bin/sievec {sieve_file}")
         system.add_user_to_group(self.mailboxes_owner, 'dovecot')
 
