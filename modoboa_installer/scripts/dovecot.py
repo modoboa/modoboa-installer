@@ -4,6 +4,7 @@ import glob
 import os
 import pwd
 import shutil
+import stat
 
 from .. import database
 from .. import package
@@ -124,6 +125,17 @@ class Dovecot(base.Installer):
             "do_move_spam_to_junk": "" if self.app_config["move_spam_to_junk"] else "#"
         })
         return context
+
+    def install_config_files(self):
+        """Create sieve dir if needed."""
+        if self.app_config["move_spam_to_junk"]:
+            utils.mkdir_safe(
+                f"{self.config_dir}/conf.d/custom_after_sieve",
+                stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
+                stat.S_IROTH | stat.S_IXOTH,
+                0, 0
+                )
+        super().install_config_files()
 
     def post_run(self):
         """Additional tasks."""
