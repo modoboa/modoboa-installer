@@ -379,7 +379,11 @@ ConfigDictTemplate = [
             },
             {
                 "option": "radicale_auth_socket_path",
-                "default": "/var/run/dovecot/auth-radicale"
+                "default": "/var/run/dovecot/auth-radicale",
+            },
+            {
+                "option": "move_spam_to_junk",
+                "default": "true",
             },
         ]
     },
