@@ -40,7 +40,13 @@ class Dovecot(base.Installer):
 
     def get_config_files(self):
         """Additional config files."""
-        return self.config_files + [
+        _config_files = self.config_files
+
+        if self.app_config["move_spam_to_junk"]:
+            _config_files += ["conf.d/90-sieve.conf",
+                              "conf.d/custom_after_sieve/spam-to-junk.sieve"]
+
+        return _config_files + [
             "dovecot-sql-{}.conf.ext=dovecot-sql.conf.ext"
             .format(self.dbengine),
             "dovecot-sql-master-{}.conf.ext=dovecot-sql-master.conf.ext"
@@ -145,6 +151,10 @@ class Dovecot(base.Installer):
         utils.exec_cmd("chmod 600 /etc/dovecot/conf.d/10-ssl-keys.try")
         # Add mailboxes user to dovecot group for modoboa mailbox commands.
         # See https://github.com/modoboa/modoboa/issues/2157.
+        if self.app_config["move_spam_to_junk"]:
+            # Compile sieve script
+            sieve_file = "/etc/dovecot/conf.d/custom_after_sieve/spam-to-junk.sieve"
+            utils.exec_cmd(f"/usr/bin/sievec {sieve_file}")
         system.add_user_to_group(self.mailboxes_owner, 'dovecot')
 
     def restart_daemon(self):
