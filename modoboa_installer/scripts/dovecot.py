@@ -78,7 +78,7 @@ class Dovecot(base.Installer):
 
     def get_template_context(self):
         """Additional variables."""
-        context = super(Dovecot, self).get_template_context()
+        context = super().get_template_context()
         pw_mailbox = pwd.getpwnam(self.mailboxes_owner)
         dovecot_package = {"deb": "dovecot-core", "rpm": "dovecot"}
         ssl_protocol_parameter = "ssl_protocols"
@@ -120,7 +120,8 @@ class Dovecot(base.Installer):
             "ssl_protocols": ssl_protocols,
             "ssl_protocol_parameter": ssl_protocol_parameter,
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
-            "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#"
+            "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#",
+            "do_move_spam_to_junk": "" if self.app_config["move_spam_to_junk"] else "#"
         })
         return context
 
