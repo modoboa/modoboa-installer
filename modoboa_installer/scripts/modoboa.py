@@ -303,16 +303,18 @@ class Modoboa(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
+        if 'centos' in utils.dist_name():
+            system.enable_and_start_service("redis")
+        else:
+            system.enable_and_start_service("redis-server")
         self._deploy_instance()
         if not self.upgrade:
             self.apply_settings()
 
         if 'centos' in utils.dist_name():
             supervisor = "supervisord"
-            system.enable_and_start_service("redis")
         else:
             supervisor = "supervisor"
-            system.enable_and_start_service("redis-server")
         # Restart supervisor
         system.enable_service(supervisor)
         utils.exec_cmd("service {} stop".format(supervisor))
