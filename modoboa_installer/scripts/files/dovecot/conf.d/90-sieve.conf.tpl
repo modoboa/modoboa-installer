@@ -38,7 +38,7 @@ plugin {
   # Identical to sieve_before, only the specified scripts are executed after the
   # user's script (only when keep is still in effect!). Multiple script file or
   # directory paths can be specified by appending an increasing number.
-  {%dovecot_enabled}sieve_after = /etc/dovecot/conf.d/custom_after_sieve
+  %{do_move_spam_to_junk}sieve_after = /etc/dovecot/conf.d/custom_after_sieve
   #sieve_after2 = 
   #sieve_after2 = (etc...)
 
