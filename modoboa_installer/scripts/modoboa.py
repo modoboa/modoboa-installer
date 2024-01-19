@@ -227,10 +227,16 @@ class Modoboa(base.Installer):
 
         # Add worker for dkim if needed
         if self.modoboa_2_2_or_greater:
-            config_files.append(
-                "supervisor-rq-dkim=/etc/supervisor/conf.d/modoboa-dkim-worker.conf")
-            config_files.append(
-                "supervisor-rq-base=/etc/supervisor/conf.d/modoboa-base-worker.conf")
+            if package.backend.FORMAT == "deb":
+                config_files.append(
+                    "supervisor-rq-dkim=/etc/supervisor/conf.d/modoboa-dkim-worker.conf")
+                config_files.append(
+                    "supervisor-rq-base=/etc/supervisor/conf.d/modoboa-base-worker.conf")
+            else:
+                config_files.append(
+                    "supervisor-rq-dkim=/etc/supervisord.d/modoboa-dkim-worker.conf")
+                config_files.append(
+                    "supervisor-rq-base=/etc/supervisord.d/modoboa-base-worker.conf")
         return config_files
 
     def get_template_context(self):
@@ -303,7 +309,7 @@ class Modoboa(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        if 'centos' in utils.dist_name():
+        if utils.dist_name() in ["centos", "oracle linux server"]:
             system.enable_and_start_service("redis")
         else:
             system.enable_and_start_service("redis-server")
@@ -311,7 +317,7 @@ class Modoboa(base.Installer):
         if not self.upgrade:
             self.apply_settings()
 
-        if 'centos' in utils.dist_name():
+        if utils.dist_name() in ["centos", "oracle linux server"]:
             supervisor = "supervisord"
         else:
             supervisor = "supervisor"

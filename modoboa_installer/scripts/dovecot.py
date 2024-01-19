@@ -75,7 +75,7 @@ class Dovecot(base.Installer):
             ssl_protocols = "!SSLv3"
         if ssl_protocol_parameter == "ssl_min_protocol":
             ssl_protocols = "TLSv1"
-        if "centos" in utils.dist_name():
+        if utils.dist_name() in ["centos", "oracle linux server"]:
             protocols = "protocols = imap lmtp sieve"
             extra_protocols = self.config.get("dovecot", "extra_protocols")
             if extra_protocols:

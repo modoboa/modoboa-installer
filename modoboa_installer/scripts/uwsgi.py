@@ -17,7 +17,7 @@ class Uwsgi(base.Installer):
     appname = "uwsgi"
     packages = {
         "deb": ["uwsgi", "uwsgi-plugin-python3"],
-        "rpm": ["uwsgi", "uwsgi-plugin-python36"],
+        "rpm": ["uwsgi", "uwsgi-plugin-python3"], #Previousli was 36
     }
 
     def get_socket_path(self, app):
@@ -29,7 +29,7 @@ class Uwsgi(base.Installer):
     def get_template_context(self, app):
         """Additionnal variables."""
         context = super(Uwsgi, self).get_template_context()
-        if package.backend.FORMAT == "deb":
+        if package.backend.FORMAT == "deb" or True:
             uwsgi_plugin = "python3"
         else:
             uwsgi_plugin = "python36"
@@ -105,7 +105,7 @@ class Uwsgi(base.Installer):
     def restart_daemon(self):
         """Restart daemon process."""
         # Temp. fix for CentOS
-        if utils.dist_name().startswith("centos"):
+        if utils.dist_name().startswith("centos") or utils.dist_name().startswith("oracle linux server"):
             pw = pwd.getpwnam("uwsgi")
             utils.mkdir(
                 "/run/uwsgi",

@@ -102,7 +102,7 @@ def setup_virtualenv(path, sudo_user=None, python_version=2):
         if utils.dist_name() == "debian":
             packages.append("virtualenv")
     else:
-        if utils.dist_name().startswith("centos"):
+        if utils.dist_name().startswith("centos") or utils.dist_name().startswith("oracle linux server"):
             python_binary = "python3"
             packages = ["python3"]
         else:

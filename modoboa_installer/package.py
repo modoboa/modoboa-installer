@@ -83,7 +83,7 @@ class RPMPackage(Package):
     def __init__(self, dist_name):
         """Initialize backend."""
         super(RPMPackage, self).__init__(dist_name)
-        if "centos" in dist_name:
+        if dist_name in ["centos", "oracle linux server"]:
             self.install("epel-release")
 
     def install(self, name):
@@ -92,7 +92,7 @@ class RPMPackage(Package):
 
     def install_many(self, names):
         """Install many packages."""
-        return utils.exec_cmd("yum install -y --quiet {}".format(" ".join(names)))
+        return utils.exec_cmd("yum install -y {}".format(" ".join(names))) # Before it was quiet
 
     def get_installed_version(self, name):
         """Get installed package version."""
@@ -110,7 +110,7 @@ def get_backend():
     backend = None
     if distname in ["debian", "debian gnu/linux", "ubuntu"]:
         backend = DEBPackage
-    elif "centos" in distname:
+    elif distname in ["centos", "oracle linux server"]:
         backend = RPMPackage
     else:
         raise NotImplementedError(
