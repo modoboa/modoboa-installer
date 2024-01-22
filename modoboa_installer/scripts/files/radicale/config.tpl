@@ -70,8 +70,10 @@
 [auth]
 
 # Authentication method
-# Value: none | htpasswd | remote_user | http_x_remote_user
-type = radicale_dovecot_auth 
+# Value: none | htpasswd | remote_user | http_x_remote_user | radicale_dovecot_auth | radicale_modoboa_token_auth
+type = radicale_modoboa_token_auth
+radicale_modoboa_token_auth_check_url = https://%{hostname}/api/v1/user-calendars/check_token/
+radicale_modoboa_token_auth_token = <generate_and_replace_with_generated_API_key>
 
 # Htpasswd filename
 # htpasswd_filename = users
