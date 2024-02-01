@@ -56,7 +56,7 @@ def get_package_version(name, venv=None, **kwargs):
                     f"Output is: {output}")
         sys.exit(1)
 
-    list_dict = json.loads(output)
+    list_dict = json.loads(output.decode())
     version_list = []
     for element in list_dict:
         if element["name"] == name:
