@@ -1,5 +1,6 @@
 """Python related tools."""
 
+import json
 import os
 import sys
 
@@ -48,19 +49,19 @@ def install_packages(names, venv=None, upgrade=False, **kwargs):
 
 def get_package_version(name, venv=None, **kwargs):
     """Returns the version of an installed package."""
-    cmd = "{} show {}".format(
-        get_pip_path(venv),
-        name
-    )
+    cmd = f"{get_pip_path(venv)} list --format json"
     exit_code, output = utils.exec_cmd(cmd, **kwargs)
     if exit_code != 0:
         utils.error(f"Failed to get version of {name}. "
                     f"Output is: {output}")
         sys.exit(1)
 
-    output_list = output.decode().split("\n")
-    version_item_list = output_list[1].split(":")
-    version_list = version_item_list[1].split(".")
+    list_dict = json.loads(output)
+    version_list = []
+    for element in list_dict:
+        if element["name"] == name:
+            version_list = element["version"].split(".")
+            break
     version_list_clean = []
     for element in version_list:
         try:
