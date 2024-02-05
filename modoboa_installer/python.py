@@ -49,7 +49,7 @@ def install_packages(names, venv=None, upgrade=False, **kwargs):
 
 def get_package_version(name, venv=None, **kwargs):
     """Returns the version of an installed package."""
-    cmd = f"{get_pip_path(venv)} list --format json"
+    cmd = f"{get_pip_path(venv)} -qqq list --format json"
     exit_code, output = utils.exec_cmd(cmd, **kwargs)
     if exit_code != 0:
         utils.error(f"Failed to get version of {name}. "
