@@ -56,6 +56,7 @@ def get_package_version(name, venv=None, **kwargs):
                     f"Output is: {output}")
         sys.exit(1)
 
+    print(f"name: {name}, venv: {venv}, cmd: {cmd}, exit_code: {exit_code}, output: {output.decode()}")
     list_dict = json.loads(output.decode())
     version_list = []
     for element in list_dict:
