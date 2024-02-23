@@ -60,7 +60,7 @@ class Dovecot(base.Installer):
         if package.backend.FORMAT == "deb":
             if "pop3" in self.config.get("dovecot", "extra_protocols"):
                 packages += ["dovecot-pop3d"]
-        return super(Dovecot, self).get_packages() + packages
+        return super().get_packages() + packages
 
     def install_packages(self):
         """Preconfigure Dovecot if needed."""
@@ -139,7 +139,8 @@ class Dovecot(base.Installer):
                 self.get_file_path("fix_modoboa_postgres_schema.sql")
             )
         for f in glob.glob("{}/*".format(self.get_file_path("conf.d"))):
-            utils.copy_file(f, "{}/conf.d".format(self.config_dir))
+            if os.path.isfile(f):
+                utils.copy_file(f, "{}/conf.d".format(self.config_dir))
         # Make postlogin script executable
         utils.exec_cmd("chmod +x /usr/local/bin/postlogin.sh")
         # Only root should have read access to the 10-ssl-keys.try
