@@ -276,6 +276,19 @@ def main(input_args):
             "Restore complete! You can enjoy Modoboa at https://{} (same credentials as before)"
             .format(config.get("general", "hostname"))
         )
+    utils.success(
+        "\n"
+        "Modoboa is a free software maintained by volunteers.\n"
+        "You like the project and want it to be sustainable?\n"
+        "Then don't wait anymore and go sponsor it here:\n"
+    )
+    utils.printcolor(
+        "https://github.com/sponsors/modoboa\n",
+        utils.YELLOW
+    )
+    utils.success(
+        "Thank you for your help :-)\n"
+    )
 
 
 if __name__ == "__main__":
