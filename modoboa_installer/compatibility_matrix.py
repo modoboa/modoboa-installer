@@ -31,3 +31,10 @@ COMPATIBILITY_MATRIX = {
 EXTENSIONS_AVAILABILITY = {
     "modoboa-contacts": "1.7.4",
 }
+
+APP_INCOMPATIBILITY = {
+    "opendkim": ["rspamd"],
+    "amavis": ["rspamd"],
+    "postwhite": ["rspamd"],
+    "spamassassin": ["rspamd"]
+}

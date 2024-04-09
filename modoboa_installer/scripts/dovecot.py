@@ -4,6 +4,7 @@ import glob
 import os
 import pwd
 import shutil
+import stat
 
 from .. import database
 from .. import package
@@ -27,7 +28,8 @@ class Dovecot(base.Installer):
     }
     config_files = [
         "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
-        "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try"]
+        "conf.d/10-master.conf", "conf.d/20-lmtp.conf",
+        "conf.d/10-ssl-keys.try", "conf.d/90-sieve.conf"]
     with_user = True
 
     def setup_user(self):
@@ -38,7 +40,12 @@ class Dovecot(base.Installer):
 
     def get_config_files(self):
         """Additional config files."""
-        return self.config_files + [
+        _config_files = self.config_files
+
+        if self.app_config["move_spam_to_junk"]:
+            _config_files += ["conf.d/custom_after_sieve/spam-to-junk.sieve"]
+
+        return _config_files + [
             "dovecot-sql-{}.conf.ext=dovecot-sql.conf.ext"
             .format(self.dbengine),
             "dovecot-sql-master-{}.conf.ext=dovecot-sql-master.conf.ext"
@@ -53,7 +60,7 @@ class Dovecot(base.Installer):
         if package.backend.FORMAT == "deb":
             if "pop3" in self.config.get("dovecot", "extra_protocols"):
                 packages += ["dovecot-pop3d"]
-        return super(Dovecot, self).get_packages() + packages
+        return super().get_packages() + packages
 
     def install_packages(self):
         """Preconfigure Dovecot if needed."""
@@ -63,7 +70,7 @@ class Dovecot(base.Installer):
 
     def get_template_context(self):
         """Additional variables."""
-        context = super(Dovecot, self).get_template_context()
+        context = super().get_template_context()
         pw_mailbox = pwd.getpwnam(self.mailboxes_owner)
         dovecot_package = {"deb": "dovecot-core", "rpm": "dovecot"}
         ssl_protocol_parameter = "ssl_protocols"
@@ -100,9 +107,21 @@ class Dovecot(base.Installer):
             "radicale_auth_socket_path": os.path.basename(
                 self.config.get("dovecot", "radicale_auth_socket_path")),
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
-            "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#"
+            "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#",
+            "do_move_spam_to_junk": "" if self.app_config["move_spam_to_junk"] else "#"
         })
         return context
+
+    def install_config_files(self):
+        """Create sieve dir if needed."""
+        if self.app_config["move_spam_to_junk"]:
+            utils.mkdir_safe(
+                f"{self.config_dir}/conf.d/custom_after_sieve",
+                stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
+                stat.S_IROTH | stat.S_IXOTH,
+                0, 0
+                )
+        super().install_config_files()
 
     def post_run(self):
         """Additional tasks."""
@@ -120,7 +139,8 @@ class Dovecot(base.Installer):
                 self.get_file_path("fix_modoboa_postgres_schema.sql")
             )
         for f in glob.glob("{}/*".format(self.get_file_path("conf.d"))):
-            utils.copy_file(f, "{}/conf.d".format(self.config_dir))
+            if os.path.isfile(f):
+                utils.copy_file(f, "{}/conf.d".format(self.config_dir))
         # Make postlogin script executable
         utils.exec_cmd("chmod +x /usr/local/bin/postlogin.sh")
         # Only root should have read access to the 10-ssl-keys.try
@@ -128,6 +148,10 @@ class Dovecot(base.Installer):
         utils.exec_cmd("chmod 600 /etc/dovecot/conf.d/10-ssl-keys.try")
         # Add mailboxes user to dovecot group for modoboa mailbox commands.
         # See https://github.com/modoboa/modoboa/issues/2157.
+        if self.app_config["move_spam_to_junk"]:
+            # Compile sieve script
+            sieve_file = f"{self.config_dir}/conf.d/custom_after_sieve/spam-to-junk.sieve"
+            utils.exec_cmd(f"/usr/bin/sievec {sieve_file}")
         system.add_user_to_group(self.mailboxes_owner, 'dovecot')
 
     def restart_daemon(self):

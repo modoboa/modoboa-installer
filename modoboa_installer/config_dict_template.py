@@ -28,6 +28,26 @@ ConfigDictTemplate = [
         ]
     },
     {
+        "name": "antispam",
+        "values": [
+            {
+                "option": "enabled",
+                "default": "true",
+                "customizable": True,
+                "values": ["true", "false"],
+                "question": "Do you want to setup an antispam utility?"
+            },
+            {
+                "option": "type",
+                "default": "rspamd",
+                "customizable": True,
+                "question": "Please select your antispam utility",
+                "values": ["rspamd", "amavis"],
+                "if": ["antispam.enabled=true"]
+            }
+        ]
+    },
+    {
         "name": "certificate",
         "values": [
             {
@@ -45,7 +65,7 @@ ConfigDictTemplate = [
     },
     {
         "name": "letsencrypt",
-        "if": "certificate.type=letsencrypt",
+        "if": ["certificate.type=letsencrypt"],
         "values": [
             {
                 "option": "email",
@@ -80,7 +100,7 @@ ConfigDictTemplate = [
     },
     {
         "name": "postgres",
-        "if": "database.engine=postgres",
+        "if": ["database.engine=postgres"],
         "values": [
             {
                 "option": "user",
@@ -96,7 +116,7 @@ ConfigDictTemplate = [
     },
     {
         "name": "mysql",
-        "if": "database.engine=mysql",
+        "if": ["database.engine=mysql"],
         "values": [
             {
                 "option": "user",
@@ -181,9 +201,16 @@ ConfigDictTemplate = [
                 "question": "Please enter Modoboa db password",
             },
             {
+                "option": "cron_error_recipient",
+                "default": "root",
+                "customizable": True,
+                "question":
+                    "Please enter a mail recipient for cron error reports"
+            },
+            {
                 "option": "extensions",
                 "default": (
-                    "modoboa-amavis "
+                    "modoboa-rspamd "
                     "modoboa-postfix-autoreply modoboa-sievefilters "
                     "modoboa-webmail modoboa-contacts "
                     "modoboa-radicale"
@@ -225,11 +252,59 @@ ConfigDictTemplate = [
         ]
     },
     {
+        "name": "rspamd",
+        "if": ["antispam.enabled=true", "antispam.type=rspamd"],
+        "values": [
+            {
+                "option": "enabled",
+                "default": ["antispam.enabled=true", "antispam.type=rspamd"],
+            },
+            {
+                "option": "user",
+                "default": "_rspamd",
+            },
+            {
+                "option": "password",
+                "default": make_password,
+                "customizable": True,
+                "question": "Please enter Rspamd interface password",
+            },
+            {
+                "option": "dnsbl",
+                "default": "true",
+            },
+            {
+                "option": "dkim_keys_storage_dir",
+                "default": "/var/lib/dkim"
+            },
+            {
+                "option": "key_map_path",
+                "default": "/var/lib/dkim/keys.path.map"
+            },
+            {
+                "option": "selector_map_path",
+                "default": "/var/lib/dkim/selectors.path.map"
+            },
+            {
+                "option": "greylisting",
+                "default": "true"
+            },
+            {
+                "option": "whitelist_auth",
+                "default": "true"
+            },
+            {
+                "option": "whitelist_auth_weigth",
+                "default": "-5"
+            }
+        ],
+    },
+    {
         "name": "amavis",
         "values": [
             {
                 "option": "enabled",
-                "default": "true",
+                "default": ["antispam.enabled=true", "antispam.type=amavis"],
             },
             {
                 "option": "user",
@@ -250,8 +325,6 @@ ConfigDictTemplate = [
             {
                 "option": "dbpassword",
                 "default": make_password,
-                "customizable": True,
-                "question": "Please enter amavis db password"
             },
         ],
     },
@@ -301,7 +374,11 @@ ConfigDictTemplate = [
             },
             {
                 "option": "radicale_auth_socket_path",
-                "default": "/var/run/dovecot/auth-radicale"
+                "default": "/var/run/dovecot/auth-radicale",
+            },
+            {
+                "option": "move_spam_to_junk",
+                "default": "true",
             },
         ]
     },
@@ -323,7 +400,7 @@ ConfigDictTemplate = [
         "values": [
             {
                 "option": "enabled",
-                "default": "true",
+                "default": "false",
             },
             {
                 "option": "config_dir",
@@ -357,7 +434,7 @@ ConfigDictTemplate = [
         "values": [
             {
                 "option": "enabled",
-                "default": "true",
+                "default": ["antispam.enabled=true", "antispam.type=amavis"],
             },
             {
                 "option": "config_dir",
@@ -367,10 +444,11 @@ ConfigDictTemplate = [
     },
     {
         "name": "spamassassin",
+        "if": ["antispam.enabled=true", "antispam.type=amavis"],
         "values": [
             {
                 "option": "enabled",
-                "default": "true",
+                "default": ["antispam.enabled=true", "antispam.type=amavis"],
             },
             {
                 "option": "config_dir",
@@ -436,10 +514,11 @@ ConfigDictTemplate = [
     },
     {
         "name": "opendkim",
+        "if": ["antispam.enabled=true", "antispam.type=amavis"],
         "values": [
             {
                 "option": "enabled",
-                "default": "true",
+                "default": ["antispam.enabled=true", "antispam.type=amavis"],
             },
             {
                 "option": "user",
