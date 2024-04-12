@@ -7,19 +7,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0 # otherwise, there would be errors pushing refs to the destination repository.
+            ref: ${{ github.head_ref }}
       - name: Overwrite file
         uses: "DamianReeves/write-file-action@master"
         with:
           path: version.txt
           write-mode: overwrite
-          contents: $GITHUB_SHA
+          contents: ${{ GITHUB_SHA }}
 
       - name: Commit & Push
         uses: Andro999b/push@v1.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+          branch: ${{ github.ref_name }}
           force: true
           message: '[GitHub Action] Updated version file'
