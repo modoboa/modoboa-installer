@@ -1,0 +1,25 @@
+name: Update version file
+
+on: push
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Overwrite file
+        uses: "DamianReeves/write-file-action@master"
+        with:
+          path: version.txt
+          write-mode: overwrite
+          contents: $GITHUB_SHA
+
+      - name: Commit & Push
+        uses: Andro999b/push@v1.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          force: true
+          message: '[GitHub Action] Updated version file'
