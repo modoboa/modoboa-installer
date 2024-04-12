@@ -16,7 +16,7 @@ jobs:
         with:
           path: version.txt
           write-mode: overwrite
-          contents: ${GITHUB_SHA}
+          contents: ${{ github.sha }}
 
       - name: Commit & Push
         uses: Andro999b/push@v1.3
