@@ -171,7 +171,7 @@ def main(input_args):
         "You MUST provide backup directory"
     ),
     parser.add_argument(
-        "--skip-checks"; action="store_true", default=False,
+        "--skip-checks", action="store_true", default=False,
         help="Skip the checks the installer performs initially")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
