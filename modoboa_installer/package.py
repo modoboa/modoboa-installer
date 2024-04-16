@@ -108,7 +108,7 @@ def get_backend():
     """Return the appropriate package backend."""
     distname = utils.dist_name()
     backend = None
-    if distname in ["debian", "debian gnu/linux", "ubuntu", "linuxmint", "LMDE"]:
+    if distname in ["debian", "debian gnu/linux", "ubuntu", "linuxmint"]:
         backend = DEBPackage
     elif "centos" in distname:
         backend = RPMPackage
