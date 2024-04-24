@@ -65,8 +65,8 @@ class Modoboa(base.Installer):
 
     def is_extension_ok_for_version(self, extension, version):
         """Check if extension can be installed with this modo version."""
+        version = utils.convert_version_to_int(version)
         if extension in compatibility_matrix.EXTENSIONS_AVAILABILITY:
-            version = utils.convert_version_to_int(version)
             min_version = compatibility_matrix.EXTENSIONS_AVAILABILITY[extension]
             min_version = utils.convert_version_to_int(min_version)
             return version >= min_version
