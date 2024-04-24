@@ -7,7 +7,7 @@ from . import package
 from . import utils
 
 
-class CertificateBackend(object):
+class CertificateBackend:
     """Base class."""
 
     def __init__(self, config):
@@ -29,7 +29,7 @@ class CertificateBackend(object):
         pass
 
 
-class ManualCertification(CertificateBackend):
+class ManualCertificate(CertificateBackend):
     """Use certificate provided."""
 
     def __init__(self, *args, **kwargs):
@@ -61,7 +61,7 @@ class SelfSignedCertificate(CertificateBackend):
 
     def __init__(self, *args, **kwargs):
         """Sanity checks."""
-        super(SelfSignedCertificate, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.config.has_option("general", "tls_key_file"):
             # Compatibility
             return
@@ -96,7 +96,7 @@ class LetsEncryptCertificate(CertificateBackend):
 
     def __init__(self, *args, **kwargs):
         """Update config."""
-        super(LetsEncryptCertificate, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.hostname = self.config.get("general", "hostname")
         self.config.set("general", "tls_cert_file", (
             "/etc/letsencrypt/live/{}/fullchain.pem".format(self.hostname)))
@@ -158,5 +158,5 @@ def get_backend(config):
     if cert_type == "letsencrypt":
         return LetsEncryptCertificate(config)
     if cert_type == "manual":
-        return ManualCertification(config)
+        return ManualCertificate(config)
     return SelfSignedCertificate(config)

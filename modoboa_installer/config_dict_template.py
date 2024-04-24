@@ -39,8 +39,8 @@ ConfigDictTemplate = [
                 "default": "self-signed",
                 "customizable": True,
                 "question": "Please choose your certificate type",
-                "value_return": ["manual"],
                 "values": ["self-signed", "letsencrypt", "manual"],
+                "non_interactive_values": ["manual"],
             },
             {
                 "option": "tls_cert_file_path",

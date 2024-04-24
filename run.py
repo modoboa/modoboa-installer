@@ -203,7 +203,7 @@ def main(input_args):
     if not args.skip_checks:
         utils.printcolor("Checking the installer...", utils.BLUE)
         checks.handle()
-        utils.success("Checks complete")
+        utils.success("Checks complete\n")
 
     is_config_file_available, outdate_config = utils.check_config_file(
         args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)

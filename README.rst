@@ -165,19 +165,17 @@ Certificate
 Self-signed
 -----------
 
-It is the default way of the installer, it is however
-not recommended for production use. We recommend using
-letsencrypt for production. Using Letsencrypt imply that
-you accept their Tos (see bellow)
+It is the default type of certificate the installer will generate, it
+is however not recommended for production use.
 
 Letsencrypt
 -----------
 
 .. warning::
 
-  Please note that by using this option, you aggree to the `ToS
+  Please note that by using this option, you agree to the `ToS
   <https://community.letsencrypt.org/tos>`_ of
-  letsencrypt and that your IP will be logged (see ToS)
+  letsencrypt and that your IP will be logged (see ToS).
   Please also note this option requires the hostname you're using to be
   valid (ie. it can be resolved with a DNS query) and to match the
   server you're installing Modoboa on.
@@ -202,11 +200,13 @@ Manual
 ------
 
 .. warning::
-  It is not possible to configure manual certs interactively.
-  To do so, please run ``run.py`` with  `--stop-after-configfile-check`,
-  configure your file as desired and apply the configuration as
-  written bellow. Then run ``run.py`` without
-  `--stop-after-configfile-check` or `--interactive`.
+
+  It is not possible to configure manual certs interactively, so
+  you'll have to do it in 2 steps. Please run ``run.py`` with
+  `--stop-after-configfile-check` first, configure your file as
+  desired and apply the configuration as written bellow. Then run
+  ``run.py`` again but without `--stop-after-configfile-check` or
+  `--interactive`.
 
 If you want to use already generated certs, simply edit the
 ``installer.cfg`` file and modify the following settings::
