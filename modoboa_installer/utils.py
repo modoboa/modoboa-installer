@@ -316,6 +316,17 @@ def get_entry_value(entry, interactive):
 
         if entry.get("values") and user_value != "":
             user_value = values[int(user_value)]
+
+        non_interactive_values = entry.get("non_interactive_values", [])
+        if user_value in non_interactive_values:
+            error(
+                f"{user_value} cannot be set interactively. "
+                "Please configure installer.cfg manually by running "
+                "'python3 run.py --stop-after-configfile-check domain'. "
+                "Check modoboa-installer README for more information."
+            )
+            sys.exit(1)
+
     return user_value if user_value else default_value
 
 
