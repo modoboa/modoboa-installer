@@ -65,12 +65,16 @@ class Modoboa(base.Installer):
 
     def is_extension_ok_for_version(self, extension, version):
         """Check if extension can be installed with this modo version."""
-        if extension not in compatibility_matrix.EXTENSIONS_AVAILABILITY:
-            return True
-        version = utils.convert_version_to_int(version)
-        min_version = compatibility_matrix.EXTENSIONS_AVAILABILITY[extension]
-        min_version = utils.convert_version_to_int(min_version)
-        return version >= min_version
+        if extension in compatibility_matrix.EXTENSIONS_AVAILABILITY:
+            version = utils.convert_version_to_int(version)
+            min_version = compatibility_matrix.EXTENSIONS_AVAILABILITY[extension]
+            min_version = utils.convert_version_to_int(min_version)
+            return version >= min_version
+        if extension in compatibility_matrix.REMOVED_EXTENSIONS:
+            max_version = compatibility_matrix.REMOVED_EXTENSIONS[extension]
+            max_version = utils.convert_version_to_int(max_version)
+            return version < max_version
+        return True
 
     def _setup_venv(self):
         """Prepare a dedicated virtualenv."""
@@ -80,6 +84,13 @@ class Modoboa(base.Installer):
         version = self.config.get("modoboa", "version")
         if version == "latest":
             packages += ["modoboa"] + self.extensions
+            for extension in list(self.extensions):
+                if extension in compatibility_matrix.REMOVED_EXTENSIONS.keys():
+                    self.extensions.remove(extension)
+            self.extensions = [
+                extension for extension in self.extensions
+                if extension not in compatibility_matrix.REMOVED_EXTENSIONS
+            ]
         else:
             matrix = compatibility_matrix.COMPATIBILITY_MATRIX[version]
             packages.append("modoboa=={}".format(version))
@@ -99,16 +110,6 @@ class Modoboa(base.Installer):
         if sys.version_info.major == 2 and sys.version_info.micro < 9:
             # Add extra packages to fix the SNI issue
             packages += ["pyOpenSSL"]
-        for extension in list(self.extensions):
-            if extension in compatibility_matrix.REMOVED_EXTENSIONS.keys():
-                modoboa_version = self.config.get("modoboa", "version")
-                if modoboa_version != "latest":
-                    max_version = utils.convert_version_to_int(
-                        compatibility_matrix.REMOVED_EXTENSIONS[extension])
-                    modoboa_v_int = utils.convert_version_to_int(modoboa_version)
-                    if modoboa_v_int < max_version:
-                        continue
-                self.extensions.remove(extension)
         python.install_packages(
             packages, self.venv_path,
             upgrade=self.upgrade,
