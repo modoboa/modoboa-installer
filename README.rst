@@ -9,12 +9,11 @@ An installer which deploy a complete mail server based on Modoboa.
 
    This tool is still in beta stage, it has been tested on:
 
-   * Debian Buster (10) / Bullseye (11)
+   * Debian 10 and upper
    * Ubuntu Bionic Beaver (18.04) and upper
-   * CentOS 7
 
 .. warning::
-      
+
    ``/tmp`` partition must be mounted without the ``noexec`` option.
 
 .. note::
@@ -92,8 +91,8 @@ You can activate it as follows::
 
 It will automatically install latest versions of modoboa and its plugins.
 
-Backup mode 
-------------
+Backup mode
+-----------
 
 An experimental backup mode is available.
 

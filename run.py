@@ -38,6 +38,12 @@ def installation_disclaimer(args, config):
     """Display installation disclaimer."""
     hostname = config.get("general", "hostname")
     utils.printcolor(
+        "Notice:\n"
+        "It is recommanded to run this installer on a FRESHLY installed server.\n"
+        "(ie. with nothing special already installed on it)\n",
+        utils.CYAN
+    )
+    utils.printcolor(
         "Warning:\n"
         "Before you start the installation, please make sure the following "
         "DNS records exist for domain '{}':\n"
@@ -47,7 +53,7 @@ def installation_disclaimer(args, config):
             hostname.replace(".{}".format(args.domain), ""),
             hostname
         ),
-        utils.CYAN
+        utils.YELLOW
     )
     utils.printcolor(
         "Your mail server will be installed with the following components:",
