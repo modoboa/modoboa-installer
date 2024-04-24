@@ -11,6 +11,7 @@ except ImportError:
     import ConfigParser as configparser
 import sys
 
+import checks
 from modoboa_installer import compatibility_matrix
 from modoboa_installer import constants
 from modoboa_installer import package
@@ -168,7 +169,10 @@ def main(input_args):
         "--restore", type=str, metavar="path",
         help="Restore a previously backup up modoboa instance on a NEW machine. "
         "You MUST provide backup directory"
-    )
+    ),
+    parser.add_argument(
+        "--skip-checks", action="store_true", default=False,
+        help="Skip the checks the installer performs initially")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args(input_args)
@@ -188,6 +192,12 @@ def main(input_args):
             sys.exit(1)
 
     utils.success("Welcome to Modoboa installer!\n")
+
+    # Checks
+    if not args.skip_checks:
+        utils.printcolor("Checking the installer...", utils.BLUE)
+        checks.handle()
+        utils.success("Checks complete")
 
     is_config_file_available, outdate_config = utils.check_config_file(
         args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
