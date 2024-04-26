@@ -151,7 +151,7 @@ class LetsEncryptCertificate(CertificateBackend):
 
 HOSTNAME=$(basename $RENEWED_LINEAGE)
 
-if [ $HOSTNAME = '{self.hostname}' ]
+if [ "$HOSTNAME" = "{self.hostname}" ]
 then
 	systemctl reload dovecot
 	systemctl reload postfix
