@@ -122,6 +122,7 @@ def backup_system(config, args):
     for app in PRIMARY_APPS:
         if app == "dovecot" and args.no_mail:
             utils.printcolor("Skipping mail backup", utils.BLUE)
+            continue
         scripts.backup(app, config, backup_path)
 
 
