@@ -263,7 +263,7 @@ def main(input_args):
     components = []
     for section in config.sections():
         if section in ["general", "database", "mysql", "postgres",
-                       "certificate", "letsencrypt"]:
+                       "certificate", "letsencrypt", "backup"]:
             continue
         if (config.has_option(section, "enabled") and
                 not config.getboolean(section, "enabled")):
