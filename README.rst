@@ -107,7 +107,19 @@ You can start the process as follows::
 
 Then follow the step on the console.
 
-There is also a non-interactive mode:
+There is also a non-interactive mode::
+
+  $ sudo ./run.py --silent-backup <your domain>
+
+You can also add a path, else it will be saved in ./modoboa_backup/Backup_M_Y_d_H_M::
+
+  $ sudo ./run.py --silent-backup --backup-path "/My_Backup_Path" <your domain>
+
+if you want to disable mail backup::
+
+  $ sudo ./run.py --backup --no-mail <your domain>
+
+This can be useful for larger instance
 
 1. Silent mode
 

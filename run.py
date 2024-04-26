@@ -120,6 +120,8 @@ def backup_system(config, args):
     utils.copy_file(args.configfile, backup_path)
     # Backup applications
     for app in PRIMARY_APPS:
+        if app == "dovecot" and args.no_mail:
+            utils.printcolor("Skipping mail backup", utils.BLUE)
         scripts.backup(app, config, backup_path)
 
 
@@ -171,6 +173,9 @@ def main(input_args):
         help="For script usage, do not require user interaction "
         "backup will be saved at ./modoboa_backup/Backup_M_Y_d_H_M "
         "if --backup-path is not provided")
+    parser.add_argument(
+        "--no-mail", action="store_true", default=False,
+        help="Disable mail backup (save space)")
     parser.add_argument(
         "--restore", type=str, metavar="path",
         help="Restore a previously backup up modoboa instance on a NEW machine. "
