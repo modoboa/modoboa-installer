@@ -1,8 +1,11 @@
 name: Update version file
 
 on:
-  push:
+  workflow_run:
     branches: [ master ]
+    workflows: [Modoboa installer]
+    types:
+      - completed
 
 jobs:
   update-version:
