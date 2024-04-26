@@ -146,6 +146,17 @@ class LetsEncryptCertificate(CertificateBackend):
         cfg_file = "/etc/letsencrypt/renewal/{}.conf".format(self.hostname)
         pattern = "s/authenticator = standalone/authenticator = nginx/"
         utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfg_file))
+        with open("/etc/letsencrypt/renewal-hooks/deploy/reload-services.sh", "w") as fp:
+            fp.write(f"""#!/bin/bash
+
+HOSTNAME=$(basename $RENEWED_LINEAGE)
+
+if [ $HOSTNAME = '{self.hostname}' ]
+then
+	systemctl reload dovecot
+	systemctl reload postfix
+fi
+""")
 
 
 def get_backend(config):
