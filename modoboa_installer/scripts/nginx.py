@@ -21,7 +21,7 @@ class Nginx(base.Installer):
 
     def get_template_context(self, app):
         """Additionnal variables."""
-        context = super(Nginx, self).get_template_context()
+        context = super().get_template_context()
         context.update({
             "app_instance_path": (
                 self.config.get(app, "instance_path")),
