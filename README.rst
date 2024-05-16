@@ -226,8 +226,8 @@ If you want to use already generated certs, simply edit the
     [certificate]
     generate = true
     type = manual
-    tls_cert_file_path = *path to tls key file*
-    tls_key_file_path = * path to tls fullchain file*
+    tls_cert_file_path = *path to tls fullchain file*
+    tls_key_file_path = *path to tls key file*
 
 .. |workflow| image:: https://github.com/modoboa/modoboa-installer/workflows/Modoboa%20installer/badge.svg
 .. |codecov| image:: http://codecov.io/github/modoboa/modoboa-installer/coverage.svg?branch=master

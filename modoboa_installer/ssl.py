@@ -36,9 +36,9 @@ class ManualCertificate(CertificateBackend):
         super().__init__(*args, **kwargs)
         path_correct = True
         self.tls_cert_file_path = self.config.get("certificate",
-                                                  "tls_key_file_path")
+                                                  "tls_cert_file_path")
         self.tls_key_file_path = self.config.get("certificate",
-                                                 "tls_cert_file_path")
+                                                 "tls_key_file_path")
 
         if not os.path.exists(self.tls_key_file_path):
             utils.error("'tls_key_file_path' path is not accessible")
