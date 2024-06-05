@@ -99,26 +99,17 @@ def install_package_from_remote_requirements(url, venv=None, **kwargs):
     utils.exec_cmd(cmd, **kwargs)
 
 
-def setup_virtualenv(path, sudo_user=None, python_version=2):
+def setup_virtualenv(path, sudo_user=None):
     """Install a virtualenv if needed."""
     if os.path.exists(path):
         return
-    if python_version == 2:
-        python_binary = "python"
-        packages = ["python-virtualenv"]
-        if utils.dist_name() == "debian":
-            packages.append("virtualenv")
+    if utils.dist_name().startswith("centos"):
+        python_binary = "python3"
+        packages = ["python3"]
     else:
-        if utils.dist_name().startswith("centos"):
-            python_binary = "python3"
-            packages = ["python3"]
-        else:
-            python_binary = "python3"
-            packages = ["python3-venv"]
+        python_binary = "python3"
+        packages = ["python3-venv"]
     package.backend.install_many(packages)
     with utils.settings(sudo_user=sudo_user):
-        if python_version == 2:
-            utils.exec_cmd("virtualenv {}".format(path))
-        else:
-            utils.exec_cmd("{} -m venv {}".format(python_binary, path))
-        install_packages(["pip", "setuptools\<58.0.0"], venv=path, upgrade=True)
+        utils.exec_cmd("{} -m venv {}".format(python_binary, path))
+        install_packages(["pip", "setuptools"], venv=path, upgrade=True)
