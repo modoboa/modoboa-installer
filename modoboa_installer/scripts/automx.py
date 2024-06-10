@@ -56,8 +56,7 @@ class Automx(base.Installer):
 
     def _setup_venv(self):
         """Prepare a python virtualenv."""
-        python.setup_virtualenv(
-            self.venv_path, sudo_user=self.user, python_version=3)
+        python.setup_virtualenv(self.venv_path, sudo_user=self.user)
         packages = [
             "future", "lxml", "ipaddress", "sqlalchemy < 2.0", "python-memcached",
             "python-dateutil", "configparser"
