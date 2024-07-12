@@ -70,13 +70,13 @@ class Dovecot(base.Installer):
         python_path = os.path.join(venv_path, "bin", "python")
         instance_path = self.config.get("modoboa", "instance_path")
         script_path = os.path.join(instance_path, "manage.py")
-        client_id = str(uuid.uuid4())
+        client_id = "dovecot"
         client_secret = str(uuid.uuid4())
         cmd = (
             f"{python_path} {script_path} createapplication "
-            f"--name=Dovecot --algorithm=RS256 --skip-authorization "
+            f"--name=Dovecot --skip-authorization "
             f"--client-id={client_id} --client-secret={client_secret} "
-            f"public authorization-code"
+            f"confidential client-credentials"
         )
         utils.exec_cmd(cmd)
         return client_id, client_secret
