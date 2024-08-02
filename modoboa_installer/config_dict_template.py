@@ -189,7 +189,6 @@ ConfigDictTemplate = [
                 "option": "extensions",
                 "default": (
                     "modoboa-amavis "
-                    "modoboa-postfix-autoreply modoboa-sievefilters "
                     "modoboa-webmail modoboa-contacts "
                     "modoboa-radicale"
                 ),
