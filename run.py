@@ -18,6 +18,7 @@ from modoboa_installer import scripts
 from modoboa_installer import ssl
 from modoboa_installer import system
 from modoboa_installer import utils
+from modoboa_installer import disclaimers
 
 
 PRIMARY_APPS = [
@@ -33,53 +34,9 @@ PRIMARY_APPS = [
 ]
 
 
-def installation_disclaimer(args, config):
-    """Display installation disclaimer."""
-    hostname = config.get("general", "hostname")
-    utils.printcolor(
-        "Warning:\n"
-        "Before you start the installation, please make sure the following "
-        "DNS records exist for domain '{}':\n"
-        "  {} IN A   <IP ADDRESS OF YOUR SERVER>\n"
-        "     @ IN MX  {}.\n".format(
-            args.domain,
-            hostname.replace(".{}".format(args.domain), ""),
-            hostname
-        ),
-        utils.CYAN
-    )
-    utils.printcolor(
-        "Your mail server will be installed with the following components:",
-        utils.BLUE)
-
-
-def upgrade_disclaimer(config):
-    """Display upgrade disclaimer."""
-    utils.printcolor(
-        "Your mail server is about to be upgraded and the following components"
-        " will be impacted:", utils.BLUE
-    )
-
-
-def backup_disclaimer():
-    """Display backup disclamer. """
-    utils.printcolor(
-        "Your mail server will be backed up locally.\n"
-        " !! You should really transfer the backup somewhere else...\n"
-        " !! Custom configuration (like for postfix) won't be saved.", utils.BLUE)
-
-
-def restore_disclaimer():
-    """Display restore disclamer. """
-    utils.printcolor(
-        "You are about to restore a previous installation of Modoboa.\n"
-        "If a new version has been released in between, please update your database!",
-        utils.BLUE)
-
-
 def backup_system(config, args):
     """Launch backup procedure."""
-    backup_disclaimer()
+    disclaimers.backup_disclaimer()
     backup_path = None
     if args.silent_backup:
         if not args.backup_path:
@@ -199,12 +156,12 @@ def main(input_args):
     # Check if config is outdated and ask user if it needs to be updated
     if is_config_file_available and outdate_config:
         answer = utils.user_input("It seems that your config file is outdated. "
-                                  "Would you like to update it? (y/N) ")
-        if answer.lower().startswith("y"):
+                                  "Would you like to update it? (Y/n) ")
+        if not answer or answer.lower().startswith("y"):
             config_file_update_complete(utils.update_config(args.configfile))
             if not args.stop_after_configfile_check:
-                answer = utils.user_input("Would you like to stop to review the updated config? (y/N)")
-                if answer.lower().startswith("y"):
+                answer = utils.user_input("Would you like to stop to review the updated config? (Y/n)")
+                if not answer or answer.lower().startswith("y"):
                     return
         else:
             utils.error("You might encounter unexpected errors ! "
@@ -229,12 +186,12 @@ def main(input_args):
 
     # Display disclaimer python 3 linux distribution
     if args.upgrade:
-        upgrade_disclaimer(config)
+        disclaimers.upgrade_disclaimer(config)
     elif args.restore:
-        restore_disclaimer()
+        disclaimers.restore_disclaimer()
         scripts.restore_prep(args.restore)
     else:
-        installation_disclaimer(args, config)
+        disclaimers.installation_disclaimer(args, config)
 
     # Show concerned components
     components = []
@@ -277,6 +234,19 @@ def main(input_args):
         utils.success(
             "Restore complete! You can enjoy Modoboa at https://{} (same credentials as before)"
             .format(config.get("general", "hostname"))
+        )
+    utils.success(
+        "\n"
+        "Modoboa is a free software maintained by volunteers.\n"
+        "You like the project and want it to be sustainable?\n"
+        "Then don't wait anymore and go sponsor it here:\n"
+        )
+    utils.printcolor(
+        "https://github.com/sponsors/modoboa\n",
+        utils.YELLOW
+        )
+    utils.success(
+        "Thank you for your help :-)\n"
         )
 
 
