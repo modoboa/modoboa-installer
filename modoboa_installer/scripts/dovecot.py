@@ -28,8 +28,9 @@ class Dovecot(base.Installer):
     }
     config_files = [
         "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
-        "conf.d/10-master.conf", "conf.d/20-lmtp.conf",
-        "conf.d/10-ssl-keys.try", "conf.d/90-sieve.conf"]
+        "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try",
+        "conf.d/dovecot-oauth2.conf.ext"
+        ]
     with_user = True
 
     def setup_user(self):
@@ -75,7 +76,25 @@ class Dovecot(base.Installer):
             self.backports_codename = "bookworm"
         package.backend.preconfigure(
             "dovecot-core", "create-ssl-cert", "boolean", "false")
-        super(Dovecot, self).install_packages()
+        super().install_packages()
+
+    def create_oauth2_app(self):
+            """Create a application for Oauth2 authentication."""
+        # FIXME: how can we check that application already exists ?
+        venv_path = self.config.get("modoboa", "venv_path")
+        python_path = os.path.join(venv_path, "bin", "python")
+        instance_path = self.config.get("modoboa", "instance_path")
+        script_path = os.path.join(instance_path, "manage.py")
+        client_id = "dovecot"
+        client_secret = str(uuid.uuid4())
+        cmd = (
+            f"{python_path} {script_path} createapplication "
+            f"--name=Dovecot --skip-authorization "
+            f"--client-id={client_id} --client-secret={client_secret} "
+            f"confidential client-credentials"
+            )
+        utils.exec_cmd(cmd)
+        return client_id, client_secret
 
     def get_template_context(self):
         """Additional variables."""
@@ -117,7 +136,8 @@ class Dovecot(base.Installer):
                 self.config.get("dovecot", "radicale_auth_socket_path")),
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
             "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#",
-            "do_move_spam_to_junk": "" if self.app_config["move_spam_to_junk"] else "#"
+            "do_move_spam_to_junk": "" if self.app_config["move_spam_to_junk"] else "#",
+            "oauth2_introspection_url": oauth2_introspection_url
         })
         return context
 
