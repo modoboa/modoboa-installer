@@ -28,8 +28,9 @@ class Dovecot(base.Installer):
     }
     config_files = [
         "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
-        "conf.d/10-master.conf", "conf.d/20-lmtp.conf",
-        "conf.d/10-ssl-keys.try", "conf.d/90-sieve.conf"]
+        "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try",
+        "conf.d/dovecot-oauth2.conf.ext"
+        ]
     with_user = True
 
     def setup_user(self):
@@ -122,7 +123,8 @@ class Dovecot(base.Installer):
             "ssl_protocol_parameter": ssl_protocol_parameter,
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
             "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#",
-            "do_move_spam_to_junk": "" if self.app_config["move_spam_to_junk"] else "#"
+            "do_move_spam_to_junk": "" if self.app_config["move_spam_to_junk"] else "#",
+            "oauth2_introspection_url": oauth2_introspection_url
         })
         return context
 
