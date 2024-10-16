@@ -5,7 +5,7 @@ import re
 from . import utils
 
 
-class Package(object):
+class Package:
     """Base classe."""
 
     def __init__(self, dist_name):
@@ -29,9 +29,15 @@ class DEBPackage(Package):
     FORMAT = "deb"
 
     def __init__(self, dist_name):
-        super(DEBPackage, self).__init__(dist_name)
+        super().__init__(dist_name)
         self.index_updated = False
         self.policy_file = "/usr/sbin/policy-rc.d"
+
+    def enable_backports(self, codename):
+        code, output = utils.exec_cmd(f"grep {codename}-backports /etc/apt/sources.list")
+        if code:
+            with open(f"/etc/apt/sources.list.d/backports.list", "w") as fp:
+                fp.write(f"deb http://deb.debian.org/debian {codename}-backports main\n")
 
     def prepare_system(self):
         """Make sure services don't start at installation."""

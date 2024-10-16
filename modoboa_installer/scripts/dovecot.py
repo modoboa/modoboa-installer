@@ -55,10 +55,19 @@ class Dovecot(base.Installer):
         if package.backend.FORMAT == "deb":
             if "pop3" in self.config.get("dovecot", "extra_protocols"):
                 packages += ["dovecot-pop3d"]
-        return super().get_packages() + packages
+        packages += super().get_packages()
+        backports_codename = getattr(self, "backports_codename", None)
+        if backports_codename:
+            packages = [f"{package}/{backports_codename}-backports" for package in packages]
+        return packages
 
     def install_packages(self):
         """Preconfigure Dovecot if needed."""
+        name, version = utils.dist_info()
+        name = name.lower()
+        if name.startswith("debian") and version.startswith("12"):
+            package.backend.enable_backports("bookworm")
+            self.backports_codename = "bookworm"
         package.backend.preconfigure(
             "dovecot-core", "create-ssl-cert", "boolean", "false")
         super().install_packages()
