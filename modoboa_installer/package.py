@@ -38,6 +38,7 @@ class DEBPackage(Package):
         if code:
             with open(f"/etc/apt/sources.list.d/backports.list", "w") as fp:
                 fp.write(f"deb http://deb.debian.org/debian {codename}-backports main\n")
+            self.update(force=True)
 
     def prepare_system(self):
         """Make sure services don't start at installation."""
@@ -48,9 +49,9 @@ class DEBPackage(Package):
     def restore_system(self):
         utils.exec_cmd("rm -f {}".format(self.policy_file))
 
-    def update(self):
+    def update(self, force=False):
         """Update local cache."""
-        if self.index_updated:
+        if self.index_updated and not force:
             return
         utils.exec_cmd("apt-get -o Dpkg::Progress-Fancy=0 update --quiet")
         self.index_updated = True
