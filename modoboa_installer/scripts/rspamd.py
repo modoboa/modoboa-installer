@@ -22,6 +22,7 @@ class Rspamd(base.Installer):
         ]
     }
     config_files = ["local.d/dkim_signing.conf",
+                    "local.d/arc.conf",
                     "local.d/mx_check.conf",
                     "local.d/spf.conf",
                     "local.d/worker-controller.inc",
