@@ -246,6 +246,10 @@ def main(input_args):
             "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
             .format(config.get("general", "hostname"))
         )
+        if config.get("rspamd", "enabled"):
+            utils.success(
+                f"You can also enjoy rspamd at https://{config.get("general", "hostname")} ({config.get("rspamd", "password")})"
+            )
     else:
         utils.success(
             "Restore complete! You can enjoy Modoboa at https://{} (same credentials as before)"
