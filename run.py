@@ -11,7 +11,7 @@ except ImportError:
     import ConfigParser as configparser
 import sys
 
-from . import checks
+from modoboa_installer import checks
 from modoboa_installer import compatibility_matrix
 from modoboa_installer import constants
 from modoboa_installer import package
