@@ -79,7 +79,7 @@ class Dovecot(base.Installer):
         super().install_packages()
 
     def create_oauth2_app(self):
-            """Create a application for Oauth2 authentication."""
+        """Create a application for Oauth2 authentication."""
         # FIXME: how can we check that application already exists ?
         venv_path = self.config.get("modoboa", "venv_path")
         python_path = os.path.join(venv_path, "bin", "python")
