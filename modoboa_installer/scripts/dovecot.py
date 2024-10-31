@@ -5,6 +5,7 @@ import os
 import pwd
 import shutil
 import stat
+import uuid
 
 from .. import database
 from .. import package
