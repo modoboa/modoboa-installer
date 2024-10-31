@@ -11,6 +11,7 @@ except ImportError:
     import ConfigParser as configparser
 import sys
 
+from . import checks
 from modoboa_installer import compatibility_matrix
 from modoboa_installer import constants
 from modoboa_installer import package
@@ -69,6 +70,9 @@ def backup_system(config, args):
     utils.copy_file(args.configfile, backup_path)
     # Backup applications
     for app in PRIMARY_APPS:
+        if app == "dovecot" and args.no_mail:
+            utils.printcolor("Skipping mail backup", utils.BLUE)
+            continue
         scripts.backup(app, config, backup_path)
 
 
@@ -144,6 +148,12 @@ def main(input_args):
             sys.exit(1)
 
     utils.success("Welcome to Modoboa installer!\n")
+
+    # Checks
+    if not args.skip_checks:
+        utils.printcolor("Checking the installer...", utils.BLUE)
+        checks.handle()
+        utils.success("Checks complete\n")
 
     is_config_file_available, outdate_config = utils.check_config_file(
         args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
