@@ -125,10 +125,16 @@ def main(input_args):
         "backup will be saved at ./modoboa_backup/Backup_M_Y_d_H_M "
         "if --backup-path is not provided")
     parser.add_argument(
+        "--no-mail", action="store_true", default=False,
+        help="Disable mail backup (save space)")
+    parser.add_argument(
         "--restore", type=str, metavar="path",
         help="Restore a previously backup up modoboa instance on a NEW machine. "
         "You MUST provide backup directory"
     )
+    parser.add_argument(
+        "--skip-checks", action="store_true", default=False,
+        help="Skip the checks the installer performs initially")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args(input_args)
