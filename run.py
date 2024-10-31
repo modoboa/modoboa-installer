@@ -248,7 +248,7 @@ def main(input_args):
         )
         if config.get("rspamd", "enabled"):
             utils.success(
-                f"You can also enjoy rspamd at https://{config.get("general", "hostname")} ({config.get("rspamd", "password")})"
+                f"You can also enjoy rspamd at https://{config.get("general", "hostname")}/rspamd ({config.get("rspamd", "password")})"
             )
     else:
         utils.success(
