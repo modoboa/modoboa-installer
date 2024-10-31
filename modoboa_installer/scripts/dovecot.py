@@ -119,6 +119,13 @@ class Dovecot(base.Installer):
             # Protocols are automatically guessed on debian/ubuntu
             protocols = ""
 
+        oauth2_client_id, oauth2_client_secret = self.create_oauth2_app()
+        hostname = self.config.get("general", "hostname")
+        oauth2_introspection_url = (
+            f"https://{oauth2_client_id}:{oauth2_client_secret}"
+            f"@{hostname}/api/o/introspect/"
+        )
+
         context.update({
             "db_driver": self.db_driver,
             "mailboxes_owner_uid": pw_mailbox[2],
