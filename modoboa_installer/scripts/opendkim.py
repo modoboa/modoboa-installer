@@ -95,7 +95,7 @@ class Opendkim(base.Installer):
         with open(params_file, "a") as f:
             f.write('\n'.join([
                 "",
-                'SOCKET="inet:12345@localhost"',
+                'Socket inet:12345@localhost',
             ]))
 
         # Make sure opendkim is started after postgresql and mysql,

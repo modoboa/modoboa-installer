@@ -103,12 +103,13 @@ def setup_virtualenv(path, sudo_user=None):
     """Install a virtualenv if needed."""
     if os.path.exists(path):
         return
-    if utils.dist_name().startswith("centos"):
+    if utils.dist_name().startswith("centos") or utils.dist_name().startswith("oracle linux server")::
         python_binary = "python3"
         packages = ["python3"]
     else:
         python_binary = "python3"
         packages = ["python3-venv"]
+        
     package.backend.install_many(packages)
     with utils.settings(sudo_user=sudo_user):
         utils.exec_cmd("{} -m venv {}".format(python_binary, path))
