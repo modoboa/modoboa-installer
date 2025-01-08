@@ -58,18 +58,25 @@ def get_package_version(name, venv=None, **kwargs):
                     f"Output is: {output}")
         sys.exit(1)
 
-    output_list = output.decode().split("\n")
-    version_item_list = output_list[1].split(":")
-    version_list = version_item_list[1].split(".")
     version_list_clean = []
-    for element in version_list:
-        try:
-            version_list_clean.append(int(element))
-        except ValueError:
-            utils.printcolor(
-                f"Failed to decode some part of the version of {name}",
-                utils.YELLOW)
-            version_list_clean.append(element)
+    for line in output.decode().split("\n"):
+        if not line.startswith("Version:"):
+            continue
+        version_item_list = line.split(":")
+        version_list = version_item_list[1].split(".")
+        for element in version_list:
+            try:
+                version_list_clean.append(int(element))
+            except ValueError:
+                utils.printcolor(
+                    f"Failed to decode some part of the version of {name}",
+                    utils.YELLOW)
+                version_list_clean.append(element)
+    if len(version_list_clean) == 0:
+        utils.printcolor(
+            f"Failed to find the version of {name}",
+            utils.RED)
+        sys.exit(1)
     return version_list_clean
 
 
@@ -92,26 +99,18 @@ def install_package_from_remote_requirements(url, venv=None, **kwargs):
     utils.exec_cmd(cmd, **kwargs)
 
 
-def setup_virtualenv(path, sudo_user=None, python_version=2):
+def setup_virtualenv(path, sudo_user=None):
     """Install a virtualenv if needed."""
     if os.path.exists(path):
         return
-    if python_version == 2:
-        python_binary = "python"
-        packages = ["python-virtualenv"]
-        if utils.dist_name() == "debian":
-            packages.append("virtualenv")
+    if utils.dist_name().startswith("centos") or utils.dist_name().startswith("oracle linux server")::
+        python_binary = "python3"
+        packages = ["python3"]
     else:
-        if utils.dist_name().startswith("centos") or utils.dist_name().startswith("oracle linux server"):
-            python_binary = "python3"
-            packages = ["python3"]
-        else:
-            python_binary = "python3"
-            packages = ["python3-venv"]
+        python_binary = "python3"
+        packages = ["python3-venv"]
+        
     package.backend.install_many(packages)
     with utils.settings(sudo_user=sudo_user):
-        if python_version == 2:
-            utils.exec_cmd("virtualenv {}".format(path))
-        else:
-            utils.exec_cmd("{} -m venv {}".format(python_binary, path))
-        install_packages(["pip", "setuptools\<58.0.0"], venv=path, upgrade=True)
+        utils.exec_cmd("{} -m venv {}".format(python_binary, path))
+        install_packages(["pip", "setuptools"], venv=path, upgrade=True)

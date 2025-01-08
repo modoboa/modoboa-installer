@@ -31,15 +31,20 @@ ConfigDictTemplate = [
         "name": "certificate",
         "values": [
             {
-                "option": "generate",
-                "default": "true",
-            },
-            {
                 "option": "type",
                 "default": "self-signed",
                 "customizable": True,
                 "question": "Please choose your certificate type",
-                "values": ["self-signed", "letsencrypt"],
+                "values": ["self-signed", "letsencrypt", "manual"],
+                "non_interactive_values": ["manual"],
+            },
+            {
+                "option": "tls_cert_file_path",
+                "default": ""
+            },
+            {
+                "option": "tls_key_file_path",
+                "default": ""
             }
         ],
     },
@@ -184,7 +189,6 @@ ConfigDictTemplate = [
                 "option": "extensions",
                 "default": (
                     "modoboa-amavis "
-                    "modoboa-postfix-autoreply modoboa-sievefilters "
                     "modoboa-webmail modoboa-contacts "
                     "modoboa-radicale"
                 ),

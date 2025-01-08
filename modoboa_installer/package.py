@@ -5,7 +5,7 @@ import re
 from . import utils
 
 
-class Package(object):
+class Package:
     """Base classe."""
 
     def __init__(self, dist_name):
@@ -29,9 +29,16 @@ class DEBPackage(Package):
     FORMAT = "deb"
 
     def __init__(self, dist_name):
-        super(DEBPackage, self).__init__(dist_name)
+        super().__init__(dist_name)
         self.index_updated = False
         self.policy_file = "/usr/sbin/policy-rc.d"
+
+    def enable_backports(self, codename):
+        code, output = utils.exec_cmd(f"grep {codename}-backports /etc/apt/sources.list")
+        if code:
+            with open(f"/etc/apt/sources.list.d/backports.list", "w") as fp:
+                fp.write(f"deb http://deb.debian.org/debian {codename}-backports main\n")
+            self.update(force=True)
 
     def prepare_system(self):
         """Make sure services don't start at installation."""
@@ -42,9 +49,9 @@ class DEBPackage(Package):
     def restore_system(self):
         utils.exec_cmd("rm -f {}".format(self.policy_file))
 
-    def update(self):
+    def update(self, force=False):
         """Update local cache."""
-        if self.index_updated:
+        if self.index_updated and not force:
             return
         utils.exec_cmd("apt-get -o Dpkg::Progress-Fancy=0 update --quiet")
         self.index_updated = True
@@ -57,12 +64,12 @@ class DEBPackage(Package):
     def install(self, name):
         """Install a package."""
         self.update()
-        utils.exec_cmd("apt-get -o Dpkg::Progress-Fancy=0 install --quiet --assume-yes {}".format(name))
+        utils.exec_cmd("apt-get -o Dpkg::Progress-Fancy=0 install --quiet --assume-yes -o DPkg::options::=--force-confold {}".format(name))
 
     def install_many(self, names):
         """Install many packages."""
         self.update()
-        return utils.exec_cmd("apt-get -o Dpkg::Progress-Fancy=0 install --quiet --assume-yes {}".format(
+        return utils.exec_cmd("apt-get -o Dpkg::Progress-Fancy=0 install --quiet --assume-yes -o DPkg::options::=--force-confold {}".format(
             " ".join(names)))
 
     def get_installed_version(self, name):
@@ -108,7 +115,7 @@ def get_backend():
     """Return the appropriate package backend."""
     distname = utils.dist_name()
     backend = None
-    if distname in ["debian", "debian gnu/linux", "ubuntu"]:
+    if distname in ["debian", "debian gnu/linux", "ubuntu", "linuxmint"]:
         backend = DEBPackage
     elif distname in ["centos", "oracle linux server"]:
         backend = RPMPackage

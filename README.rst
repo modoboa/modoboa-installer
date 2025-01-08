@@ -1,5 +1,5 @@
-modoboa-installer
-=================
+**modoboa-installer**
+=====================
 
 |workflow| |codecov|
 
@@ -9,12 +9,11 @@ An installer which deploy a complete mail server based on Modoboa.
 
    This tool is still in beta stage, it has been tested on:
 
-   * Debian Buster (10) / Bullseye (11)
+   * Debian 10 and upper
    * Ubuntu Bionic Beaver (18.04) and upper
-   * CentOS 7
 
 .. warning::
-      
+
    ``/tmp`` partition must be mounted without the ``noexec`` option.
 
 .. note::
@@ -77,7 +76,7 @@ If you want more information about the installation process, add the
 ``--debug`` option to your command line.
 
 Upgrade mode
-------------
+============
 
 An experimental upgrade mode is available.
 
@@ -92,8 +91,8 @@ You can activate it as follows::
 
 It will automatically install latest versions of modoboa and its plugins.
 
-Backup mode 
-------------
+Backup mode
+===========
 
 An experimental backup mode is available.
 
@@ -108,7 +107,19 @@ You can start the process as follows::
 
 Then follow the step on the console.
 
-There is also a non-interactive mode:
+There is also a non-interactive mode::
+
+  $ sudo ./run.py --silent-backup <your domain>
+
+You can also add a path, else it will be saved in ./modoboa_backup/Backup_M_Y_d_H_M::
+
+  $ sudo ./run.py --silent-backup --backup-path "/My_Backup_Path" <your domain>
+
+if you want to disable mail backup::
+
+  $ sudo ./run.py --backup --no-mail <your domain>
+
+This can be useful for larger instance
 
 1. Silent mode
 
@@ -130,7 +141,7 @@ configuration file (set enabled to False).
 This can be useful for larger instance.
 
 Restore mode
-------------
+============
 
 An experimental restore mode is available.
 
@@ -141,7 +152,7 @@ You can start the process as follows::
 Then wait for the process to finish.
 
 Change the generated hostname
------------------------------
+=============================
 
 By default, the installer will setup your email server using the
 following hostname: ``mail.<your domain>``. If you want a different
@@ -160,14 +171,26 @@ modifications.
 Finally, run the installer without the
 ``--stop-after-configfile-check`` option.
 
-Let's Encrypt certificate
--------------------------
+Certificate
+===========
+
+Self-signed
+-----------
+
+It is the default type of certificate the installer will generate, it
+is however not recommended for production use.
+
+Letsencrypt
+-----------
 
 .. warning::
 
-   Please note this option requires the hostname you're using to be
-   valid (ie. it can be resolved with a DNS query) and to match the
-   server you're installing Modoboa on.
+  Please note that by using this option, you agree to the `ToS
+  <https://community.letsencrypt.org/tos>`_ of
+  letsencrypt and that your IP will be logged (see ToS).
+  Please also note this option requires the hostname you're using to be
+  valid (ie. it can be resolved with a DNS query) and to match the
+  server you're installing Modoboa on.
 
 If you want to generate a valid certificate using `Let's Encrypt
 <https://letsencrypt.org/>`_, edit the ``installer.cfg`` file and
@@ -176,12 +199,35 @@ modify the following settings::
   [certificate]
   generate = true
   type = letsencrypt
+  tls_cert_file_path =
+  tls_key_file_path =
 
   [letsencrypt]
   email = admin@example.com
 
 Change the ``email`` setting to a valid value since it will be used
 for account recovery.
+
+Manual
+------
+
+.. warning::
+
+  It is not possible to configure manual certs interactively, so
+  you'll have to do it in 2 steps. Please run ``run.py`` with
+  `--stop-after-configfile-check` first, configure your file as
+  desired and apply the configuration as written bellow. Then run
+  ``run.py`` again but without `--stop-after-configfile-check` or
+  `--interactive`.
+
+If you want to use already generated certs, simply edit the
+``installer.cfg`` file and modify the following settings::
+
+    [certificate]
+    generate = true
+    type = manual
+    tls_cert_file_path = *path to tls fullchain file*
+    tls_key_file_path = *path to tls key file*
 
 .. |workflow| image:: https://github.com/modoboa/modoboa-installer/workflows/Modoboa%20installer/badge.svg
 .. |codecov| image:: http://codecov.io/github/modoboa/modoboa-installer/coverage.svg?branch=master

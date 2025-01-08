@@ -21,13 +21,16 @@ COMPATIBILITY_MATRIX = {
         "modoboa-sievefilters": ">=1.1.1",
         "modoboa-webmail": ">=1.2.0",
     },
-    "2.1.0": {
-        "modoboa-pdfcredentials": None,
-        "modoboa-dmarc": None,
-        "modoboa-imap-migration": None,
-    },
 }
 
 EXTENSIONS_AVAILABILITY = {
     "modoboa-contacts": "1.7.4",
+}
+
+REMOVED_EXTENSIONS = {
+    "modoboa-pdfcredentials": "2.1.0",
+    "modoboa-dmarc": "2.1.0",
+    "modoboa-imap-migration": "2.1.0",
+    "modoboa-sievefilters": "2.3.0",
+    "modoboa-postfix-autoreply": "2.3.0"
 }

@@ -48,11 +48,13 @@ smtpd_tls_security_level = may
 smtpd_tls_received_header = yes
 
 # Disallow SSLv2 and SSLv3, only accept secure ciphers
-smtpd_tls_protocols = !SSLv2, !SSLv3
-smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3
+smtpd_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
 smtpd_tls_mandatory_ciphers = high
-smtpd_tls_mandatory_exclude_ciphers = aNULL, MD5 , DES, ADH, RC4, PSD, SRP, 3DES, eNULL
-smtpd_tls_exclude_ciphers = aNULL, MD5 , DES, ADH, RC4, PSD, SRP, 3DES, eNULL
+smtpd_tls_mandatory_exclude_ciphers = aNULL, eNULL, EXPORT, DES, RC4, MD5, PSK, aECDH, EDH-DSS-DES-CBC3-SHA, EDH-RSA-DES-CBC3-SHA, KRB5-DES, CBC3-SHA, CAMELLIA, SEED-SHA, AES256-SHA, AES256-SHA256, AES256-GCM-SHA384, AES128-SHA, AES128-SHA256, AES128-GCM-SHA256, DHE-RSA-AES128-GCM-SHA256, DHE-RSA-AES128-SHA, DHE-RSA-AES128-SHA256, DHE-RSA-AES256-GCM-SHA384, DHE-RSA-AES256-SHA, DHE-RSA-AES256-SHA256, DHE-RSA-CHACHA20-POLY1305, ECDHE-RSA-AES128-SHA, ECDHE-RSA-AES256-SHA
+smtpd_tls_exclude_ciphers = aNULL, eNULL, EXPORT, DES, RC4, MD5, PSK, aECDH, EDH-DSS-DES-CBC3-SHA, EDH-RSA-DES-CBC3-SHA, KRB5-DES, CBC3-SHA, CAMELLIA, SEED-SHA, AES256-SHA, AES256-SHA256, AES256-GCM-SHA384, AES128-SHA, AES128-SHA256, AES128-GCM-SHA256, DHE-RSA-AES128-GCM-SHA256, DHE-RSA-AES128-SHA, DHE-RSA-AES128-SHA256, DHE-RSA-AES256-GCM-SHA384, DHE-RSA-AES256-SHA, DHE-RSA-AES256-SHA256, DHE-RSA-CHACHA20-POLY1305, ECDHE-RSA-AES128-SHA, ECDHE-RSA-AES256-SHA
+tls_preempt_cipherlist = yes
+tls_ssl_options = NO_COMPRESSION
 
 # Enable elliptic curve cryptography
 smtpd_tls_eecdh_grade = strong
@@ -150,7 +152,6 @@ postscreen_dnsbl_sites =
 	zen.spamhaus.org=127.0.0.[2..11]*3
 	bl.spameatingmonkey.net=127.0.0.2*2
 	bl.spamcop.net=127.0.0.2
-	dnsbl.sorbs.net=127.0.0.[2..15]
 postscreen_dnsbl_threshold = 3 
 postscreen_dnsbl_action = enforce 
 

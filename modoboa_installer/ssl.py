@@ -7,7 +7,7 @@ from . import package
 from . import utils
 
 
-class CertificateBackend(object):
+class CertificateBackend:
     """Base class."""
 
     def __init__(self, config):
@@ -24,13 +24,44 @@ class CertificateBackend(object):
                     return False
         return True
 
+    def generate_cert(self):
+        """Create a certificate."""
+        pass
+
+
+class ManualCertificate(CertificateBackend):
+    """Use certificate provided."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        path_correct = True
+        self.tls_cert_file_path = self.config.get("certificate",
+                                                  "tls_cert_file_path")
+        self.tls_key_file_path = self.config.get("certificate",
+                                                 "tls_key_file_path")
+
+        if not os.path.exists(self.tls_key_file_path):
+            utils.error("'tls_key_file_path' path is not accessible")
+            path_correct = False
+        if not os.path.exists(self.tls_cert_file_path):
+            utils.error("'tls_cert_file_path' path is not accessible")
+            path_correct = False
+
+        if not path_correct:
+            sys.exit(1)
+
+        self.config.set("general", "tls_key_file",
+                        self.tls_key_file_path)
+        self.config.set("general", "tls_cert_file",
+                        self.tls_cert_file_path)
+
 
 class SelfSignedCertificate(CertificateBackend):
     """Create a self signed certificate."""
 
     def __init__(self, *args, **kwargs):
         """Sanity checks."""
-        super(SelfSignedCertificate, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.config.has_option("general", "tls_key_file"):
             # Compatibility
             return
@@ -65,7 +96,7 @@ class LetsEncryptCertificate(CertificateBackend):
 
     def __init__(self, *args, **kwargs):
         """Update config."""
-        super(LetsEncryptCertificate, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.hostname = self.config.get("general", "hostname")
         self.config.set("general", "tls_cert_file", (
             "/etc/letsencrypt/live/{}/fullchain.pem".format(self.hostname)))
@@ -115,12 +146,24 @@ class LetsEncryptCertificate(CertificateBackend):
         cfg_file = "/etc/letsencrypt/renewal/{}.conf".format(self.hostname)
         pattern = "s/authenticator = standalone/authenticator = nginx/"
         utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfg_file))
+        with open("/etc/letsencrypt/renewal-hooks/deploy/reload-services.sh", "w") as fp:
+            fp.write(f"""#!/bin/bash
+
+HOSTNAME=$(basename $RENEWED_LINEAGE)
+
+if [ "$HOSTNAME" = "{self.hostname}" ]
+then
+	systemctl reload dovecot
+	systemctl reload postfix
+fi
+""")
 
 
 def get_backend(config):
     """Return the appropriate backend."""
-    if not config.getboolean("certificate", "generate"):
-        return None
-    if config.get("certificate", "type") == "letsencrypt":
+    cert_type = config.get("certificate", "type")
+    if cert_type == "letsencrypt":
         return LetsEncryptCertificate(config)
+    if cert_type == "manual":
+        return ManualCertificate(config)
     return SelfSignedCertificate(config)

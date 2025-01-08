@@ -52,8 +52,8 @@ class Installer:
             sudo_user=self.config.get("modoboa", "user")
             )
         condition = (
-            (modoboa_version[0] == 2 and modoboa_version[1] >= 2) or
-            modoboa_version[0] > 2
+            (int(modoboa_version[0]) == 2 and int(modoboa_version[1]) >= 2) or
+            int(modoboa_version[0]) > 2
             )
         return condition
 

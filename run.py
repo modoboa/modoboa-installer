@@ -11,6 +11,7 @@ except ImportError:
     import ConfigParser as configparser
 import sys
 
+import checks
 from modoboa_installer import compatibility_matrix
 from modoboa_installer import constants
 from modoboa_installer import package
@@ -38,6 +39,12 @@ def installation_disclaimer(args, config):
     """Display installation disclaimer."""
     hostname = config.get("general", "hostname")
     utils.printcolor(
+        "Notice:\n"
+        "It is recommanded to run this installer on a FRESHLY installed server.\n"
+        "(ie. with nothing special already installed on it)\n",
+        utils.CYAN
+    )
+    utils.printcolor(
         "Warning:\n"
         "Before you start the installation, please make sure the following "
         "DNS records exist for domain '{}':\n"
@@ -47,7 +54,7 @@ def installation_disclaimer(args, config):
             hostname.replace(".{}".format(args.domain), ""),
             hostname
         ),
-        utils.CYAN
+        utils.YELLOW
     )
     utils.printcolor(
         "Your mail server will be installed with the following components:",
@@ -113,6 +120,9 @@ def backup_system(config, args):
     utils.copy_file(args.configfile, backup_path)
     # Backup applications
     for app in PRIMARY_APPS:
+        if app == "dovecot" and args.no_mail:
+            utils.printcolor("Skipping mail backup", utils.BLUE)
+            continue
         scripts.backup(app, config, backup_path)
 
 
@@ -165,10 +175,16 @@ def main(input_args):
         "backup will be saved at ./modoboa_backup/Backup_M_Y_d_H_M "
         "if --backup-path is not provided")
     parser.add_argument(
+        "--no-mail", action="store_true", default=False,
+        help="Disable mail backup (save space)")
+    parser.add_argument(
         "--restore", type=str, metavar="path",
         help="Restore a previously backup up modoboa instance on a NEW machine. "
         "You MUST provide backup directory"
-    )
+    ),
+    parser.add_argument(
+        "--skip-checks", action="store_true", default=False,
+        help="Skip the checks the installer performs initially")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
     args = parser.parse_args(input_args)
@@ -189,6 +205,12 @@ def main(input_args):
 
     utils.success("Welcome to Modoboa installer!\n")
 
+    # Checks
+    if not args.skip_checks:
+        utils.printcolor("Checking the installer...", utils.BLUE)
+        checks.handle()
+        utils.success("Checks complete\n")
+
     is_config_file_available, outdate_config = utils.check_config_file(
         args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
 
@@ -201,11 +223,11 @@ def main(input_args):
     if is_config_file_available and outdate_config:
         answer = utils.user_input("It seems that your config file is outdated. "
                                   "Would you like to update it? (Y/n) ")
-        if answer.lower().startswith("y"):
+        if not answer or answer.lower().startswith("y"):
             config_file_update_complete(utils.update_config(args.configfile))
             if not args.stop_after_configfile_check:
                 answer = utils.user_input("Would you like to stop to review the updated config? (Y/n)")
-                if answer.lower().startswith("y"):
+                if not answer or answer.lower().startswith("y"):
                     return
         else:
             utils.error("You might encounter unexpected errors ! "
@@ -241,7 +263,7 @@ def main(input_args):
     components = []
     for section in config.sections():
         if section in ["general", "database", "mysql", "postgres",
-                       "certificate", "letsencrypt"]:
+                       "certificate", "letsencrypt", "backup"]:
             continue
         if (config.has_option(section, "enabled") and
                 not config.getboolean(section, "enabled")):
@@ -276,6 +298,19 @@ def main(input_args):
             "Restore complete! You can enjoy Modoboa at https://{} (same credentials as before)"
             .format(config.get("general", "hostname"))
         )
+    utils.success(
+        "\n"
+        "Modoboa is a free software maintained by volunteers.\n"
+        "You like the project and want it to be sustainable?\n"
+        "Then don't wait anymore and go sponsor it here:\n"
+    )
+    utils.printcolor(
+        "https://github.com/sponsors/modoboa\n",
+        utils.YELLOW
+    )
+    utils.success(
+        "Thank you for your help :-)\n"
+    )
 
 
 if __name__ == "__main__":

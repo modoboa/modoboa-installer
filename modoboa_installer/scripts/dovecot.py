@@ -4,6 +4,7 @@ import glob
 import os
 import pwd
 import shutil
+import uuid
 
 from .. import database
 from .. import package
@@ -14,7 +15,6 @@ from . import base
 
 
 class Dovecot(base.Installer):
-
     """Dovecot installer."""
 
     appname = "dovecot"
@@ -27,7 +27,9 @@ class Dovecot(base.Installer):
     }
     config_files = [
         "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
-        "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try"]
+        "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try",
+        "conf.d/dovecot-oauth2.conf.ext"
+    ]
     with_user = True
 
     def setup_user(self):
@@ -53,17 +55,44 @@ class Dovecot(base.Installer):
         if package.backend.FORMAT == "deb":
             if "pop3" in self.config.get("dovecot", "extra_protocols"):
                 packages += ["dovecot-pop3d"]
-        return super(Dovecot, self).get_packages() + packages
+        packages += super().get_packages()
+        backports_codename = getattr(self, "backports_codename", None)
+        if backports_codename:
+            packages = [f"{package}/{backports_codename}-backports" for package in packages]
+        return packages
 
     def install_packages(self):
         """Preconfigure Dovecot if needed."""
+        name, version = utils.dist_info()
+        name = name.lower()
+        if name.startswith("debian") and version.startswith("12"):
+            package.backend.enable_backports("bookworm")
+            self.backports_codename = "bookworm"
         package.backend.preconfigure(
             "dovecot-core", "create-ssl-cert", "boolean", "false")
-        super(Dovecot, self).install_packages()
+        super().install_packages()
+
+    def create_oauth2_app(self):
+        """Create a application for Oauth2 authentication."""
+        # FIXME: how can we check that application already exists ?
+        venv_path = self.config.get("modoboa", "venv_path")
+        python_path = os.path.join(venv_path, "bin", "python")
+        instance_path = self.config.get("modoboa", "instance_path")
+        script_path = os.path.join(instance_path, "manage.py")
+        client_id = "dovecot"
+        client_secret = str(uuid.uuid4())
+        cmd = (
+            f"{python_path} {script_path} createapplication "
+            f"--name=Dovecot --skip-authorization "
+            f"--client-id={client_id} --client-secret={client_secret} "
+            f"confidential client-credentials"
+        )
+        utils.exec_cmd(cmd)
+        return client_id, client_secret
 
     def get_template_context(self):
         """Additional variables."""
-        context = super(Dovecot, self).get_template_context()
+        context = super().get_template_context()
         pw_mailbox = pwd.getpwnam(self.mailboxes_owner)
         dovecot_package = {"deb": "dovecot-core", "rpm": "dovecot"}
         ssl_protocol_parameter = "ssl_protocols"
@@ -84,6 +113,13 @@ class Dovecot(base.Installer):
             # Protocols are automatically guessed on debian/ubuntu
             protocols = ""
 
+        oauth2_client_id, oauth2_client_secret = self.create_oauth2_app()
+        hostname = self.config.get("general", "hostname")
+        oauth2_introspection_url = (
+            f"https://{oauth2_client_id}:{oauth2_client_secret}"
+            f"@{hostname}/api/o/introspect/"
+        )
+
         context.update({
             "db_driver": self.db_driver,
             "mailboxes_owner_uid": pw_mailbox[2],
@@ -100,7 +136,8 @@ class Dovecot(base.Installer):
             "radicale_auth_socket_path": os.path.basename(
                 self.config.get("dovecot", "radicale_auth_socket_path")),
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
-            "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#"
+            "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#",
+            "oauth2_introspection_url": oauth2_introspection_url
         })
         return context
 
