@@ -2,6 +2,8 @@
 
 import re
 
+from os.path import isfile as file_exists
+
 from . import utils
 
 
@@ -49,6 +51,29 @@ class DEBPackage(Package):
     def restore_system(self):
         utils.exec_cmd("rm -f {}".format(self.policy_file))
 
+    def add_custom_repository(self,
+                              name: str,
+                              url: str,
+                              key_url: str,
+                              codename: str,
+                              with_source: bool = True):
+        key_file = f"/etc/apt/keyrings/{name}.gpg"
+        utils.exec_cmd(
+            f"wget -O - {key_url} | gpg --dearmor | tee {key_file} > /dev/null"
+        )
+        line_types = ["deb"]
+        if with_source:
+            line_types.append("deb-src")
+        for line_type in line_types:
+            line = (
+                f"{line_type} [arch=amd64 signed-by={key_file}] "
+                f"{url} {codename} main"
+            )
+            target_file = f"/etc/apt/sources.list.d/{name}.list"
+            tee_option = "-a" if file_exists(target_file) else ""
+            utils.exec_cmd(f'echo "{line}" | tee {tee_option} {target_file}')
+        self.index_updated = False
+
     def update(self, force=False):
         """Update local cache."""
         if self.index_updated and not force:
@@ -89,7 +114,7 @@ class RPMPackage(Package):
 
     def __init__(self, dist_name):
         """Initialize backend."""
-        super(RPMPackage, self).__init__(dist_name)
+        super().__init__(dist_name)
         if "centos" in dist_name:
             self.install("epel-release")
 

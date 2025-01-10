@@ -60,7 +60,9 @@ class Postfix(base.Installer):
             "modoboa_instance_path": self.config.get(
                 "modoboa", "instance_path"),
             "opendkim_port": self.config.get(
-                "opendkim", "port")
+                "opendkim", "port"),
+            "rspamd_disabled": "" if not self.config.getboolean(
+                "rspamd", "enabled") else "#"
         })
         return context
 
@@ -101,8 +103,18 @@ class Postfix(base.Installer):
             utils.exec_cmd("postalias {}".format(aliases_file))
 
         # Postwhite
-        install("postwhite", self.config, self.upgrade, self.archive_path)
+        condition = (
+            not self.config.getboolean("rspamd", "enabled") and
+            self.config.getboolean("postwhite", "enabled")
+            )
+        if condition:
+            install("postwhite", self.config, self.upgrade, self.archive_path)
 
     def backup(self, path):
         """Launch postwhite backup."""
-        backup("postwhite", self.config, path)
+        condition = (
+            not self.config.getboolean("rspamd", "enabled") and
+            self.config.getboolean("postwhite", "enabled")
+            )
+        if condition:
+            backup("postwhite", self.config, path)

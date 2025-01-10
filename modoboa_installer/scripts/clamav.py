@@ -42,9 +42,10 @@ class Clamav(base.Installer):
         """Additional tasks."""
         if package.backend.FORMAT == "deb":
             user = self.config.get(self.appname, "user")
-            system.add_user_to_group(
-                user, self.config.get("amavis", "user")
-            )
+            if self.config.get("amavis", "enabled").lower() == "true":
+                system.add_user_to_group(
+                    user, self.config.get("amavis", "user")
+                )
             pattern = (
                 "s/^AllowSupplementaryGroups false/"
                 "AllowSupplementaryGroups true/")
