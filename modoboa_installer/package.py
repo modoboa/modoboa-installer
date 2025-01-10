@@ -74,7 +74,7 @@ class DEBPackage(Package):
             utils.exec_cmd(f'echo "{line}" | tee {tee_option} {target_file}')
         self.index_updated = False
 
-    def update(self):
+    def update(self, force=False):
         """Update local cache."""
         if self.index_updated and not force:
             return
