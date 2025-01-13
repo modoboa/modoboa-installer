@@ -39,7 +39,7 @@ ConfigDictTemplate = [
             },
             {
                 "option": "type",
-                "default": "rspamd",
+                "default": "amavis",
                 "customizable": True,
                 "question": "Please select your antispam utility",
                 "values": ["rspamd", "amavis"],

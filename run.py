@@ -85,12 +85,11 @@ def config_file_update_complete(backup_location):
                          utils.BLUE)
 
 
-def main(input_args):
-    """Install process."""
+def parser_setup(input_args):
     parser = argparse.ArgumentParser()
     versions = (
         ["latest"] + list(compatibility_matrix.COMPATIBILITY_MATRIX.keys())
-    )
+        )
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Enable debug output")
     parser.add_argument("--force", action="store_true", default=False,
@@ -118,7 +117,7 @@ def main(input_args):
     parser.add_argument(
         "--backup", action="store_true", default=False,
         help="Backing up interactively previously installed instance"
-    )
+        )
     parser.add_argument(
         "--silent-backup", action="store_true", default=False,
         help="For script usage, do not require user interaction "
@@ -131,13 +130,18 @@ def main(input_args):
         "--restore", type=str, metavar="path",
         help="Restore a previously backup up modoboa instance on a NEW machine. "
         "You MUST provide backup directory"
-    )
+        )
     parser.add_argument(
         "--skip-checks", action="store_true", default=False,
         help="Skip the checks the installer performs initially")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
-    args = parser.parse_args(input_args)
+    return parser.parse_args(input_args)
+
+
+def main(input_args):
+    """Install process."""
+    args = parser_setup(input_args)
 
     if args.debug:
         utils.ENV["debug"] = True
@@ -241,20 +245,29 @@ def main(input_args):
         scripts.install(appname, config, args.upgrade, args.restore)
     system.restart_service("cron")
     package.backend.restore_system()
+    hostname = config.get("general", "hostname")
     if not args.restore:
         utils.success(
-            "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
-            .format(config.get("general", "hostname"))
+            f"Congratulations! You can enjoy Modoboa at https://{hostname} "
+            "(admin:password)"
         )
         if config.get("rspamd", "enabled"):
+            rspamd_password = config.get("rspamd", "password")
             utils.success(
-                f"You can also enjoy rspamd at https://{config.get("general", "hostname")}/rspamd ({config.get("rspamd", "password")})"
+                f"You can also enjoy rspamd at https://{hostname}/rspamd "
+                f"(password: {rspamd_password})"
             )
     else:
         utils.success(
-            "Restore complete! You can enjoy Modoboa at https://{} (same credentials as before)"
-            .format(config.get("general", "hostname"))
+            f"Restore complete! You can enjoy Modoboa at https://{hostname} "
+            "(same credentials as before)"
         )
+        if config.get("rspamd", "enabled"):
+            rspamd_password = config.get("rspamd", "password")
+            utils.success(
+                f"You can also enjoy rspamd at https://{hostname}/rspamd "
+                "(password: {rspamd_password})"
+                )
     utils.success(
         "\n"
         "Modoboa is a free software maintained by volunteers.\n"
