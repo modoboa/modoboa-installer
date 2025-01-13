@@ -132,6 +132,9 @@ strict_rfc821_envelopes = yes
 smtpd_sender_login_maps =
         proxy:%{db_driver}:/etc/postfix/sql-sender-login-map.cf
 
+# Add authenticated header to hide public client IP
+smtpd_sasl_authenticated_header = yes
+
 # Recipient restriction rules
 smtpd_recipient_restrictions =
       check_policy_service inet:127.0.0.1:9999
