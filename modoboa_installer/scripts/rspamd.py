@@ -25,12 +25,18 @@ class Rspamd(base.Installer):
                     "local.d/arc.conf",
                     "local.d/mx_check.conf",
                     "local.d/spf.conf",
-                    "local.d/worker-controller.inc",
                     "local.d/worker-normal.inc",
                     "local.d/worker-proxy.inc",
                     "local.d/greylist.conf",
                     "local.d/milter_headers.conf",
                     "local.d/metrics.conf"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
+        self.generate_password_condition = (not self.upgrade or
+                                            utils.user_input(
+                                                "Do you want to (re)generate rspamd password ? (y/N)").lower().startswith("y")
+                                            )
 
     @property
     def config_dir(self):
@@ -83,23 +89,26 @@ class Rspamd(base.Installer):
             _config_files.append("local.d/rbl.conf")
         if self.app_config["whitelist_auth"].lower() == "true":
             _config_files.append("local.d/groups.conf")
+        if self.generate_password_condition:
+            _config_files.append("local.d/worker-controller.inc")
         return _config_files
 
     def get_template_context(self):
         _context = super().get_template_context()
-        code, controller_password = utils.exec_cmd(
-            r"rspamadm pw -p {}".format(self.app_config["password"]))
-        if code != 0:
-            utils.error("Error setting rspamd password. "
-                        "Please make sure it is not 'q1' or 'q2'."
-                        "Storing the password in plain. See"
-                        "https://rspamd.com/doc/quickstart.html#setting-the-controller-password")
-            _context["controller_password"] = self.app_config["password"]
-        else:
-            controller_password = controller_password.decode().replace("\n", "")
-            _context["controller_password"] = controller_password
         _context["greylisting_disabled"] = "" if not self.app_config["greylisting"].lower() == "true" else "#"
         _context["whitelist_auth_enabled"] = "" if self.app_config["whitelist_auth"].lower() == "true" else "#"
+        if self.generate_password_condition:
+            code, controller_password = utils.exec_cmd(
+                r"rspamadm pw -p {}".format(self.app_config["password"]))
+            if code != 0:
+                utils.error("Error setting rspamd password. "
+                            "Please make sure it is not 'q1' or 'q2'."
+                            "Storing the password in plain. See"
+                            "https://rspamd.com/doc/quickstart.html#setting-the-controller-password")
+                _context["controller_password"] = self.app_config["password"]
+            else:
+                controller_password = controller_password.decode().replace("\n", "")
+                _context["controller_password"] = controller_password
         return _context
 
     def post_run(self):
