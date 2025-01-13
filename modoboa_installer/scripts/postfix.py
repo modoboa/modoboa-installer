@@ -18,10 +18,9 @@ class Postfix(base.Installer):
 
     appname = "postfix"
     packages = {
-        "deb": ["postfix"],
-        "rpm": ["postfix"],
+        "deb": ["postfix", "postfix-pcre"],
     }
-    config_files = ["main.cf", "master.cf"]
+    config_files = ["main.cf", "master.cf", "anonymize_headers.pcre"]
 
     def get_packages(self):
         """Additional packages."""
