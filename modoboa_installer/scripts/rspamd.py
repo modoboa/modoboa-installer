@@ -21,15 +21,21 @@ class Rspamd(base.Installer):
             "rspamd", "redis"
         ]
     }
-    config_files = ["local.d/dkim_signing.conf",
-                    "local.d/arc.conf",
-                    "local.d/mx_check.conf",
-                    "local.d/spf.conf",
-                    "local.d/worker-normal.inc",
-                    "local.d/worker-proxy.inc",
-                    "local.d/greylist.conf",
-                    "local.d/milter_headers.conf",
-                    "local.d/metrics.conf"]
+    config_files = [
+        "local.d/arc.conf",
+        "local.d/dkim_signing.conf",
+        "local.d/dmarc.conf",
+        "local.d/force_actions.conf",
+        "local.d/greylist.conf",
+        "local.d/metrics.conf",
+        "local.d/milter_headers.conf",
+        "local.d/mx_check.conf",
+        "local.d/redis.conf",
+        "local.d/settings.conf",
+        "local.d/spf.conf",
+        "local.d/worker-normal.inc",
+        "local.d/worker-proxy.inc",
+    ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)

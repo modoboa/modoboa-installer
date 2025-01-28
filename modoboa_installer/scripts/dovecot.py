@@ -28,10 +28,14 @@ class Dovecot(base.Installer):
             "dovecot", "dovecot-pigeonhole"]
     }
     config_files = [
-        "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
-        "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try",
-        "conf.d/dovecot-oauth2.conf.ext"
-        ]
+        "dovecot.conf",
+        "dovecot-dict-sql.conf.ext",
+        "conf.d/10-ssl.conf",
+        "conf.d/10-master.conf",
+        "conf.d/20-lmtp.conf",
+        "conf.d/10-ssl-keys.try",
+        "conf.d/dovecot-oauth2.conf.ext",
+    ]
     with_user = True
 
     def setup_user(self):
@@ -45,7 +49,10 @@ class Dovecot(base.Installer):
         _config_files = self.config_files
 
         if self.app_config["move_spam_to_junk"]:
-            _config_files += ["conf.d/custom_after_sieve/spam-to-junk.sieve"]
+            _config_files += [
+                "conf.d/custom_after_sieve/spam-to-junk.sieve",
+                "conf.d/90-sieve.conf",
+            ]
 
         return _config_files + [
             "dovecot-sql-{}.conf.ext=dovecot-sql.conf.ext"
