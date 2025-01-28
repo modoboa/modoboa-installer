@@ -71,7 +71,7 @@
 
 # Authentication method
 # Value: none | htpasswd | remote_user | http_x_remote_user
-type = radicale_dovecot_auth 
+type = dovecot
 
 # Htpasswd filename
 # htpasswd_filename = users
@@ -85,7 +85,7 @@ type = radicale_dovecot_auth
 # Incorrect authentication delay (seconds)
 #delay = 1
 
-auth_socket = %{auth_socket_path}
+dovecot_socket = %{auth_socket_path}
 
 
 [rights]
