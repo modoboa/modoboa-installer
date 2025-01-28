@@ -230,5 +230,5 @@ If you want to use already generated certs, simply edit the
     tls_key_file_path = *path to tls key file*
 
 .. |workflow| image:: https://github.com/modoboa/modoboa-installer/workflows/Modoboa%20installer/badge.svg
-.. |codecov| image:: http://codecov.io/github/modoboa/modoboa-installer/coverage.svg?branch=master
-   :target: http://codecov.io/github/modoboa/modoboa-installer?branch=master
+.. |codecov| image:: https://codecov.io/gh/modoboa/modoboa-installer/graph/badge.svg?token=Fo2o1GdHZq
+   :target: https://codecov.io/gh/modoboa/modoboa-installer
