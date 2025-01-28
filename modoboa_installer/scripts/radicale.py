@@ -33,7 +33,7 @@ class Radicale(base.Installer):
         """Prepare a dedicated virtualenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
         packages = [
-            "Radicale", "radicale-dovecot-auth", "pytz"
+            "Radicale", "pytz"
         ]
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
         python.install_package_from_repository(
