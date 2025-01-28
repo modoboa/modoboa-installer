@@ -37,6 +37,7 @@ jobs:
         with:
           name: coverage-results
           path: .coverage
+          include-hidden-files: true
 
   coverage:
     needs: test
