@@ -103,7 +103,7 @@ class PostgreSQL(Database):
     def create_database(self, name, owner):
         """Create a database."""
         code, output = utils.exec_cmd(
-            "psql -lqt | cut -d \| -f 1 | grep -w {} | wc -l"
+            "psql -lqt | cut -d \\| -f 1 | grep -w {} | wc -l"
             .format(name), sudo_user=self.dbuser)
         if code:
             return
