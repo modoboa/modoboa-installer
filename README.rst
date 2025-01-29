@@ -9,8 +9,8 @@ An installer which deploy a complete mail server based on Modoboa.
 
    This tool is still in beta stage, it has been tested on:
 
-   * Debian 10 and upper
-   * Ubuntu Bionic Beaver (18.04) and upper
+   * Debian 12 and upper
+   * Ubuntu Focal Fossa (20.04) and upper
 
 .. warning::
 
@@ -43,7 +43,7 @@ The following components are installed by the installer:
 * Nginx and uWSGI
 * Postfix
 * Dovecot
-* Amavis (with SpamAssassin and ClamAV)
+* Amavis (with SpamAssassin and ClamAV) or Rspamd
 * automx (autoconfiguration service)
 * OpenDKIM
 * Radicale (CalDAV and CardDAV server)
@@ -228,6 +228,22 @@ If you want to use already generated certs, simply edit the
     type = manual
     tls_cert_file_path = *path to tls fullchain file*
     tls_key_file_path = *path to tls key file*
+
+Antispam
+========
+
+You have 3 options regarding antispam : disabled, Amavis, Rspamd
+
+Amavis
+------
+
+Amavis
+
+Rspamd
+------
+
+Rspamd
+
 
 .. |workflow| image:: https://github.com/modoboa/modoboa-installer/workflows/Modoboa%20installer/badge.svg
 .. |codecov| image:: https://codecov.io/gh/modoboa/modoboa-installer/graph/badge.svg?token=Fo2o1GdHZq
