@@ -81,8 +81,13 @@ class Modoboa(base.Installer):
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
         packages = ["rrdtool"]
         version = self.config.get("modoboa", "version")
+        extras = "postgresql"
+        if self.dbengine != "postgres":
+            extras = "mysql"
+        if self.devmode:
+            extras += ",dev"
         if version == "latest":
-            packages += ["modoboa"] + self.extensions
+            packages += [f"modoboa[{extras}]"] + self.extensions
             for extension in list(self.extensions):
                 if extension in compatibility_matrix.REMOVED_EXTENSIONS.keys():
                     self.extensions.remove(extension)
@@ -92,7 +97,7 @@ class Modoboa(base.Installer):
             ]
         else:
             matrix = compatibility_matrix.COMPATIBILITY_MATRIX[version]
-            packages.append("modoboa=={}".format(version))
+            packages.append(f"modoboa[{extras}]=={version}")
             for extension in list(self.extensions):
                 if not self.is_extension_ok_for_version(extension, version):
                     self.extensions.remove(extension)
@@ -115,25 +120,6 @@ class Modoboa(base.Installer):
             sudo_user=self.user,
             beta=self.config.getboolean("modoboa", "install_beta")
         )
-
-        # Install version specific modules to the venv
-        modoboa_version = ".".join(str(i) for i in python.get_package_version(
-            "modoboa", self.venv_path, sudo_user=self.user
-        ))
-        # Database:
-        db_file = "postgresql"
-        if self.dbengine != "postgres":
-            db_file = "mysql"
-        db_file += "-requirements.txt"
-
-        python.install_package_from_remote_requirements(
-            f"https://raw.githubusercontent.com/modoboa/modoboa/{modoboa_version}/{db_file}",
-            venv=self.venv_path)
-        # Dev mode:
-        if self.devmode:
-            python.install_package_from_remote_requirements(
-                f"https://raw.githubusercontent.com/modoboa/modoboa/{modoboa_version}/dev-requirements.txt",
-                venv=self.venv_path)
 
     def _deploy_instance(self):
         """Deploy Modoboa."""
