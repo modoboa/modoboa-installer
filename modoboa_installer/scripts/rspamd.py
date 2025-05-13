@@ -38,11 +38,11 @@ class Rspamd(base.Installer):
     ]
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.generate_password_condition = (not self.upgrade or
-                                            utils.user_input(
-                                                "Do you want to (re)generate rspamd password ? (y/N)").lower().startswith("y")
-                                            )
+        super().__init__(*args, **kwargs)
+        self.generate_password_condition = (
+            not self.upgrade or utils.user_input(
+                "Do you want to (re)generate rspamd password ? (y/N)").lower().startswith("y")
+        )
 
     @property
     def config_dir(self):
