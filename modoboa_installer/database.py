@@ -184,7 +184,7 @@ class MySQL(Database):
                 self.packages["deb"].append("libmariadbclient-dev")
         elif name == "ubuntu":
             if version.startswith("2"):
-                # Works for Ubuntu 22 and 20
+                # Works for Ubuntu 20, 22, and 24.
                 self.packages["deb"].append("libmariadb-dev")
             else:
                 self.packages["deb"].append("libmysqlclient-dev")
@@ -201,7 +201,7 @@ class MySQL(Database):
                 return
         if (
             (name.startswith("debian") and (version.startswith("11") or version.startswith("12"))) or
-            (name.startswith("ubuntu") and version.startswith("22"))
+            (name.startswith("ubuntu") and int(version[:2]) >= 22)
         ):
             queries = [
                 "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}')"
