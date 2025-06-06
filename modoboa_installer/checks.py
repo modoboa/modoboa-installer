@@ -26,7 +26,7 @@ def check_version():
             "Check README file for instructions about how to update.\n"
             "No support will be provided without an up-to-date installer!"
         )
-        answer = utils.user_input("Continue anyway? (Y/n) ")
+        answer = utils.user_input("Continue anyway? (y/N) ")
         if not answer.lower().startswith("y"):
             sys.exit(0)
     else:

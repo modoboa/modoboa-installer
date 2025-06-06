@@ -49,19 +49,26 @@ class Modoboa(base.Installer):
         self.instance_path = self.config.get("modoboa", "instance_path")
         self.extensions = self.config.get("modoboa", "extensions").split()
         self.devmode = self.config.getboolean("modoboa", "devmode")
-        # Sanity check for amavis
-        self.amavis_enabled = False
-        if "modoboa-amavis" in self.extensions:
-            if self.config.getboolean("amavis", "enabled"):
-                self.amavis_enabled = True
-            else:
-                self.extensions.remove("modoboa-amavis")
+        # Sanity check for amavis and rspamd
+        self.amavis_enabled = self.sanity_check("modoboa-amavis", "amavis")
+        self.sanity_check("modoboa-rspamd", "rspamd")
+
         if "modoboa-radicale" in self.extensions:
             if not self.config.getboolean("radicale", "enabled"):
                 self.extensions.remove("modoboa-radicale")
         self.dovecot_enabled = self.config.getboolean("dovecot", "enabled")
         self.opendkim_enabled = self.config.getboolean("opendkim", "enabled")
         self.dkim_cron_enabled = False
+
+    def sanity_check(self, extension, plugin):
+        # Sanity check for plugin requirements
+        enabled = False
+        if extension in self.extensions:
+            if self.config.getboolean(plugin, "enabled"):
+                enabled = True
+            else:
+                self.extensions.remove(extension)
+        return enabled
 
     def is_extension_ok_for_version(self, extension, version):
         """Check if extension can be installed with this modo version."""
@@ -246,6 +253,7 @@ class Modoboa(base.Installer):
             "radicale_enabled": (
                 "" if "modoboa-radicale" in extensions else "#"),
             "opendkim_user": self.config.get("opendkim", "user"),
+            "dkim_user": "_rspamd" if self.config.getboolean("rspamd", "enabled") else self.config.get("opendkim", "user"),
             "minutes": random.randint(1, 59),
             "hours": f"{random_hour},{random_hour+12}",
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
@@ -289,6 +297,15 @@ class Modoboa(base.Installer):
         if self.config.getboolean("opendkim", "enabled"):
             settings["admin"]["dkim_keys_storage_dir"] = (
                 self.config.get("opendkim", "keys_storage_dir"))
+
+        if self.config.getboolean("rspamd", "enabled"):
+            settings["admin"]["dkim_keys_storage_dir"] = (
+                self.config.get("rspamd", "dkim_keys_storage_dir"))
+            settings["modoboa_rspamd"] = {
+                "key_map_path": self.config.get("rspamd", "key_map_path"),
+                "selector_map_path": self.config.get("rspamd", "selector_map_path")
+            }
+
         settings = json.dumps(settings)
         query = (
             "UPDATE core_localconfig SET _parameters='{}'"
