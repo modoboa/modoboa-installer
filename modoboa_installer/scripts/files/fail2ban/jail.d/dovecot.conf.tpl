@@ -1,9 +1,9 @@
-[modoboa]
+[dovecot]
 enabled = true
 port = %ports_blocked
-protocol = tcp
-filter = modoboa-auth
+filter = dovecot
+logpath = /var/log/mail.log
 maxretry = %max_retry
 bantime = %ban_time
 findtime = %find_time
-logpath = /var/log/auth.log
+ignoreip = ::1 127.0.01/8
