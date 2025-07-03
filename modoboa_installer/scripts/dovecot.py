@@ -72,24 +72,6 @@ class Dovecot(base.Installer):
             "dovecot-core", "create-ssl-cert", "boolean", "false")
         super().install_packages()
 
-    def create_oauth2_app(self):
-        """Create a application for Oauth2 authentication."""
-        # FIXME: how can we check that application already exists ?
-        venv_path = self.config.get("modoboa", "venv_path")
-        python_path = os.path.join(venv_path, "bin", "python")
-        instance_path = self.config.get("modoboa", "instance_path")
-        script_path = os.path.join(instance_path, "manage.py")
-        client_id = "dovecot"
-        client_secret = str(uuid.uuid4())
-        cmd = (
-            f"{python_path} {script_path} createapplication "
-            f"--name=Dovecot --skip-authorization "
-            f"--client-id={client_id} --client-secret={client_secret} "
-            f"confidential client-credentials"
-        )
-        utils.exec_cmd(cmd)
-        return client_id, client_secret
-
     def get_template_context(self):
         """Additional variables."""
         context = super().get_template_context()
@@ -113,7 +95,8 @@ class Dovecot(base.Installer):
             # Protocols are automatically guessed on debian/ubuntu
             protocols = ""
 
-        oauth2_client_id, oauth2_client_secret = self.create_oauth2_app()
+        oauth2_client_id, oauth2_client_secret = utils.create_oauth2_app(
+            "Dovecot", "dovecot", self.config)
         hostname = self.config.get("general", "hostname")
         oauth2_introspection_url = (
             f"https://{oauth2_client_id}:{oauth2_client_secret}"
@@ -132,9 +115,6 @@ class Dovecot(base.Installer):
             "protocols": protocols,
             "ssl_protocols": ssl_protocols,
             "ssl_protocol_parameter": ssl_protocol_parameter,
-            "radicale_user": self.config.get("radicale", "user"),
-            "radicale_auth_socket_path": os.path.basename(
-                self.config.get("dovecot", "radicale_auth_socket_path")),
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
             "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#",
             "oauth2_introspection_url": oauth2_introspection_url

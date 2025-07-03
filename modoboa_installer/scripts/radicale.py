@@ -33,7 +33,7 @@ class Radicale(base.Installer):
         """Prepare a dedicated virtualenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
         packages = [
-            "Radicale", "pytz"
+            "Radicale", "pytz", "radicale-modoboa-auth-oauth2"
         ]
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
         python.install_package_from_repository(
@@ -43,17 +43,22 @@ class Radicale(base.Installer):
 
     def get_template_context(self):
         """Additional variables."""
-        context = super(Radicale, self).get_template_context()
-        radicale_auth_socket_path = self.config.get(
-            "dovecot", "radicale_auth_socket_path")
+        context = super().get_template_context()
+        oauth2_client_id, oauth2_client_secret = utils.create_oauth2_app(
+            "Radicale", "radicale", self.config)
+        hostname = self.config.get("general", "hostname")
+        oauth2_introspection_url = (
+            f"https://{oauth2_client_id}:{oauth2_client_secret}"
+            f"@{hostname}/api/o/introspect/"
+        )
         context.update({
-            "auth_socket_path": radicale_auth_socket_path
+            "oauth2_introspection_url": oauth2_introspection_url,
         })
         return context
 
     def get_config_files(self):
         """Return appropriate path."""
-        config_files = super(Radicale, self).get_config_files()
+        config_files = super().get_config_files()
         if package.backend.FORMAT == "deb":
             path = "supervisor=/etc/supervisor/conf.d/radicale.conf"
         else:

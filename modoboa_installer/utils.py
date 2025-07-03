@@ -12,6 +12,7 @@ import stat
 import string
 import subprocess
 import sys
+import uuid
 try:
     import configparser
 except ImportError:
@@ -485,3 +486,21 @@ def validate_backup_path(path: str, silent_mode: bool):
         mkdir_safe(os.path.join(backup_path, dir),
                    stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
     return backup_path
+
+
+def create_oauth2_app(app_name: str, client_id: str, config) -> tuple[str, str]:
+    """Create a application for Oauth2 authentication."""
+    # FIXME: how can we check that application already exists ?
+    venv_path = config.get("modoboa", "venv_path")
+    python_path = os.path.join(venv_path, "bin", "python")
+    instance_path = config.get("modoboa", "instance_path")
+    script_path = os.path.join(instance_path, "manage.py")
+    client_secret = str(uuid.uuid4())
+    cmd = (
+        f"{python_path} {script_path} createapplication "
+        f"--name={app_name} --skip-authorization "
+        f"--client-id={client_id} --client-secret={client_secret} "
+        f"confidential client-credentials"
+    )
+    exec_cmd(cmd)
+    return client_id, client_secret

@@ -71,7 +71,7 @@
 
 # Authentication method
 # Value: none | htpasswd | remote_user | http_x_remote_user
-type = dovecot
+type = radicale_modoboa_auth_oauth2
 
 # Htpasswd filename
 # htpasswd_filename = users
@@ -85,7 +85,7 @@ type = dovecot
 # Incorrect authentication delay (seconds)
 #delay = 1
 
-dovecot_socket = %{auth_socket_path}
+oauth2_introspection_endpoint = %{oauth2_introspection_url}
 
 
 [rights]

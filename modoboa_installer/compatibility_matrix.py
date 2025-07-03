@@ -32,5 +32,8 @@ REMOVED_EXTENSIONS = {
     "modoboa-dmarc": "2.1.0",
     "modoboa-imap-migration": "2.1.0",
     "modoboa-sievefilters": "2.3.0",
-    "modoboa-postfix-autoreply": "2.3.0"
+    "modoboa-postfix-autoreply": "2.3.0",
+    "modoboa-contacts": "2.4.0",
+    "modoboa-radicale": "2.4.0",
+    "modoboa-webmail": "2.4.0",
 }

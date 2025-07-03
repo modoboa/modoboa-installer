@@ -124,11 +124,6 @@ mailman   unix  -       n       n       -       -       pipe
   flags=FR user=list argv=/usr/lib/mailman/bin/postfix-to-mailman.py
   ${nexthop} ${user}
 
-# Modoboa autoreply service
-#
-autoreply unix        -       n       n       -       -       pipe
-  flags= user=%{dovecot_mailboxes_owner}:%{dovecot_mailboxes_owner} argv=%{modoboa_venv_path}/bin/python %{modoboa_instance_path}/manage.py autoreply $sender $mailbox
-
 # Amavis return path
 #
 %{amavis_enabled}127.0.0.1:10025 inet n    -       n       -       -     smtpd 

@@ -142,7 +142,7 @@ class Backup:
         """
         Custom config :
         - DKIM keys: {{keys_storage_dir}}
-        - Radicale collection (calendat, contacts): {{home_dir}}
+        - Radicale collection (calendars, contacts): {{home_dir}}
         - Amavis : /etc/amavis/conf.d/99-custom
         - Postwhite : /etc/postwhite.conf
         Feel free to suggest to add others!

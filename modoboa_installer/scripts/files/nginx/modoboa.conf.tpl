@@ -37,7 +37,13 @@ server {
         try_files $uri $uri/ =404;
     }
 
-    location ^~ /new-admin {
+    location ~ ^/(api|accounts) {
+        include uwsgi_params;
+        uwsgi_param UWSGI_SCRIPT instance.wsgi:application;
+        uwsgi_pass modoboa;
+    }
+
+    location / {
         alias  %{app_instance_path}/frontend/;
         index  index.html;
 
@@ -48,10 +54,5 @@ server {
         try_files $uri $uri/ /index.html = 404;
     }
 
-    location / {
-        include uwsgi_params;
-        uwsgi_param UWSGI_SCRIPT instance.wsgi:application;
-        uwsgi_pass modoboa;
-    }
     %{extra_config}
 }

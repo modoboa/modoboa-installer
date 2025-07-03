@@ -13,4 +13,5 @@ socket = %uwsgi_socket_path
 chmod-socket = 660
 vacuum = true
 single-interpreter = True
+max-requests = 5000
 buffer-size = 8192
