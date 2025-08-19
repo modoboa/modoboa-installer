@@ -196,9 +196,10 @@ def main(input_args):
     config.set("modoboa", "version", args.version)
     config.set("modoboa", "install_beta", str(args.beta))
 
-    PRIMARY_APPS.append(
-        "amavis" if config.get("antispam", "type") == "amavis" else "rspamd"
-    )
+    if config.get("antispam", "type") == "amavis":
+        PRIMARY_APPS += ["amavis", "opendkim"]
+    else:
+        PRIMARY_APPS += ["rspamd"]
 
     if args.backup or args.silent_backup:
         backup_system(config, args)
