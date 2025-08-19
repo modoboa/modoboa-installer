@@ -197,9 +197,9 @@ def main(input_args):
     config.set("modoboa", "install_beta", str(args.beta))
 
     if config.get("antispam", "type") == "amavis":
-        PRIMARY_APPS += ["amavis", "opendkim"]
+        antispam_apps = ["amavis", "opendkim"]
     else:
-        PRIMARY_APPS += ["rspamd"]
+        antispam_apps = ["rspamd"]
 
     if args.backup or args.silent_backup:
         backup_system(config, args)
@@ -242,7 +242,7 @@ def main(input_args):
     ssl_backend = ssl.get_backend(config)
     if ssl_backend and not args.upgrade:
         ssl_backend.generate_cert()
-    for appname in PRIMARY_APPS:
+    for appname in PRIMARY_APPS + antispam_apps:
         scripts.install(appname, config, args.upgrade, args.restore)
     system.restart_service("cron")
     package.backend.restore_system()
