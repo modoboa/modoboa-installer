@@ -3,12 +3,9 @@
 """An installer for Modoboa."""
 
 import argparse
+import configparser
 import datetime
 import os
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 import sys
 
 from modoboa_installer import checks
@@ -29,7 +26,6 @@ PRIMARY_APPS = [
     "radicale",
     "uwsgi",
     "nginx",
-    "rspamd",
     "postfix",
     "dovecot"
 ]
@@ -200,6 +196,10 @@ def main(input_args):
     config.set("modoboa", "version", args.version)
     config.set("modoboa", "install_beta", str(args.beta))
 
+    PRIMARY_APPS.append(
+        "amavis" if config.get("antispam", "type") == "amavis" else "rspamd"
+    )
+
     if args.backup or args.silent_backup:
         backup_system(config, args)
         return
@@ -251,36 +251,30 @@ def main(input_args):
             f"Congratulations! You can enjoy Modoboa at https://{hostname} "
             "(admin:password)"
         )
-        if config.get("rspamd", "enabled"):
-            rspamd_password = config.get("rspamd", "password")
-            utils.success(
-                f"You can also enjoy rspamd at https://{hostname}/rspamd "
-                f"(password: {rspamd_password})"
-            )
     else:
         utils.success(
             f"Restore complete! You can enjoy Modoboa at https://{hostname} "
             "(same credentials as before)"
         )
-        if config.get("rspamd", "enabled"):
-            rspamd_password = config.get("rspamd", "password")
-            utils.success(
-                f"You can also enjoy rspamd at https://{hostname}/rspamd "
-                "(password: {rspamd_password})"
-                )
+    if config.getboolean("rspamd", "enabled"):
+        rspamd_password = config.get("rspamd", "password")
+        utils.success(
+            f"You can also enjoy rspamd at https://{hostname}/rspamd "
+            f"(password: {rspamd_password})"
+        )
     utils.success(
         "\n"
         "Modoboa is a free software maintained by volunteers.\n"
         "You like the project and want it to be sustainable?\n"
         "Then don't wait anymore and go sponsor it here:\n"
-        )
+    )
     utils.printcolor(
         "https://github.com/sponsors/modoboa\n",
         utils.YELLOW
-        )
+    )
     utils.success(
         "Thank you for your help :-)\n"
-        )
+    )
 
 
 if __name__ == "__main__":
