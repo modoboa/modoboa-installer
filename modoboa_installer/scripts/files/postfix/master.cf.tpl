@@ -9,7 +9,8 @@
 # service type  private unpriv  chroot  wakeup  maxproc command + args
 #               (yes)   (yes)   (yes)   (never) (100)
 # ==========================================================================
-smtp      inet  n       -       -       -       1       postscreen
+%{rspamd_disabled}smtp      inet  n       -       -       -       1       postscreen
+%{rspamd_enabled}smtp      inet  n       -       -       -       -       smtpd
 smtpd     pass  -       -       -       -       -       smtpd
 %{amavis_enabled}  -o smtpd_proxy_filter=inet:[127.0.0.1]:10024 
 %{amavis_enabled}  -o smtpd_proxy_options=speed_adjust
@@ -26,6 +27,7 @@ submission inet n       -       -       -       -       smtpd
   -o smtpd_helo_restrictions=
   -o smtpd_sender_restrictions=reject_sender_login_mismatch
   -o milter_macro_daemon_name=ORIGINATING
+  -o cleanup_service_name=ascleanup
 %{amavis_enabled}  -o smtpd_proxy_filter=inet:[127.0.0.1]:10026
 #smtps     inet  n       -       -       -       -       smtpd
 #  -o syslog_name=postfix/smtps
@@ -41,6 +43,8 @@ submission inet n       -       -       -       -       smtpd
 #628       inet  n       -       -       -       -       qmqpd
 pickup    unix  n       -       -       60      1       pickup
 cleanup   unix  n       -       -       -       0       cleanup
+ascleanup unix  n       -       -       -       0       cleanup
+  -o header_checks=pcre:/etc/postfix/anonymize_headers.pcre
 qmgr      unix  n       -       n       300     1       qmgr
 #qmgr     unix  n       -       n       300     1       oqmgr
 tlsmgr    unix  -       -       -       1000?   1       tlsmgr

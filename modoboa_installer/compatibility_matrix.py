@@ -37,3 +37,10 @@ REMOVED_EXTENSIONS = {
     "modoboa-radicale": "2.4.0",
     "modoboa-webmail": "2.4.0",
 }
+
+APP_INCOMPATIBILITY = {
+    "opendkim": ["rspamd"],
+    "amavis": ["rspamd"],
+    "postwhite": ["rspamd"],
+    "spamassassin": ["rspamd"]
+}

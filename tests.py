@@ -47,7 +47,7 @@ class ConfigFileTestCase(unittest.TestCase):
     def test_interactive_mode(self, mock_user_input):
         """Check interactive mode."""
         mock_user_input.side_effect = [
-            "0", "0", "", "", "", "", ""
+            "0", "0", "", "", "", "", "", ""
         ]
         with open(os.devnull, "w") as fp:
             sys.stdout = fp
@@ -99,7 +99,7 @@ class ConfigFileTestCase(unittest.TestCase):
     def test_interactive_mode_letsencrypt(self, mock_user_input):
         """Check interactive mode."""
         mock_user_input.side_effect = [
-            "1", "admin@example.test", "0", "", "", "", "", ""
+            "0", "0", "1", "admin@example.test", "0", "", "", "", ""
         ]
         with open(os.devnull, "w") as fp:
             sys.stdout = fp
@@ -126,12 +126,13 @@ class ConfigFileTestCase(unittest.TestCase):
             "example.test"])
         self.assertTrue(os.path.exists(self.cfgfile))
         self.assertIn(
-            "modoboa automx amavis clamav dovecot nginx razor postfix"
-            " postwhite spamassassin uwsgi",
+            "fail2ban modoboa automx amavis clamav dovecot nginx "
+            "postfix postwhite spamassassin uwsgi radicale opendkim",
             out.getvalue()
         )
-        self.assertNotIn("It seems that your config file is outdated.",
-                         out.getvalue()
+        self.assertNotIn(
+            "It seems that your config file is outdated.",
+            out.getvalue()
         )
 
     @patch("modoboa_installer.utils.user_input")

@@ -4,6 +4,7 @@ import glob
 import os
 import pwd
 import shutil
+import stat
 import uuid
 
 from .. import database
@@ -15,6 +16,7 @@ from . import base
 
 
 class Dovecot(base.Installer):
+
     """Dovecot installer."""
 
     appname = "dovecot"
@@ -26,9 +28,13 @@ class Dovecot(base.Installer):
             "dovecot", "dovecot-pigeonhole"]
     }
     config_files = [
-        "dovecot.conf", "dovecot-dict-sql.conf.ext", "conf.d/10-ssl.conf",
-        "conf.d/10-master.conf", "conf.d/20-lmtp.conf", "conf.d/10-ssl-keys.try",
-        "conf.d/dovecot-oauth2.conf.ext"
+        "dovecot.conf",
+        "dovecot-dict-sql.conf.ext",
+        "conf.d/10-ssl.conf",
+        "conf.d/10-master.conf",
+        "conf.d/20-lmtp.conf",
+        "conf.d/10-ssl-keys.try",
+        "conf.d/dovecot-oauth2.conf.ext",
     ]
     with_user = True
 
@@ -40,7 +46,15 @@ class Dovecot(base.Installer):
 
     def get_config_files(self):
         """Additional config files."""
-        return self.config_files + [
+        _config_files = self.config_files
+
+        if self.app_config["move_spam_to_junk"]:
+            _config_files += [
+                "conf.d/custom_after_sieve/spam-to-junk.sieve",
+                "conf.d/90-sieve.conf",
+            ]
+
+        return _config_files + [
             "dovecot-sql-{}.conf.ext=dovecot-sql.conf.ext"
             .format(self.dbengine),
             "dovecot-sql-master-{}.conf.ext=dovecot-sql-master.conf.ext"
@@ -117,9 +131,21 @@ class Dovecot(base.Installer):
             "ssl_protocol_parameter": ssl_protocol_parameter,
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
             "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#",
+            "do_move_spam_to_junk": "" if self.app_config["move_spam_to_junk"] else "#",
             "oauth2_introspection_url": oauth2_introspection_url
         })
         return context
+
+    def install_config_files(self):
+        """Create sieve dir if needed."""
+        if self.app_config["move_spam_to_junk"]:
+            utils.mkdir_safe(
+                f"{self.config_dir}/conf.d/custom_after_sieve",
+                stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
+                stat.S_IROTH | stat.S_IXOTH,
+                0, 0
+                )
+        super().install_config_files()
 
     def post_run(self):
         """Additional tasks."""
@@ -137,7 +163,8 @@ class Dovecot(base.Installer):
                 self.get_file_path("fix_modoboa_postgres_schema.sql")
             )
         for f in glob.glob("{}/*".format(self.get_file_path("conf.d"))):
-            utils.copy_file(f, "{}/conf.d".format(self.config_dir))
+            if os.path.isfile(f):
+                utils.copy_file(f, "{}/conf.d".format(self.config_dir))
         # Make postlogin script executable
         utils.exec_cmd("chmod +x /usr/local/bin/postlogin.sh")
         # Only root should have read access to the 10-ssl-keys.try
@@ -145,6 +172,10 @@ class Dovecot(base.Installer):
         utils.exec_cmd("chmod 600 /etc/dovecot/conf.d/10-ssl-keys.try")
         # Add mailboxes user to dovecot group for modoboa mailbox commands.
         # See https://github.com/modoboa/modoboa/issues/2157.
+        if self.app_config["move_spam_to_junk"]:
+            # Compile sieve script
+            sieve_file = f"{self.config_dir}/conf.d/custom_after_sieve/spam-to-junk.sieve"
+            utils.exec_cmd(f"/usr/bin/sievec {sieve_file}")
         system.add_user_to_group(self.mailboxes_owner, 'dovecot')
 
     def restart_daemon(self):

@@ -3,6 +3,7 @@
 #
 PYTHON=%{venv_path}/bin/python
 INSTANCE=%{instance_path}
+MAILTO=%{cron_error_recipient}
 
 # Operations on mailboxes
 %{dovecot_enabled}*       *       *       *       *       %{dovecot_mailboxes_owner}   $PYTHON $INSTANCE/manage.py handle_mailbox_operations

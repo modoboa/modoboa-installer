@@ -3,15 +3,12 @@
 """An installer for Modoboa."""
 
 import argparse
+import configparser
 import datetime
 import os
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 import sys
 
-import checks
+from modoboa_installer import checks
 from modoboa_installer import compatibility_matrix
 from modoboa_installer import constants
 from modoboa_installer import package
@@ -19,75 +16,24 @@ from modoboa_installer import scripts
 from modoboa_installer import ssl
 from modoboa_installer import system
 from modoboa_installer import utils
+from modoboa_installer import disclaimers
 
 
 PRIMARY_APPS = [
-    "amavis",
     "fail2ban",
     "modoboa",
     "automx",
     "radicale",
     "uwsgi",
     "nginx",
-    "opendkim",
     "postfix",
     "dovecot"
 ]
 
 
-def installation_disclaimer(args, config):
-    """Display installation disclaimer."""
-    hostname = config.get("general", "hostname")
-    utils.printcolor(
-        "Notice:\n"
-        "It is recommanded to run this installer on a FRESHLY installed server.\n"
-        "(ie. with nothing special already installed on it)\n",
-        utils.CYAN
-    )
-    utils.printcolor(
-        "Warning:\n"
-        "Before you start the installation, please make sure the following "
-        "DNS records exist for domain '{}':\n"
-        "  {} IN A   <IP ADDRESS OF YOUR SERVER>\n"
-        "     @ IN MX  {}.\n".format(
-            args.domain,
-            hostname.replace(".{}".format(args.domain), ""),
-            hostname
-        ),
-        utils.YELLOW
-    )
-    utils.printcolor(
-        "Your mail server will be installed with the following components:",
-        utils.BLUE)
-
-
-def upgrade_disclaimer(config):
-    """Display upgrade disclaimer."""
-    utils.printcolor(
-        "Your mail server is about to be upgraded and the following components"
-        " will be impacted:", utils.BLUE
-    )
-
-
-def backup_disclaimer():
-    """Display backup disclamer. """
-    utils.printcolor(
-        "Your mail server will be backed up locally.\n"
-        " !! You should really transfer the backup somewhere else...\n"
-        " !! Custom configuration (like for postfix) won't be saved.", utils.BLUE)
-
-
-def restore_disclaimer():
-    """Display restore disclamer. """
-    utils.printcolor(
-        "You are about to restore a previous installation of Modoboa.\n"
-        "If a new version has been released in between, please update your database!",
-        utils.BLUE)
-
-
 def backup_system(config, args):
     """Launch backup procedure."""
-    backup_disclaimer()
+    disclaimers.backup_disclaimer()
     backup_path = None
     if args.silent_backup:
         if not args.backup_path:
@@ -135,12 +81,11 @@ def config_file_update_complete(backup_location):
                          utils.BLUE)
 
 
-def main(input_args):
-    """Install process."""
+def parser_setup(input_args):
     parser = argparse.ArgumentParser()
     versions = (
         ["latest"] + list(compatibility_matrix.COMPATIBILITY_MATRIX.keys())
-    )
+        )
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Enable debug output")
     parser.add_argument("--force", action="store_true", default=False,
@@ -168,7 +113,7 @@ def main(input_args):
     parser.add_argument(
         "--backup", action="store_true", default=False,
         help="Backing up interactively previously installed instance"
-    )
+        )
     parser.add_argument(
         "--silent-backup", action="store_true", default=False,
         help="For script usage, do not require user interaction "
@@ -181,13 +126,18 @@ def main(input_args):
         "--restore", type=str, metavar="path",
         help="Restore a previously backup up modoboa instance on a NEW machine. "
         "You MUST provide backup directory"
-    ),
+        )
     parser.add_argument(
         "--skip-checks", action="store_true", default=False,
         help="Skip the checks the installer performs initially")
     parser.add_argument("domain", type=str,
                         help="The main domain of your future mail server")
-    args = parser.parse_args(input_args)
+    return parser.parse_args(input_args)
+
+
+def main(input_args):
+    """Install process."""
+    args = parser_setup(input_args)
 
     if args.debug:
         utils.ENV["debug"] = True
@@ -246,28 +196,36 @@ def main(input_args):
     config.set("modoboa", "version", args.version)
     config.set("modoboa", "install_beta", str(args.beta))
 
+    if config.get("antispam", "type") == "amavis":
+        antispam_apps = ["amavis", "opendkim"]
+    else:
+        antispam_apps = ["rspamd"]
+
     if args.backup or args.silent_backup:
         backup_system(config, args)
         return
 
     # Display disclaimer python 3 linux distribution
     if args.upgrade:
-        upgrade_disclaimer(config)
+        disclaimers.upgrade_disclaimer(config)
     elif args.restore:
-        restore_disclaimer()
+        disclaimers.restore_disclaimer()
         scripts.restore_prep(args.restore)
     else:
-        installation_disclaimer(args, config)
+        disclaimers.installation_disclaimer(args, config)
 
     # Show concerned components
     components = []
     for section in config.sections():
-        if section in ["general", "database", "mysql", "postgres",
+        if section in ["general", "antispam", "database", "mysql", "postgres",
                        "certificate", "letsencrypt", "backup"]:
             continue
         if (config.has_option(section, "enabled") and
                 not config.getboolean(section, "enabled")):
             continue
+        incompatible_app_detected = not utils.check_app_compatibility(section, config)
+        if incompatible_app_detected:
+            sys.exit(0)
         components.append(section)
     utils.printcolor(" ".join(components), utils.YELLOW)
     if not args.force:
@@ -284,19 +242,26 @@ def main(input_args):
     ssl_backend = ssl.get_backend(config)
     if ssl_backend and not args.upgrade:
         ssl_backend.generate_cert()
-    for appname in PRIMARY_APPS:
+    for appname in PRIMARY_APPS + antispam_apps:
         scripts.install(appname, config, args.upgrade, args.restore)
     system.restart_service("cron")
     package.backend.restore_system()
+    hostname = config.get("general", "hostname")
     if not args.restore:
         utils.success(
-            "Congratulations! You can enjoy Modoboa at https://{} (admin:password)"
-            .format(config.get("general", "hostname"))
+            f"Congratulations! You can enjoy Modoboa at https://{hostname} "
+            "(admin:password)"
         )
     else:
         utils.success(
-            "Restore complete! You can enjoy Modoboa at https://{} (same credentials as before)"
-            .format(config.get("general", "hostname"))
+            f"Restore complete! You can enjoy Modoboa at https://{hostname} "
+            "(same credentials as before)"
+        )
+    if config.getboolean("rspamd", "enabled"):
+        rspamd_password = config.get("rspamd", "password")
+        utils.success(
+            f"You can also enjoy rspamd at https://{hostname}/rspamd "
+            f"(password: {rspamd_password})"
         )
     utils.success(
         "\n"
