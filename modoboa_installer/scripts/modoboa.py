@@ -50,6 +50,7 @@ class Modoboa(base.Installer):
         self.extensions = self.config.get("modoboa", "extensions").split()
         self.devmode = self.config.getboolean("modoboa", "devmode")
         self.amavis_enabled = self.config.getboolean("amavis", "enabled")
+        self.rspamd_enabled = self.config.getboolean("rspamd", "enabled")
         self.dovecot_enabled = self.config.getboolean("dovecot", "enabled")
         self.opendkim_enabled = self.config.getboolean("opendkim", "enabled")
         self.dkim_cron_enabled = False
@@ -134,6 +135,10 @@ class Modoboa(base.Installer):
 
         prefix = ". {}; ".format(
             os.path.join(self.venv_path, "bin", "activate"))
+        if self.amavis_enabled:
+            self.extensions += ["modoboa.amavis"]
+        if self.rspamd_enabled:
+            self.extensions += ["modoboa.rspamd"]
         args = [
             "--collectstatic",
             "--timezone", self.config.get("modoboa", "timezone"),
@@ -235,7 +240,7 @@ class Modoboa(base.Installer):
             "dovecot_mailboxes_owner": (
                 self.config.get("dovecot", "mailboxes_owner")),
             "opendkim_user": self.config.get("opendkim", "user"),
-            "dkim_user": "_rspamd" if self.config.getboolean("rspamd", "enabled") else self.config.get("opendkim", "user"),
+            "dkim_user": "_rspamd" if self.rspamd_enabled else self.config.get("opendkim", "user"),
             "minutes": random.randint(1, 59),
             "hours": f"{random_hour},{random_hour+12}",
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
@@ -257,9 +262,6 @@ class Modoboa(base.Installer):
                 "handle_mailboxes": True,
                 "account_auto_removal": True
             },
-            "modoboa_amavis": {
-                "am_pdp_mode": "inet",
-            },
             "maillog": {
                 "rrd_rootdir": rrd_root_dir,
             },
@@ -280,12 +282,16 @@ class Modoboa(base.Installer):
             settings["admin"]["dkim_keys_storage_dir"] = (
                 self.config.get("opendkim", "keys_storage_dir"))
 
-        if self.config.getboolean("rspamd", "enabled"):
+        if self.rspamd_enabled:
             settings["admin"]["dkim_keys_storage_dir"] = (
                 self.config.get("rspamd", "dkim_keys_storage_dir"))
-            settings["modoboa_rspamd"] = {
+            settings["rspamd"] = {
                 "key_map_path": self.config.get("rspamd", "key_map_path"),
                 "selector_map_path": self.config.get("rspamd", "selector_map_path")
+            }
+        if self.config.getboolean("amavis", "enabled"):
+            settings["amavis"] = {
+                "am_pdp_mode": "inet",
             }
 
         settings = json.dumps(settings)
