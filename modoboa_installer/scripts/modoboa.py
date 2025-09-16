@@ -27,7 +27,7 @@ class Modoboa(base.Installer):
             "build-essential", "python3-dev", "libxml2-dev", "libxslt-dev",
             "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron",
             "libssl-dev", "redis-server", "supervisor", "pkg-config",
-            "libcairo2-dev"
+            "libcairo2-dev", "libmagic-dev"
         ],
         "rpm": [
             "gcc", "gcc-c++", "python3-devel", "libxml2-devel", "libxslt-devel",
@@ -71,7 +71,7 @@ class Modoboa(base.Installer):
     def _setup_venv(self):
         """Prepare a dedicated virtualenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
-        packages = ["rrdtool"]
+        packages = []
         version = self.config.get("modoboa", "version")
         extras = "postgresql"
         if self.dbengine != "postgres":

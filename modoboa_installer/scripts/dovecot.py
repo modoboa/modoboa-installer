@@ -5,7 +5,6 @@ import os
 import pwd
 import shutil
 import stat
-import uuid
 
 from .. import database
 from .. import package
@@ -16,27 +15,47 @@ from . import base
 
 
 class Dovecot(base.Installer):
-
     """Dovecot installer."""
 
     appname = "dovecot"
     packages = {
         "deb": [
-            "dovecot-imapd", "dovecot-lmtpd", "dovecot-managesieved",
-            "dovecot-sieve"],
+            "dovecot-imapd",
+            "dovecot-lmtpd",
+            "dovecot-managesieved",
+            "dovecot-sieve"
+        ],
         "rpm": [
             "dovecot", "dovecot-pigeonhole"]
     }
-    config_files = [
-        "dovecot.conf",
-        "dovecot-dict-sql.conf.ext",
-        "conf.d/10-ssl.conf",
-        "conf.d/10-master.conf",
-        "conf.d/20-lmtp.conf",
-        "conf.d/10-ssl-keys.try",
-        "conf.d/dovecot-oauth2.conf.ext",
-    ]
+    per_version_config_files = {
+        "2.3": [
+            "dovecot.conf",
+            "dovecot-dict-sql.conf.ext",
+            "conf.d/10-ssl.conf",
+            "conf.d/10-master.conf",
+            "conf.d/20-lmtp.conf",
+            "conf.d/10-ssl-keys.try",
+            "conf.d/dovecot-oauth2.conf.ext",
+        ],
+        "2.4": [
+            "dovecot.conf",
+            "conf.d/10-mail.conf",
+            "conf.d/10-master.conf",
+            "conf.d/10-ssl.conf",
+            "conf.d/10-ssl-keys.try",
+            "conf.d/20-lmtp.conf",
+            "conf.d/30-dict-server.conf",
+            "conf.d/auth-oauth2.conf.ext",
+        ]
+    }
     with_user = True
+
+    @property
+    def version(self) -> str:
+        if not hasattr(self, "_version"):
+            self._version = package.backend.get_installed_version("dovecot-core")[:3]
+        return self._version
 
     def setup_user(self):
         """Setup mailbox user."""
@@ -44,24 +63,39 @@ class Dovecot(base.Installer):
         self.mailboxes_owner = self.app_config["mailboxes_owner"]
         system.create_user(self.mailboxes_owner, self.home_dir)
 
-    def get_config_files(self):
-        """Additional config files."""
-        _config_files = self.config_files
+    def _get_config_files_for_version(self, version: str) -> list[str]:
+        files = self.per_version_config_files[version]
+        if version == "2.4":
+            files += [
+                f"conf.d/auth-sql-{self.dbengine}.conf.ext=conf.d/auth-sql.conf.ext"
+            ]
+        else:
+            files += [
+                f"dovecot-sql-{self.dbengine}.conf.ext=dovecot-sql.conf.ext",
+                f"dovecot-sql-master-{self.dbengine}.conf.ext=dovecot-sql-master.conf.ext"
+            ]
+        result = []
+        for path in files:
+            if "=" not in path:
+                result.append(f"{version}/{path}={path}")
+            else:
+                src, dst = path.split("=")
+                result.append(f"{version}/{src}={dst}")
+        return result
 
+    def get_config_files(self) -> list[str]:
+        """Additional config files."""
+        _config_files = self._get_config_files_for_version(self.version)
+        _config_files.append(
+            f"postlogin-{self.dbengine}.sh=/usr/local/bin/postlogin.sh"
+        )
         if self.app_config["move_spam_to_junk"]:
             _config_files += [
-                "conf.d/custom_after_sieve/spam-to-junk.sieve",
-                "conf.d/90-sieve.conf",
+                "custom_after_sieve/spam-to-junk.sieve=conf.d/custom_after_sieve/spam-to-junk.sieve",
+                f"{self.version}/conf.d/90-sieve.conf=conf.d/90-sieve.conf",
             ]
 
-        return _config_files + [
-            "dovecot-sql-{}.conf.ext=dovecot-sql.conf.ext"
-            .format(self.dbengine),
-            "dovecot-sql-master-{}.conf.ext=dovecot-sql-master.conf.ext"
-            .format(self.dbengine),
-            "postlogin-{}.sh=/usr/local/bin/postlogin.sh"
-            .format(self.dbengine),
-        ]
+        return _config_files
 
     def get_packages(self):
         """Additional packages."""
@@ -99,7 +133,7 @@ class Dovecot(base.Installer):
                 or package.backend.get_installed_version("openssl").startswith("3"):
             ssl_protocols = "!SSLv3"
         if ssl_protocol_parameter == "ssl_min_protocol":
-            ssl_protocols = "TLSv1"
+            ssl_protocols = "TLSv1.2"
         if "centos" in utils.dist_name():
             protocols = "protocols = imap lmtp sieve"
             extra_protocols = self.config.get("dovecot", "extra_protocols")
@@ -149,7 +183,7 @@ class Dovecot(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        if self.dbengine == "postgres":
+        if self.version == "2.3" and self.dbengine == "postgres":
             dbname = self.config.get("modoboa", "dbname")
             dbuser = self.config.get("modoboa", "dbuser")
             dbpassword = self.config.get("modoboa", "dbpassword")
@@ -162,7 +196,7 @@ class Dovecot(base.Installer):
                 dbname, dbuser, dbpassword,
                 self.get_file_path("fix_modoboa_postgres_schema.sql")
             )
-        for f in glob.glob("{}/*".format(self.get_file_path("conf.d"))):
+        for f in glob.glob(f"{self.version}/{self.get_file_path('conf.d')}/*"):
             if os.path.isfile(f):
                 utils.copy_file(f, "{}/conf.d".format(self.config_dir))
         # Make postlogin script executable
