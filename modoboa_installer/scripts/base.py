@@ -45,7 +45,6 @@ class Installer:
 
     @property
     def modoboa_2_2_or_greater(self):
-        return True
         # Check if modoboa version > 2.2
         modoboa_version = python.get_package_version(
             "modoboa",
