@@ -1,0 +1,53 @@
+##
+#i
+## LMTP specific settings
+##
+
+# Support proxying to other LMTP/SMTP servers by performing passdb lookups.
+#lmtp_proxy = no
+
+# When recipient address includes the detail (e.g. user+detail), try to save
+# the mail to the detail mailbox. See also recipient_delimiter and
+# lda_mailbox_autocreate settings.
+#lmtp_save_to_detail_mailbox = no
+
+# Verify quota before replying to RCPT TO. This adds a small overhead.
+lmtp_rcpt_check_quota = yes
+
+# Add "Received:" header to mails delivered.
+#lmtp_add_received_header = yes
+
+# Which recipient address to use for Delivered-To: header and Received:
+# header. The default is "final", which is the same as the one given to
+# RCPT TO command. "original" uses the address given in RCPT TO's ORCPT
+# parameter, "none" uses nothing. Note that "none" is currently always used
+# when a mail has multiple recipients.
+#lmtp_hdr_delivery_address = final
+
+# Workarounds for various client bugs:
+#   whitespace-before-path:
+#     Allow one or more spaces or tabs between `MAIL FROM:' and path and between
+#     `RCPT TO:' and path.
+#   mailbox-for-path:
+#     Allow using bare Mailbox syntax (i.e., without <...>) instead of full path
+#     syntax.
+#
+#lmtp_client_workarounds {
+#  whitespace-before-path = yes
+#}
+
+protocol lmtp {
+  mail_plugins {
+    quota = yes
+    sieve = yes
+  }
+  postmaster_address = %postmaster_address
+
+  # This strips the domain name before delivery, since the default
+  # userdb in Debian is /etc/passwd, which doesn't include domain
+  # names in the user.  If you're using a different userdb backend
+  # that does include domain names, you may wish to remove this.  See
+  # https://doc.dovecot.org/2.4.0/howto/lmtp/exim.html and
+  # https://doc.dovecot.org/2.4.0/core/summaries/settings.html#auth_username_format
+  # auth_username_format = %%{user | username}
+}
