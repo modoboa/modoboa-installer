@@ -145,6 +145,13 @@ service auth {
     group = postfix
   }
 
+  %{radicale_enabled}unix_listener auth-radicale {
+  %{radicale_enabled}  mode = 0666
+  %{radicale_enabled}  user = %{radicale_user}
+  %{radicale_enabled}  group = %{radicale_user}
+  %{radicale_enabled}  type = auth-legacy
+  %{radicale_enabled}}
+
   # Auth process is run as this user.
   #user = $SET:default_internal_user
 }

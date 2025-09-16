@@ -9,13 +9,18 @@
 # "proxy::<name>".
 
 dict_server {
+  pgsql %dbhost {
+    parameters {
+      port = %dbport
+      dbname = %modoboa_dbname
+      user = %modoboa_dbuser
+      password = %modoboa_dbpassword
+    }
+  }
   dict quota {
     driver = sql
     sql_driver = %db_driver
     hostname = %dbhost
-    dbname = %modoboa_dbname
-    user = %modoboa_dbuser
-    password = %modoboa_dbpassword
 
     dict_map priv/quota/storage {
       sql_table = admin_quota

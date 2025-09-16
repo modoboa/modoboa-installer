@@ -67,7 +67,8 @@ class Dovecot(base.Installer):
         files = self.per_version_config_files[version]
         if version == "2.4":
             files += [
-                f"conf.d/auth-sql-{self.dbengine}.conf.ext=conf.d/auth-sql.conf.ext"
+                f"conf.d/auth-sql-{self.dbengine}.conf.ext=conf.d/auth-sql.conf.ext",
+                f"conf.d/auth-master-{self.dbengine}.conf.ext=conf.d/auth-master.conf.ext",
             ]
         else:
             files += [
@@ -166,7 +167,8 @@ class Dovecot(base.Installer):
             "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
             "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#",
             "do_move_spam_to_junk": "" if self.app_config["move_spam_to_junk"] else "#",
-            "oauth2_introspection_url": oauth2_introspection_url
+            "oauth2_introspection_url": oauth2_introspection_url,
+            "radicale_user": self.config.get("radicale", "user"),
         })
         return context
 

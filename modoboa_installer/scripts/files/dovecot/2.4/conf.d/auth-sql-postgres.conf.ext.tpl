@@ -80,10 +80,12 @@ sql_driver = %db_driver
 # ...
 #}
 pgsql %dbhost {
-  port = %dbport
-  dbname = %modoboa_dbname
-  user = %modoboa_dbuser
-  password = %modoboa_dbpassword
+  parameters {
+    port = %dbport
+    dbname = %modoboa_dbname
+    user = %modoboa_dbuser
+    password = %modoboa_dbpassword
+  }
 }
 
 #passdb sql {
