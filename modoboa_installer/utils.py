@@ -109,7 +109,7 @@ def is_dist_debian_based() -> (bool, str):
 def mkdir(path, mode, uid, gid):
     """Create a directory."""
     if not os.path.exists(path):
-        os.mkdir(path, mode)
+        os.makedirs(path, mode)
     else:
         os.chmod(path, mode)
     os.chown(path, uid, gid)

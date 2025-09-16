@@ -87,7 +87,7 @@ class Postfix(base.Installer):
         chroot_dir = "/var/spool/postfix/etc"
         chroot_files = ["services", "resolv.conf"]
         if not os.path.exists(chroot_dir):
-            os.mkdir(chroot_dir)
+            utils.mkdir(chroot_dir)
         for f in chroot_files:
             path = os.path.join(chroot_dir, f)
             if not os.path.exists(path):
