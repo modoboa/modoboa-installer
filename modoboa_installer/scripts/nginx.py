@@ -59,20 +59,11 @@ class Nginx(base.Installer):
     def post_run(self):
         """Additionnal tasks."""
         extra_modoboa_config = ""
-        if self.config.getboolean("automx", "enabled"):
-            hostname = "autoconfig.{}".format(
-                self.config.get("general", "domain"))
-            self._setup_config("automx", hostname)
-            extra_modoboa_config = """
-    location ~* ^/autodiscover/autodiscover.xml {
-        include uwsgi_params;
-        uwsgi_pass automx;
-    }
-    location /mobileconfig {
-        include uwsgi_params;
-        uwsgi_pass automx;
-    }
-"""
+
+        hostname = "autoconfig.{}".format(
+            self.config.get("general", "domain"))
+        self._setup_config("autoconfig", hostname)
+
         if self.config.get("radicale", "enabled"):
             extra_modoboa_config += """
     location /radicale/ {
