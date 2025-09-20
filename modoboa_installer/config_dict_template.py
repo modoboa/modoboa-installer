@@ -223,35 +223,6 @@ ConfigDictTemplate = [
         ]
     },
     {
-        "name": "automx",
-        "values": [
-            {
-                "option": "enabled",
-                "default": "true",
-            },
-            {
-                "option": "user",
-                "default": "automx",
-            },
-            {
-                "option": "config_dir",
-                "default": "/etc",
-            },
-            {
-                "option": "home_dir",
-                "default": "/srv/automx",
-            },
-            {
-                "option": "venv_path",
-                "default": "%(home_dir)s/env",
-            },
-            {
-                "option": "instance_path",
-                "default": "%(home_dir)s/instance",
-            },
-        ]
-    },
-    {
         "name": "rspamd",
         "if": ["antispam.enabled=true", "antispam.type=rspamd"],
         "values": [

@@ -22,7 +22,6 @@ from modoboa_installer import disclaimers
 PRIMARY_APPS = [
     "fail2ban",
     "modoboa",
-    "automx",
     "radicale",
     "uwsgi",
     "nginx",

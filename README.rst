@@ -44,7 +44,6 @@ The following components are installed by the installer:
 * Postfix
 * Dovecot
 * Amavis (with SpamAssassin and ClamAV) or Rspamd
-* automx (autoconfiguration service)
 * OpenDKIM
 * Radicale (CalDAV and CardDAV server)
 

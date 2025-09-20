@@ -83,24 +83,9 @@ class Uwsgi(base.Installer):
             utils.exec_cmd(
                 "perl -pi -e '{}' /etc/uwsgi.ini".format(pattern))
 
-    def _setup_automx_config(self):
-        """Custom automx configuration."""
-        dst = self._setup_config("automx")
-        if package.backend.FORMAT == "deb":
-            self._enable_config_debian(dst)
-        else:
-            system.add_user_to_group(
-                "uwsgi", self.config.get("automx", "user"))
-            pattern = (
-                "s/emperor-tyrant = true/emperor-tyrant = false/")
-            utils.exec_cmd(
-                "perl -pi -e '{}' /etc/uwsgi.ini".format(pattern))
-
     def post_run(self):
         """Additionnal tasks."""
         self._setup_modoboa_config()
-        if self.config.getboolean("automx", "enabled"):
-            self._setup_automx_config()
 
     def restart_daemon(self):
         """Restart daemon process."""
