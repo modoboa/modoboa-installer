@@ -20,8 +20,8 @@ class Postwhite(base.Installer):
     ]
     no_daemon = True
     packages = {
-        "deb": ["bind9-host"],
-        "rpm": ["bind-utils"]
+        "deb": ["bind9-host", "unzip"],
+        "rpm": ["bind-utils", "unzip"]
     }
 
     def install_from_archive(self, repository, target_dir):
