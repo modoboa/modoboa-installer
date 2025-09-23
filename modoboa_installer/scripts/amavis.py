@@ -52,7 +52,17 @@ class Amavis(base.Installer):
         packages = super(Amavis, self).get_packages()
         if package.backend.FORMAT == "deb":
             db_driver = "pg" if self.db_driver == "pgsql" else self.db_driver
-            return packages + ["libdbd-{}-perl".format(db_driver)]
+            packages += ["libdbd-{}-perl".format(db_driver)]
+
+            name, version = utils.dist_info()
+            try:
+                major_version = int(version.split(".")[0])
+            except ValueError:
+                major_version = 0
+            if major_version >= 13:
+                packages = [p if p != "liblz4-tool" else "lz4" for p in packages]
+            return packages
+        
         if self.db_driver == "pgsql":
             db_driver = "Pg"
         elif self.db_driver == "mysql":
