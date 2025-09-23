@@ -37,6 +37,7 @@ class Nginx(base.Installer):
         context = self.get_template_context(app)
         context.update({"hostname": hostname, "extra_config": extra_config})
         src = self.get_file_path("{}.conf.tpl".format(app))
+        group = None
         if package.backend.FORMAT == "deb":
             dst = os.path.join(
                 self.config_dir, "sites-available", "{}.conf".format(hostname))
@@ -46,7 +47,8 @@ class Nginx(base.Installer):
             if os.path.exists(link):
                 return
             os.symlink(dst, link)
-            group = self.config.get(app, "user")
+            if self.config.has_section(app):
+                group = self.config.get(app, "user")
             user = "www-data"
         else:
             dst = os.path.join(
@@ -54,7 +56,8 @@ class Nginx(base.Installer):
             utils.copy_from_template(src, dst, context)
             group = "uwsgi"
             user = "nginx"
-        system.add_user_to_group(user, group)
+        if user and group:
+            system.add_user_to_group(user, group)
 
     def post_run(self):
         """Additionnal tasks."""
