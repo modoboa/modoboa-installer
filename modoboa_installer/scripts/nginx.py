@@ -19,14 +19,15 @@ class Nginx(base.Installer):
         "rpm": ["nginx"]
     }
 
-    def get_template_context(self, app):
+    def get_template_context(self):
         """Additionnal variables."""
         context = super().get_template_context()
         context.update({
             "app_instance_path": (
-                self.config.get(app, "instance_path")),
+                self.config.get("modoboa", "instance_path")),
             "uwsgi_socket_path": (
-                Uwsgi(self.config, self.upgrade, self.restore).get_socket_path(app))
+                Uwsgi(self.config, self.upgrade, self.restore).get_socket_path("modoboa")
+            )
         })
         return context
 
@@ -34,7 +35,7 @@ class Nginx(base.Installer):
         """Custom app configuration."""
         if hostname is None:
             hostname = self.config.get("general", "hostname")
-        context = self.get_template_context(app)
+        context = self.get_template_context()
         context.update({"hostname": hostname, "extra_config": extra_config})
         src = self.get_file_path("{}.conf.tpl".format(app))
         group = None
