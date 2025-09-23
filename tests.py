@@ -126,7 +126,7 @@ class ConfigFileTestCase(unittest.TestCase):
             "example.test"])
         self.assertTrue(os.path.exists(self.cfgfile))
         self.assertIn(
-            "fail2ban modoboa automx amavis clamav dovecot nginx "
+            "fail2ban modoboa amavis clamav dovecot nginx "
             "postfix postwhite spamassassin uwsgi radicale opendkim",
             out.getvalue()
         )
