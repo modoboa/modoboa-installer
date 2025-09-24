@@ -10,8 +10,7 @@ from . import system
 from . import utils
 
 
-class Database(object):
-
+class Database:
     """Common database backend."""
 
     default_port: Optional[int] = None
@@ -157,7 +156,6 @@ class PostgreSQL(Database):
 
 
 class MySQL(Database):
-
     """MySQL backend."""
 
     default_port = 3306
@@ -178,7 +176,7 @@ class MySQL(Database):
         if name.startswith("debian"):
             if version.startswith("8"):
                 self.packages["deb"].append("libmysqlclient-dev")
-            elif version.startswith("11") or version.startswith("12"):
+            elif int(version[:2]) >= 11:
                 self.packages["deb"].append("libmariadb-dev")
             else:
                 self.packages["deb"].append("libmariadbclient-dev")

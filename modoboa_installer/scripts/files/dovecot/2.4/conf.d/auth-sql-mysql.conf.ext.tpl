@@ -104,21 +104,21 @@ mysql %dbhost {
 #
 # Commonly used available substitutions (see https://doc.dovecot.org/latest/core/settings/variables.html
 # for full list):
-#   %{user} = entire user@domain
-#   %{user|username} = user part of user@domain
-#   %{user|domain} = domain part of user@domain
+#   %%{user} = entire user@domain
+#   %%{user|username} = user part of user@domain
+#   %%{user|domain} = domain part of user@domain
 # 
 # Note that these can be used only as input to SQL query. If the query outputs
 # any of these substitutions, they're not touched. Otherwise it would be
-# difficult to have eg. usernames containing '%' characters.
+# difficult to have eg. usernames containing '%%' characters.
 #
 # Example:
 #   query = SELECT userid AS user, pw AS password \
-#     FROM users WHERE userid = '%u' AND active = 'Y'
+#     FROM users WHERE userid = '%%u' AND active = 'Y'
 #
 #  query = \
 #    SELECT userid as username, domain, password \
-#    FROM users WHERE userid = '%{user|username}' AND domain = '%{user|domain}'
+#    FROM users WHERE userid = '%%{user|username}' AND domain = '%%{user|domain}'
 #}
 
 passdb sql {
