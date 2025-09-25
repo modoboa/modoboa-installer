@@ -92,7 +92,7 @@ oauth2_introspection_endpoint = %{oauth2_introspection_url}
 
 # Rights backend
 # Value: none | authenticated | owner_only | owner_write | from_file
-type = from_file 
+type = from_file
 
 # File for rights management from_file
 file = %{config_dir}/rights
@@ -102,8 +102,6 @@ file = %{config_dir}/rights
 
 # Storage backend
 # Value: multifilesystem
-type = radicale_storage_by_index
-radicale_storage_by_index_fields = dtstart, dtend, uid, summary
 
 # Folder for storing local collections, created if not present
 filesystem_folder = %{home_dir}/collections
@@ -134,7 +132,7 @@ filesystem_folder = %{home_dir}/collections
 
 # Web interface backend
 # Value: none | internal
-type = none 
+type = none
 
 
 [logging]

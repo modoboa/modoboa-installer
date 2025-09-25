@@ -2,6 +2,7 @@
 
 import os
 import sys
+from typing import Optional
 
 from .. import database
 from .. import package
@@ -13,15 +14,15 @@ from .. import utils
 class Installer:
     """Simple installer for one application."""
 
-    appname = None
-    no_daemon = False
-    daemon_name = None
-    packages = {}
-    with_user = False
-    with_db = False
-    config_files = []
+    appname: str
+    no_daemon: bool = False
+    daemon_name: Optional[str] = None
+    packages: dict[str, list[str]] = {}
+    with_user: bool = False
+    with_db: bool = False
+    config_files: list[str] = []
 
-    def __init__(self, config, upgrade: bool, archive_path: str):
+    def __init__(self, config, upgrade: bool, archive_path: str) -> None:
         """Get configuration."""
         self.config = config
         self.upgrade = upgrade
@@ -44,7 +45,7 @@ class Installer:
         self.dbpasswd = self.config.get(self.appname, "dbpassword")
 
     @property
-    def modoboa_2_2_or_greater(self):
+    def modoboa_2_2_or_greater(self) -> bool:
         # Check if modoboa version > 2.2
         modoboa_version = python.get_package_version(
             "modoboa",
