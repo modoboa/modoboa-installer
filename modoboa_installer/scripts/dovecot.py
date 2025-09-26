@@ -45,7 +45,6 @@ class Dovecot(base.Installer):
             "conf.d/10-ssl.conf",
             "conf.d/10-ssl-keys.try",
             "conf.d/20-lmtp.conf",
-            "conf.d/30-dict-server.conf",
             "conf.d/auth-oauth2.conf.ext",
         ]
     }
@@ -69,6 +68,7 @@ class Dovecot(base.Installer):
             files += [
                 f"conf.d/auth-sql-{self.dbengine}.conf.ext=conf.d/auth-sql.conf.ext",
                 f"conf.d/auth-master-{self.dbengine}.conf.ext=conf.d/auth-master.conf.ext",
+                f"conf.d/30-dict-server-{self.dbengine}.conf=conf.d/30-dict-server.conf",
             ]
         else:
             files += [
