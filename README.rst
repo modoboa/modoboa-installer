@@ -3,11 +3,11 @@
 
 |workflow| |codecov|
 
-An installer which deploy a complete mail server based on Modoboa.
+An installer which deploys a complete mail server based on Modoboa.
 
 .. warning::
 
-   This tool is still in beta stage, it has been tested on:
+   This tool is still in beta, it has been tested on:
 
    * Debian 12 and upper
    * Ubuntu Focal Fossa (20.04) and upper
