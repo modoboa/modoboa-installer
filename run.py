@@ -65,6 +65,10 @@ def backup_system(config, args, antispam_apps):
     utils.copy_file(args.configfile, backup_path)
     # Backup applications
     for app in PRIMARY_APPS + antispam_apps:
+        if (config.has_option(section, "enabled") and
+            not config.getboolean(section, "enabled")
+            ):
+            continue
         if app == "dovecot" and args.no_mail:
             utils.printcolor("Skipping mail backup", utils.BLUE)
             continue
