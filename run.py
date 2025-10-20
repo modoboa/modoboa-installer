@@ -30,7 +30,7 @@ PRIMARY_APPS = [
 ]
 
 
-def backup_system(config, args):
+def backup_system(config, args, antispam_apps):
     """Launch backup procedure."""
     disclaimers.backup_disclaimer()
     backup_path = None
@@ -64,7 +64,7 @@ def backup_system(config, args):
     # Backup configuration file
     utils.copy_file(args.configfile, backup_path)
     # Backup applications
-    for app in PRIMARY_APPS:
+    for app in PRIMARY_APPS + antispam_apps:
         if app == "dovecot" and args.no_mail:
             utils.printcolor("Skipping mail backup", utils.BLUE)
             continue
@@ -201,7 +201,7 @@ def main(input_args):
         antispam_apps = ["rspamd"]
 
     if args.backup or args.silent_backup:
-        backup_system(config, args)
+        backup_system(config, args, antispam_apps)
         return
 
     # Display disclaimer python 3 linux distribution
