@@ -43,7 +43,7 @@ class Dovecot(base.Installer):
             "conf.d/10-master.conf",
             "conf.d/10-ssl.conf",
             "conf.d/10-ssl-keys.try",
-            "conf.d/15-mailboxes",
+            "conf.d/15-mailboxes.conf",
             "conf.d/20-lmtp.conf",
             "conf.d/auth-oauth2.conf.ext",
         ],
