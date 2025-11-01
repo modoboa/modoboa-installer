@@ -135,5 +135,7 @@ class Opendkim(base.Installer):
     def custom_backup(self, path):
         """Backup DKIM keys."""
         if os.path.isdir(self.app_config["keys_storage_dir"]):
-            shutil.copytree(self.app_config["keys_storage_dir"], path)
+            shutil.copytree(
+                self.app_config["keys_storage_dir"], path, dirs_exist_ok=True
+            )
             utils.printcolor("DKIM keys saved!", utils.GREEN)

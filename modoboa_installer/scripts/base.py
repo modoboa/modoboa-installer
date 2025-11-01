@@ -173,6 +173,7 @@ class Installer:
         if self.with_db:
             self._dump_database(path)
         custom_backup_path = os.path.join(path, "custom", self.appname)
+        utils.mkdir_safe(custom_backup_path)
         self.custom_backup(custom_backup_path)
 
     def custom_backup(self, path):
