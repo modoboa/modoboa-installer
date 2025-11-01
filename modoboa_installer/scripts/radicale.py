@@ -100,5 +100,5 @@ class Radicale(base.Installer):
             "collections",
         )
         if os.path.isdir(radicale_backup):
-            shutil.copytree(radicale_backup, path)
+            shutil.copytree(radicale_backup, path, dirs_exist_ok=True)
             utils.printcolor("Radicale files saved", utils.GREEN)
