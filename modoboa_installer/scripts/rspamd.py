@@ -141,7 +141,8 @@ class Rspamd(base.Installer):
             if os.path.isfile(os.path.join(custom_config_dir, f))
         ]
         for file in local_files:
-            utils.copy_file(file, os.path.join(path, file))
+            basename = os.path.basename(file)
+            utils.copy_file(file, os.path.join(path, basename))
         if len(local_files) != 0:
             utils.success("Rspamd custom configuration saved!")
 
