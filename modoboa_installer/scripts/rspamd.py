@@ -132,6 +132,23 @@ class Rspamd(base.Installer):
         if self.config.getboolean("clamav", "enabled"):
             install("clamav", self.config, self.upgrade, self.archive_path)
 
+    def backup(self, path):
+        self._dump_database(path)
+        super().backup(path)
+
+    def _dump_database(self, backup_path: str):
+        """Copy the rrd file containing the redis db for rspamd.
+        Uses the default path on debian 13,
+        it may be somewhere else on other distros..."""
+        rspamd_redis_db = "/var/lib/rspamd/rspamd.rrd"
+        if not os.path.isfile(rspamd_redis_db):
+            return
+        target_dir = os.path.join(backup_path, "databases")
+        target_file = os.path.join(target_dir, "rspamd.rrd")
+        system.stop_service("redis")
+        utils.copy_file(rspamd_redis_db, target_file)
+        system.restart_service("redis")
+
     def custom_backup(self, path):
         """Backup custom configuration if any."""
         custom_config_dir = os.path.join(self.config_dir, "local.d/")
@@ -140,10 +157,13 @@ class Rspamd(base.Installer):
             for f in os.listdir(custom_config_dir)
             if os.path.isfile(os.path.join(custom_config_dir, f))
         ]
+        backup_locald_path = os.path.join(path, "local.d")
+        if local_files:
+            utils.mkdir_safe(backup_locald_path)
         for file in local_files:
             basename = os.path.basename(file)
-            utils.copy_file(file, os.path.join(path, basename))
-        if len(local_files) != 0:
+            utils.copy_file(file, os.path.join(backup_locald_path, basename))
+        if local_files:
             utils.success("Rspamd custom configuration saved!")
 
     def restore(self):
@@ -157,4 +177,10 @@ class Rspamd(base.Installer):
         ]
         for f in backed_up_files:
             utils.copy_file(f, custom_config_dir)
+        rspamd_redis_db = "/var/lib/rspamd"
+        rspamd_redis_db_backup = os.path.join(self.archive_path, "databases/rspamd.rrd")
+        if os.path.isdir(rspamd_redis_db) and os.path.isfile(rspamd_redis_db_backup):
+            system.stop_service("redis")
+            utils.copy_file(rspamd_redis_db_backup, rspamd_redis_db)
+            system.restart_service("redis")
         utils.success("Custom Rspamd configuration restored.")

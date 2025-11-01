@@ -16,12 +16,13 @@ def create_user(name, home=None):
     else:
         extra_message = "."
         if home:
-            extra_message = (
-                " but please make sure the {} directory exists.".format(
-                    home))
+            extra_message = " but please make sure the {} directory exists.".format(
+                home
+            )
         utils.printcolor(
-            "User {} already exists, skipping creation{}".format(
-                name, extra_message), utils.YELLOW)
+            "User {} already exists, skipping creation{}".format(name, extra_message),
+            utils.YELLOW,
+        )
         return
     cmd = "useradd -m "
     if home:
@@ -62,3 +63,8 @@ def enable_and_start_service(name):
 def restart_service(name):
     """Restart a service."""
     utils.exec_cmd("service {} restart".format(name))
+
+
+def stop_service(name):
+    """Stop a service."""
+    utils.exec_cmd(f"service {name} stop")
