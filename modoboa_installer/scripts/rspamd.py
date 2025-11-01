@@ -16,11 +16,7 @@ class Rspamd(base.Installer):
     """Rspamd installer."""
 
     appname = "rspamd"
-    packages = {
-        "deb": [
-            "rspamd", "redis"
-        ]
-    }
+    packages = {"deb": ["rspamd", "redis"]}
     config_files = [
         "local.d/arc.conf",
         "local.d/dkim_signing.conf",
@@ -39,10 +35,9 @@ class Rspamd(base.Installer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.generate_password_condition = (
-            not self.upgrade or utils.user_input(
-                "Do you want to (re)generate rspamd password ? (y/N)").lower().startswith("y")
-        )
+        self.generate_password_condition = not self.upgrade or utils.user_input(
+            "Do you want to (re)generate rspamd password ? (y/N)"
+        ).lower().startswith("y")
 
     @property
     def config_dir(self):
@@ -54,16 +49,20 @@ class Rspamd(base.Installer):
         if debian_based_dist:
             utils.mkdir_safe(
                 "/etc/apt/keyrings",
-                stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
-                stat.S_IROTH | stat.S_IXOTH,
-                0, 0
+                stat.S_IRWXU
+                | stat.S_IRGRP
+                | stat.S_IXGRP
+                | stat.S_IROTH
+                | stat.S_IXOTH,
+                0,
+                0,
             )
 
             package.backend.add_custom_repository(
                 "rspamd",
                 "http://rspamd.com/apt-stable/",
                 "https://rspamd.com/apt-stable/gpg.key",
-                codename
+                codename,
             )
             package.backend.update()
 
@@ -73,16 +72,18 @@ class Rspamd(base.Installer):
         """Make sure config directory exists."""
         user = self.config.get(self.appname, "user")
         pw = pwd.getpwnam(user)
-        targets = [
-            [self.app_config["dkim_keys_storage_dir"], pw[2], pw[3]]
-        ]
+        targets = [[self.app_config["dkim_keys_storage_dir"], pw[2], pw[3]]]
         for target in targets:
             if not os.path.exists(target[0]):
                 utils.mkdir(
                     target[0],
-                    stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
-                    stat.S_IROTH | stat.S_IXOTH,
-                    target[1], target[2]
+                    stat.S_IRWXU
+                    | stat.S_IRGRP
+                    | stat.S_IXGRP
+                    | stat.S_IROTH
+                    | stat.S_IXOTH,
+                    target[1],
+                    target[2],
                 )
         super().install_config_files()
 
@@ -101,16 +102,23 @@ class Rspamd(base.Installer):
 
     def get_template_context(self):
         _context = super().get_template_context()
-        _context["greylisting_disabled"] = "" if not self.app_config["greylisting"].lower() == "true" else "#"
-        _context["whitelist_auth_enabled"] = "" if self.app_config["whitelist_auth"].lower() == "true" else "#"
+        _context["greylisting_disabled"] = (
+            "" if not self.app_config["greylisting"].lower() == "true" else "#"
+        )
+        _context["whitelist_auth_enabled"] = (
+            "" if self.app_config["whitelist_auth"].lower() == "true" else "#"
+        )
         if self.generate_password_condition:
             code, controller_password = utils.exec_cmd(
-                r"rspamadm pw -p {}".format(self.app_config["password"]))
+                r"rspamadm pw -p {}".format(self.app_config["password"])
+            )
             if code != 0:
-                utils.error("Error setting rspamd password. "
-                            "Please make sure it is not 'q1' or 'q2'."
-                            "Storing the password in plain. See"
-                            "https://rspamd.com/doc/quickstart.html#setting-the-controller-password")
+                utils.error(
+                    "Error setting rspamd password. "
+                    "Please make sure it is not 'q1' or 'q2'."
+                    "Storing the password in plain. See"
+                    "https://rspamd.com/doc/quickstart.html#setting-the-controller-password"
+                )
                 _context["controller_password"] = self.app_config["password"]
             else:
                 controller_password = controller_password.decode().replace("\n", "")
@@ -120,33 +128,31 @@ class Rspamd(base.Installer):
     def post_run(self):
         """Additional tasks."""
         user = self.config.get(self.appname, "user")
-        system.add_user_to_group(
-            self.config.get("modoboa", "user"),
-            user
-        )
+        system.add_user_to_group(self.config.get("modoboa", "user"), user)
         if self.config.getboolean("clamav", "enabled"):
             install("clamav", self.config, self.upgrade, self.archive_path)
 
     def custom_backup(self, path):
         """Backup custom configuration if any."""
-        custom_config_dir = os.path.join(self.config_dir,
-                                         "/local.d/")
-        custom_backup_dir = os.path.join(path, "/rspamd/")
-        local_files = [f for f in os.listdir(custom_config_dir)
-                       if os.path.isfile(custom_config_dir, f)
-                       ]
+        custom_config_dir = os.path.join(self.config_dir, "local.d/")
+        local_files = [
+            os.path.join(custom_config_dir, f)
+            for f in os.listdir(custom_config_dir)
+            if os.path.isfile(os.path.join(custom_config_dir, f))
+        ]
         for file in local_files:
-            utils.copy_file(file, custom_backup_dir)
+            print(file)
+            utils.copy_file(file, path)
         if len(local_files) != 0:
             utils.success("Rspamd custom configuration saved!")
 
     def restore(self):
         """Restore custom config files."""
-        custom_config_dir = os.path.join(self.config_dir,
-                                         "/local.d/")
+        custom_config_dir = os.path.join(self.config_dir, "/local.d/")
         custom_backup_dir = os.path.join(self.archive_path, "/rspamd/")
         backed_up_files = [
-            f for f in os.listdir(custom_backup_dir)
+            f
+            for f in os.listdir(custom_backup_dir)
             if os.path.isfile(custom_backup_dir, f)
         ]
         for f in backed_up_files:
