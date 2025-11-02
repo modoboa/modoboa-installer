@@ -9,6 +9,7 @@ server {
 
     location ~ ^/(mail/config-v1.1.xml|mobileconfig) {
         include uwsgi_params;
+        uwsgi_param UWSGI_SCRIPT instance.wsgi:application;
         uwsgi_pass modoboa;
     }
 }
