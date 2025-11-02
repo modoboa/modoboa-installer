@@ -23,10 +23,9 @@ class Dovecot(base.Installer):
             "dovecot-imapd",
             "dovecot-lmtpd",
             "dovecot-managesieved",
-            "dovecot-sieve"
+            "dovecot-sieve",
         ],
-        "rpm": [
-            "dovecot", "dovecot-pigeonhole"]
+        "rpm": ["dovecot", "dovecot-pigeonhole"],
     }
     per_version_config_files = {
         "2.3": [
@@ -44,9 +43,10 @@ class Dovecot(base.Installer):
             "conf.d/10-master.conf",
             "conf.d/10-ssl.conf",
             "conf.d/10-ssl-keys.try",
+            "conf.d/15-mailboxes.conf",
             "conf.d/20-lmtp.conf",
             "conf.d/auth-oauth2.conf.ext",
-        ]
+        ],
     }
     with_user = True
 
@@ -73,7 +73,7 @@ class Dovecot(base.Installer):
         else:
             files += [
                 f"dovecot-sql-{self.dbengine}.conf.ext=dovecot-sql.conf.ext",
-                f"dovecot-sql-master-{self.dbengine}.conf.ext=dovecot-sql-master.conf.ext"
+                f"dovecot-sql-master-{self.dbengine}.conf.ext=dovecot-sql-master.conf.ext",
             ]
         result = []
         for path in files:
@@ -107,7 +107,9 @@ class Dovecot(base.Installer):
         packages += super().get_packages()
         backports_codename = getattr(self, "backports_codename", None)
         if backports_codename:
-            packages = [f"{package}/{backports_codename}-backports" for package in packages]
+            packages = [
+                f"{package}/{backports_codename}-backports" for package in packages
+            ]
         return packages
 
     def install_packages(self):
@@ -118,7 +120,8 @@ class Dovecot(base.Installer):
             package.backend.enable_backports("bookworm")
             self.backports_codename = "bookworm"
         package.backend.preconfigure(
-            "dovecot-core", "create-ssl-cert", "boolean", "false")
+            "dovecot-core", "create-ssl-cert", "boolean", "false"
+        )
         super().install_packages()
 
     def get_template_context(self):
@@ -127,11 +130,17 @@ class Dovecot(base.Installer):
         pw_mailbox = pwd.getpwnam(self.mailboxes_owner)
         dovecot_package = {"deb": "dovecot-core", "rpm": "dovecot"}
         ssl_protocol_parameter = "ssl_protocols"
-        if package.backend.get_installed_version(dovecot_package[package.backend.FORMAT]) > "2.3":
+        if (
+            package.backend.get_installed_version(
+                dovecot_package[package.backend.FORMAT]
+            )
+            > "2.3"
+        ):
             ssl_protocol_parameter = "ssl_min_protocol"
         ssl_protocols = "!SSLv2 !SSLv3"
-        if package.backend.get_installed_version("openssl").startswith("1.1") \
-                or package.backend.get_installed_version("openssl").startswith("3"):
+        if package.backend.get_installed_version("openssl").startswith(
+            "1.1"
+        ) or package.backend.get_installed_version("openssl").startswith("3"):
             ssl_protocols = "!SSLv3"
         if ssl_protocol_parameter == "ssl_min_protocol":
             ssl_protocols = "TLSv1.2"
@@ -145,31 +154,38 @@ class Dovecot(base.Installer):
             protocols = ""
 
         oauth2_client_id, oauth2_client_secret = utils.create_oauth2_app(
-            "Dovecot", "dovecot", self.config)
+            "Dovecot", "dovecot", self.config
+        )
         hostname = self.config.get("general", "hostname")
         oauth2_introspection_url = (
             f"https://{oauth2_client_id}:{oauth2_client_secret}"
             f"@{hostname}/api/o/introspect/"
         )
 
-        context.update({
-            "db_driver": self.db_driver,
-            "mailboxes_owner_uid": pw_mailbox[2],
-            "mailboxes_owner_gid": pw_mailbox[3],
-            "mailbox_owner": self.mailboxes_owner,
-            "modoboa_user": self.config.get("modoboa", "user"),
-            "modoboa_dbname": self.config.get("modoboa", "dbname"),
-            "modoboa_dbuser": self.config.get("modoboa", "dbuser"),
-            "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
-            "protocols": protocols,
-            "ssl_protocols": ssl_protocols,
-            "ssl_protocol_parameter": ssl_protocol_parameter,
-            "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
-            "not_modoboa_2_2_or_greater": "" if not self.modoboa_2_2_or_greater else "#",
-            "do_move_spam_to_junk": "" if self.app_config["move_spam_to_junk"] else "#",
-            "oauth2_introspection_url": oauth2_introspection_url,
-            "radicale_user": self.config.get("radicale", "user"),
-        })
+        context.update(
+            {
+                "db_driver": self.db_driver,
+                "mailboxes_owner_uid": pw_mailbox[2],
+                "mailboxes_owner_gid": pw_mailbox[3],
+                "mailbox_owner": self.mailboxes_owner,
+                "modoboa_user": self.config.get("modoboa", "user"),
+                "modoboa_dbname": self.config.get("modoboa", "dbname"),
+                "modoboa_dbuser": self.config.get("modoboa", "dbuser"),
+                "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
+                "protocols": protocols,
+                "ssl_protocols": ssl_protocols,
+                "ssl_protocol_parameter": ssl_protocol_parameter,
+                "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
+                "not_modoboa_2_2_or_greater": (
+                    "" if not self.modoboa_2_2_or_greater else "#"
+                ),
+                "do_move_spam_to_junk": (
+                    "" if self.app_config["move_spam_to_junk"] else "#"
+                ),
+                "oauth2_introspection_url": oauth2_introspection_url,
+                "radicale_user": self.config.get("radicale", "user"),
+            }
+        )
         return context
 
     def install_config_files(self):
@@ -177,10 +193,14 @@ class Dovecot(base.Installer):
         if self.app_config["move_spam_to_junk"]:
             utils.mkdir_safe(
                 f"{self.config_dir}/conf.d/custom_after_sieve",
-                stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
-                stat.S_IROTH | stat.S_IXOTH,
-                0, 0
-                )
+                stat.S_IRWXU
+                | stat.S_IRGRP
+                | stat.S_IXGRP
+                | stat.S_IROTH
+                | stat.S_IXOTH,
+                0,
+                0,
+            )
         super().install_config_files()
 
     def post_run(self):
@@ -191,12 +211,16 @@ class Dovecot(base.Installer):
             dbpassword = self.config.get("modoboa", "dbpassword")
             backend = database.get_backend(self.config)
             backend.load_sql_file(
-                dbname, dbuser, dbpassword,
-                self.get_file_path("install_modoboa_postgres_trigger.sql")
+                dbname,
+                dbuser,
+                dbpassword,
+                self.get_file_path("install_modoboa_postgres_trigger.sql"),
             )
             backend.load_sql_file(
-                dbname, dbuser, dbpassword,
-                self.get_file_path("fix_modoboa_postgres_schema.sql")
+                dbname,
+                dbuser,
+                dbpassword,
+                self.get_file_path("fix_modoboa_postgres_schema.sql"),
             )
         for f in glob.glob(f"{self.get_file_path(f'{self.version}/conf.d')}/*"):
             if os.path.isfile(f):
@@ -210,9 +234,11 @@ class Dovecot(base.Installer):
         # See https://github.com/modoboa/modoboa/issues/2157.
         if self.app_config["move_spam_to_junk"]:
             # Compile sieve script
-            sieve_file = f"{self.config_dir}/conf.d/custom_after_sieve/spam-to-junk.sieve"
+            sieve_file = (
+                f"{self.config_dir}/conf.d/custom_after_sieve/spam-to-junk.sieve"
+            )
             utils.exec_cmd(f"/usr/bin/sievec {sieve_file}")
-        system.add_user_to_group(self.mailboxes_owner, 'dovecot')
+        system.add_user_to_group(self.mailboxes_owner, "dovecot")
 
     def restart_daemon(self):
         """Restart daemon process.
@@ -226,7 +252,8 @@ class Dovecot(base.Installer):
         action = "start" if code else "restart"
         utils.exec_cmd(
             "service {} {} > /dev/null 2>&1".format(self.appname, action),
-            capture_output=False)
+            capture_output=False,
+        )
         system.enable_service(self.get_daemon_name())
 
     def backup(self, path):
@@ -234,8 +261,10 @@ class Dovecot(base.Installer):
         home_dir = self.config.get("dovecot", "home_dir")
         utils.printcolor("Backing up mails", utils.MAGENTA)
         if not os.path.exists(home_dir) or os.path.isfile(home_dir):
-            utils.error("Error backing up emails, provided path "
-                        f" ({home_dir}) seems not right...")
+            utils.error(
+                "Error backing up emails, provided path "
+                f" ({home_dir}) seems not right..."
+            )
             return
 
         dst = os.path.join(path, "mails/")
@@ -257,10 +286,13 @@ class Dovecot(base.Installer):
             for dirpath, dirnames, filenames in os.walk(home_dir):
                 shutil.chown(dirpath, self.mailboxes_owner, self.mailboxes_owner)
                 for filename in filenames:
-                    shutil.chown(os.path.join(dirpath, filename),
-                                 self.mailboxes_owner, self.mailboxes_owner)
+                    shutil.chown(
+                        os.path.join(dirpath, filename),
+                        self.mailboxes_owner,
+                        self.mailboxes_owner,
+                    )
         else:
             utils.printcolor(
                 "It seems that emails were not backed up, skipping restoration.",
-                utils.MAGENTA
+                utils.MAGENTA,
             )
