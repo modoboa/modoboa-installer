@@ -26,11 +26,11 @@ PRIMARY_APPS = [
     "uwsgi",
     "nginx",
     "postfix",
-    "dovecot"
+    "dovecot",
 ]
 
 
-def backup_system(config, args):
+def backup_system(config, args, antispam_apps):
     """Launch backup procedure."""
     disclaimers.backup_disclaimer()
     backup_path = None
@@ -52,8 +52,7 @@ def backup_system(config, args):
         user_value = None
         while not user_value or not backup_path:
             utils.printcolor(
-                "Enter backup path (it must be an empty directory)",
-                utils.MAGENTA
+                "Enter backup path (it must be an empty directory)", utils.MAGENTA
             )
             utils.printcolor("CTRL+C to cancel", utils.MAGENTA)
             user_value = utils.user_input("-> ")
@@ -64,7 +63,9 @@ def backup_system(config, args):
     # Backup configuration file
     utils.copy_file(args.configfile, backup_path)
     # Backup applications
-    for app in PRIMARY_APPS:
+    for app in PRIMARY_APPS + antispam_apps:
+        if config.has_option(app, "enabled") and not config.getboolean(app, "enabled"):
+            continue
         if app == "dovecot" and args.no_mail:
             utils.printcolor("Skipping mail backup", utils.BLUE)
             continue
@@ -72,65 +73,97 @@ def backup_system(config, args):
 
 
 def config_file_update_complete(backup_location):
-    utils.printcolor("Update complete. It seems successful.",
-                     utils.BLUE)
+    utils.printcolor("Update complete. It seems successful.", utils.BLUE)
     if backup_location is not None:
-        utils.printcolor("You will find your old config file "
-                         f"here: {backup_location}",
-                         utils.BLUE)
+        utils.printcolor(
+            "You will find your old config file " f"here: {backup_location}", utils.BLUE
+        )
 
 
 def parser_setup(input_args):
     parser = argparse.ArgumentParser()
-    versions = (
-        ["latest"] + list(compatibility_matrix.COMPATIBILITY_MATRIX.keys())
-        )
-    parser.add_argument("--debug", action="store_true", default=False,
-                        help="Enable debug output")
-    parser.add_argument("--force", action="store_true", default=False,
-                        help="Force installation")
-    parser.add_argument("--configfile", default="installer.cfg",
-                        help="Configuration file to use")
+    versions = ["latest"] + list(compatibility_matrix.COMPATIBILITY_MATRIX.keys())
     parser.add_argument(
-        "--version", default="latest", choices=versions,
-        help="Modoboa version to install")
+        "--debug", action="store_true", default=False, help="Enable debug output"
+    )
     parser.add_argument(
-        "--stop-after-configfile-check", action="store_true", default=False,
-        help="Check configuration, generate it if needed and exit")
+        "--force", action="store_true", default=False, help="Force installation"
+    )
     parser.add_argument(
-        "--interactive", action="store_true", default=False,
-        help="Generate configuration file with user interaction")
+        "--configfile", default="installer.cfg", help="Configuration file to use"
+    )
     parser.add_argument(
-        "--upgrade", action="store_true", default=False,
-        help="Run the installer in upgrade mode")
+        "--version",
+        default="latest",
+        choices=versions,
+        help="Modoboa version to install",
+    )
     parser.add_argument(
-        "--beta", action="store_true", default=False,
-        help="Install latest beta release of Modoboa instead of the stable one")
+        "--stop-after-configfile-check",
+        action="store_true",
+        default=False,
+        help="Check configuration, generate it if needed and exit",
+    )
     parser.add_argument(
-        "--backup-path", type=str, metavar="path",
-        help="To use with --silent-backup, you must provide a valid path")
+        "--interactive",
+        action="store_true",
+        default=False,
+        help="Generate configuration file with user interaction",
+    )
     parser.add_argument(
-        "--backup", action="store_true", default=False,
-        help="Backing up interactively previously installed instance"
-        )
+        "--upgrade",
+        action="store_true",
+        default=False,
+        help="Run the installer in upgrade mode",
+    )
     parser.add_argument(
-        "--silent-backup", action="store_true", default=False,
+        "--beta",
+        action="store_true",
+        default=False,
+        help="Install latest beta release of Modoboa instead of the stable one",
+    )
+    parser.add_argument(
+        "--backup-path",
+        type=str,
+        metavar="path",
+        help="To use with --silent-backup, you must provide a valid path",
+    )
+    parser.add_argument(
+        "--backup",
+        action="store_true",
+        default=False,
+        help="Backing up interactively previously installed instance",
+    )
+    parser.add_argument(
+        "--silent-backup",
+        action="store_true",
+        default=False,
         help="For script usage, do not require user interaction "
         "backup will be saved at ./modoboa_backup/Backup_M_Y_d_H_M "
-        "if --backup-path is not provided")
+        "if --backup-path is not provided",
+    )
     parser.add_argument(
-        "--no-mail", action="store_true", default=False,
-        help="Disable mail backup (save space)")
+        "--no-mail",
+        action="store_true",
+        default=False,
+        help="Disable mail backup (save space)",
+    )
     parser.add_argument(
-        "--restore", type=str, metavar="path",
+        "--restore",
+        type=str,
+        metavar="path",
         help="Restore a previously backup up modoboa instance on a NEW machine. "
-        "You MUST provide backup directory"
-        )
+        "You MUST provide backup directory",
+    )
     parser.add_argument(
-        "--skip-checks", action="store_true", default=False,
-        help="Skip the checks the installer performs initially")
-    parser.add_argument("domain", type=str,
-                        help="The main domain of your future mail server")
+        "--skip-checks",
+        action="store_true",
+        default=False,
+        help="Skip the checks the installer performs initially",
+    )
+    parser.add_argument(
+        "domain", type=str, help="The main domain of your future mail server"
+    )
     return parser.parse_args(input_args)
 
 
@@ -147,9 +180,7 @@ def main(input_args):
         is_restoring = True
         args.configfile = os.path.join(args.restore, args.configfile)
         if not os.path.exists(args.configfile):
-            utils.error(
-                "Installer configuration file not found in backup!"
-            )
+            utils.error("Installer configuration file not found in backup!")
             sys.exit(1)
 
     utils.success("Welcome to Modoboa installer!\n")
@@ -161,26 +192,34 @@ def main(input_args):
         utils.success("Checks complete\n")
 
     is_config_file_available, outdate_config = utils.check_config_file(
-        args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
+        args.configfile, args.interactive, args.upgrade, args.backup, is_restoring
+    )
 
     if not is_config_file_available and (
-            args.upgrade or args.backup or args.silent_backup):
+        args.upgrade or args.backup or args.silent_backup
+    ):
         utils.error("No config file found.")
         return
 
     # Check if config is outdated and ask user if it needs to be updated
     if is_config_file_available and outdate_config:
-        answer = utils.user_input("It seems that your config file is outdated. "
-                                  "Would you like to update it? (Y/n) ")
+        answer = utils.user_input(
+            "It seems that your config file is outdated. "
+            "Would you like to update it? (Y/n) "
+        )
         if not answer or answer.lower().startswith("y"):
             config_file_update_complete(utils.update_config(args.configfile))
             if not args.stop_after_configfile_check:
-                answer = utils.user_input("Would you like to stop to review the updated config? (Y/n)")
+                answer = utils.user_input(
+                    "Would you like to stop to review the updated config? (Y/n)"
+                )
                 if not answer or answer.lower().startswith("y"):
                     return
         else:
-            utils.error("You might encounter unexpected errors ! "
-                        "Make sure to update your config before opening an issue!")
+            utils.error(
+                "You might encounter unexpected errors ! "
+                "Make sure to update your config before opening an issue!"
+            )
 
     if args.stop_after_configfile_check:
         return
@@ -201,7 +240,7 @@ def main(input_args):
         antispam_apps = ["rspamd"]
 
     if args.backup or args.silent_backup:
-        backup_system(config, args)
+        backup_system(config, args, antispam_apps)
         return
 
     # Display disclaimer python 3 linux distribution
@@ -216,11 +255,20 @@ def main(input_args):
     # Show concerned components
     components = []
     for section in config.sections():
-        if section in ["general", "antispam", "database", "mysql", "postgres",
-                       "certificate", "letsencrypt", "backup"]:
+        if section in [
+            "general",
+            "antispam",
+            "database",
+            "mysql",
+            "postgres",
+            "certificate",
+            "letsencrypt",
+            "backup",
+        ]:
             continue
-        if (config.has_option(section, "enabled") and
-                not config.getboolean(section, "enabled")):
+        if config.has_option(section, "enabled") and not config.getboolean(
+            section, "enabled"
+        ):
             continue
         incompatible_app_detected = not utils.check_app_compatibility(section, config)
         if incompatible_app_detected:
@@ -233,8 +281,9 @@ def main(input_args):
             return
     config.set("general", "force", str(args.force))
     utils.printcolor(
-        "The process can be long, feel free to take a coffee "
-        "and come back later ;)", utils.BLUE)
+        "The process can be long, feel free to take a coffee " "and come back later ;)",
+        utils.BLUE,
+    )
     utils.success("Starting...")
     package.backend.prepare_system()
     package.backend.install_many(["sudo", "wget"])
@@ -268,13 +317,8 @@ def main(input_args):
         "You like the project and want it to be sustainable?\n"
         "Then don't wait anymore and go sponsor it here:\n"
     )
-    utils.printcolor(
-        "https://github.com/sponsors/modoboa\n",
-        utils.YELLOW
-    )
-    utils.success(
-        "Thank you for your help :-)\n"
-    )
+    utils.printcolor("https://github.com/sponsors/modoboa\n", utils.YELLOW)
+    utils.success("Thank you for your help :-)\n")
 
 
 if __name__ == "__main__":

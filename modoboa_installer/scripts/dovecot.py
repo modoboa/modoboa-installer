@@ -270,7 +270,7 @@ class Dovecot(base.Installer):
         dst = os.path.join(path, "mails/")
         if os.path.exists(dst):
             shutil.rmtree(dst)
-        shutil.copytree(home_dir, dst)
+        shutil.copytree(home_dir, dst, dirs_exist_ok=True)
         utils.success("Mail backup complete!")
 
     def restore(self):

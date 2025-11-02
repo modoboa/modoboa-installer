@@ -31,12 +31,12 @@ class Installer:
             self.app_config = dict(self.config.items(self.appname))
         self.dbengine = self.config.get("database", "engine")
         # Used to install system packages
-        self.db_driver = (
-            "pgsql" if self.dbengine == "postgres" else self.dbengine)
+        self.db_driver = "pgsql" if self.dbengine == "postgres" else self.dbengine
         self.backend = database.get_backend(self.config)
         self.dbhost = self.config.get("database", "host")
         self.dbport = self.config.get(
-            "database", "port", fallback=self.backend.default_port)
+            "database", "port", fallback=self.backend.default_port
+        )
         self._config_dir = None
         if not self.with_db:
             return
@@ -50,19 +50,19 @@ class Installer:
         modoboa_version = python.get_package_version(
             "modoboa",
             self.config.get("modoboa", "venv_path"),
-            sudo_user=self.config.get("modoboa", "user")
-            )
+            sudo_user=self.config.get("modoboa", "user"),
+        )
         condition = (
-            (int(modoboa_version[0]) == 2 and int(modoboa_version[1]) >= 2) or
-            int(modoboa_version[0]) > 2
-            )
+            int(modoboa_version[0]) == 2 and int(modoboa_version[1]) >= 2
+        ) or int(modoboa_version[0]) > 2
         return condition
 
     @property
     def config_dir(self):
         """Return main configuration directory."""
         if self._config_dir is None and self.config.has_option(
-                self.appname, "config_dir"):
+            self.appname, "config_dir"
+        ):
             self._config_dir = self.config.get(self.appname, "config_dir")
         return self._config_dir
 
@@ -73,11 +73,11 @@ class Installer:
     def get_sql_schema_from_backup(self):
         """Retrieve a dump path from a previous backup."""
         utils.printcolor(
-            f"Trying to restore {self.appname} database from backup.",
-            utils.MAGENTA
+            f"Trying to restore {self.appname} database from backup.", utils.MAGENTA
         )
         database_backup_path = os.path.join(
-            self.archive_path, f"databases/{self.appname}.sql")
+            self.archive_path, f"databases/{self.appname}.sql"
+        )
         if os.path.isfile(database_backup_path):
             utils.success(f"SQL dump found in backup for {self.appname}!")
             return database_backup_path
@@ -86,8 +86,7 @@ class Installer:
     def get_file_path(self, fname):
         """Return the absolute path of this file."""
         return os.path.abspath(
-            os.path.join(
-                os.path.dirname(__file__), "files", self.appname, fname)
+            os.path.join(os.path.dirname(__file__), "files", self.appname, fname)
         )
 
     def setup_database(self):
@@ -102,8 +101,7 @@ class Installer:
         if not schema:
             schema = self.get_sql_schema_path()
         if schema:
-            self.backend.load_sql_file(
-                self.dbname, self.dbuser, self.dbpasswd, schema)
+            self.backend.load_sql_file(self.dbname, self.dbuser, self.dbpasswd, schema)
 
     def setup_user(self):
         """Setup a system user."""
@@ -119,8 +117,7 @@ class Installer:
     def get_template_context(self):
         """Return context used for template rendering."""
         context = {
-            "dbengine": (
-                "Pg" if self.dbengine == "postgres" else self.dbengine),
+            "dbengine": ("Pg" if self.dbengine == "postgres" else self.dbengine),
             "dbhost": self.dbhost,
             "dbport": self.dbport,
         }
@@ -172,9 +169,11 @@ class Installer:
             utils.copy_from_template(src, dst, context)
 
     def backup(self, path):
+        self.base_backup_path = path
         if self.with_db:
             self._dump_database(path)
-        custom_backup_path = os.path.join(path, "custom")
+        custom_backup_path = os.path.join(path, "custom", self.appname)
+        utils.mkdir_safe(custom_backup_path)
         self.custom_backup(custom_backup_path)
 
     def custom_backup(self, path):
@@ -213,8 +212,7 @@ class Installer:
         """Create a new database dump for this app."""
         target_dir = os.path.join(backup_path, "databases")
         target_file = os.path.join(target_dir, f"{self.appname}.sql")
-        self.backend.dump_database(
-            self.dbname, self.dbuser, self.dbpasswd, target_file)
+        self.backend.dump_database(self.dbname, self.dbuser, self.dbpasswd, target_file)
 
     def pre_run(self):
         """Tasks to execute before the installer starts."""

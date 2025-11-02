@@ -18,10 +18,7 @@ class Radicale(base.Installer):
     appname = "radicale"
     config_files = ["config"]
     no_daemon = True
-    packages = {
-        "deb": ["supervisor"],
-        "rpm": ["supervisor"]
-    }
+    packages = {"deb": ["supervisor"], "rpm": ["supervisor"]}
     with_user = True
 
     def __init__(self, *args, **kwargs):
@@ -32,24 +29,25 @@ class Radicale(base.Installer):
     def _setup_venv(self):
         """Prepare a dedicated virtualenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
-        packages = [
-            "Radicale", "pytz", "radicale-modoboa-auth-oauth2"
-        ]
+        packages = ["Radicale", "pytz", "radicale-modoboa-auth-oauth2"]
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
 
     def get_template_context(self):
         """Additional variables."""
         context = super().get_template_context()
         oauth2_client_id, oauth2_client_secret = utils.create_oauth2_app(
-            "Radicale", "radicale", self.config)
+            "Radicale", "radicale", self.config
+        )
         hostname = self.config.get("general", "hostname")
         oauth2_introspection_url = (
             f"https://{oauth2_client_id}:{oauth2_client_secret}"
             f"@{hostname}/api/o/introspect/"
         )
-        context.update({
-            "oauth2_introspection_url": oauth2_introspection_url,
-        })
+        context.update(
+            {
+                "oauth2_introspection_url": oauth2_introspection_url,
+            }
+        )
         return context
 
     def get_config_files(self):
@@ -67,16 +65,19 @@ class Radicale(base.Installer):
         if not os.path.exists(self.config_dir):
             utils.mkdir(
                 self.config_dir,
-                stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |
-                stat.S_IROTH | stat.S_IXOTH,
-                0, 0
+                stat.S_IRWXU
+                | stat.S_IRGRP
+                | stat.S_IXGRP
+                | stat.S_IROTH
+                | stat.S_IXOTH,
+                0,
+                0,
             )
         super().install_config_files()
 
     def restore(self):
         """Restore collections."""
-        radicale_backup = os.path.join(
-            self.archive_path, "custom/radicale")
+        radicale_backup = os.path.join(self.archive_path, "custom/radicale")
         if os.path.isdir(radicale_backup):
             restore_target = os.path.join(self.home_dir, "collections")
             if os.path.isdir(restore_target):
@@ -87,18 +88,17 @@ class Radicale(base.Installer):
     def post_run(self):
         """Additional tasks."""
         self._setup_venv()
-        daemon_name = (
-            "supervisor" if package.backend.FORMAT == "deb" else "supervisord"
-        )
+        daemon_name = "supervisor" if package.backend.FORMAT == "deb" else "supervisord"
         system.enable_service(daemon_name)
         utils.exec_cmd("service {} stop".format(daemon_name))
         utils.exec_cmd("service {} start".format(daemon_name))
 
     def custom_backup(self, path):
         """Backup collections."""
-        radicale_backup = os.path.join(self.config.get(
-            "radicale", "home_dir", fallback="/srv/radicale"), "collections")
+        radicale_backup = os.path.join(
+            self.config.get("radicale", "home_dir", fallback="/srv/radicale"),
+            "collections",
+        )
         if os.path.isdir(radicale_backup):
-            shutil.copytree(radicale_backup, os.path.join(
-                path, "radicale"))
+            shutil.copytree(radicale_backup, path, dirs_exist_ok=True)
             utils.printcolor("Radicale files saved", utils.GREEN)
