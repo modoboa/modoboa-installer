@@ -1,5 +1,6 @@
 import random
 import string
+import uuid
 
 from .constants import DEFAULT_BACKUP_DIRECTORY
 
@@ -9,6 +10,10 @@ def make_password(length=16):
     return "".join(
         random.SystemRandom().choice(
             string.ascii_letters + string.digits) for _ in range(length))
+
+
+def make_client_secret():
+    return str(uuid.uuid4())
 
 
 # Validators should return a tuple bool, error message
@@ -351,6 +356,10 @@ ConfigDictTemplate = [
                 "option": "move_spam_to_junk",
                 "default": "true",
             },
+            {
+                "option": "oauth2_client_secret",
+                "default": make_client_secret
+            },
         ]
     },
     {
@@ -480,7 +489,11 @@ ConfigDictTemplate = [
             {
                 "option": "venv_path",
                 "default": "%(home_dir)s/env",
-            }
+            },
+            {
+                "option": "oauth2_client_secret",
+                "default": make_client_secret
+            },
         ]
     },
     {

@@ -41,7 +41,11 @@ class Radicale(base.Installer):
         """Additional variables."""
         context = super().get_template_context()
         oauth2_client_id, oauth2_client_secret = utils.create_oauth2_app(
-            "Radicale", "radicale", self.config)
+            "Radicale",
+            "radicale",
+            self.config.get("radicale", "oauth2_client_secret"),
+            self.config
+        )
         hostname = self.config.get("general", "hostname")
         oauth2_introspection_url = (
             f"https://{oauth2_client_id}:{oauth2_client_secret}"

@@ -154,7 +154,10 @@ class Dovecot(base.Installer):
             protocols = ""
 
         oauth2_client_id, oauth2_client_secret = utils.create_oauth2_app(
-            "Dovecot", "dovecot", self.config
+            "Dovecot",
+            "dovecot",
+            self.config.get("dovecot", "oauth2_client_secret"),
+            self.config
         )
         hostname = self.config.get("general", "hostname")
         oauth2_introspection_url = (
