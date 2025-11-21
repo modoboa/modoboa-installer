@@ -44,7 +44,7 @@ server {
 %{rspamd_enabled}        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 %{rspamd_enabled}    }
 
-    location ~ ^/(api|accounts) {
+    location ~ ^/(api|accounts|autodiscover) {
         include uwsgi_params;
         uwsgi_param UWSGI_SCRIPT instance.wsgi:application;
         uwsgi_pass modoboa;
