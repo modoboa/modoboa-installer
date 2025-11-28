@@ -17,7 +17,7 @@ class Amavis(base.Installer):
     packages = {
         "deb": [
             "libdbi-perl", "amavisd-new", "arc", "arj", "cabextract",
-            "liblz4-tool", "lrzip", "lzop", "p7zip-full", "rpm2cpio",
+            "lz4", "lrzip", "lzop", "p7zip-full", "rpm2cpio",
             "unrar-free",
         ],
         "rpm": [
