@@ -118,9 +118,9 @@ ConfigDictTemplate = [
             },
             {
                 "option": "password",
-                "default": "",
+                "default": make_password,
                 "customizable": True,
-                "question": "Please enter postgres password",
+                "question": "Please enter postgres root password",
             },
         ]
     },
