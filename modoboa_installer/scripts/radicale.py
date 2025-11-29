@@ -82,7 +82,9 @@ class Radicale(base.Installer):
         radicale_backup = os.path.join(
             self.archive_path, "custom/radicale")
         if os.path.isdir(radicale_backup):
-            restore_target = os.path.join(self.home_dir, "collections")
+            # Use storage_dir for data, fallback to home_dir for compatibility
+            storage_dir = self.config.get("radicale", "storage_dir", fallback=self.home_dir)
+            restore_target = os.path.join(storage_dir, "collections")
             if os.path.isdir(restore_target):
                 shutil.rmtree(restore_target)
             shutil.copytree(radicale_backup, restore_target)
