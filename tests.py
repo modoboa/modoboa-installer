@@ -42,6 +42,10 @@ class ConfigFileTestCase(unittest.TestCase):
             "--configfile", self.cfgfile,
             "example.test"])
         self.assertTrue(os.path.exists(self.cfgfile))
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        self.assertEqual(config.get("general", "domain"), "example.test")
+        self.assertEqual(config.get("general", "hostname"), "mail.example.test")
 
     @patch("modoboa_installer.utils.user_input")
     def test_interactive_mode(self, mock_user_input):
