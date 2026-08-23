@@ -161,7 +161,8 @@ def main(input_args):
         utils.success("Checks complete\n")
 
     is_config_file_available, outdate_config = utils.check_config_file(
-        args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
+        args.configfile, args.interactive, args.upgrade, args.backup,
+        is_restoring, domain=args.domain)
 
     if not is_config_file_available and (
             args.upgrade or args.backup or args.silent_backup):
@@ -183,6 +184,14 @@ def main(input_args):
                         "Make sure to update your config before opening an issue!")
 
     if args.stop_after_configfile_check:
+        config = configparser.ConfigParser()
+        with open(args.configfile) as fp:
+            config.read_file(fp)
+        if not config.has_section("general"):
+            config.add_section("general")
+        config.set("general", "domain", args.domain)
+        with open(args.configfile, "w") as fp:
+            config.write(fp)
         return
 
     config = configparser.ConfigParser()
