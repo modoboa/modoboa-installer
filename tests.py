@@ -43,6 +43,34 @@ class ConfigFileTestCase(unittest.TestCase):
             "example.test"])
         self.assertTrue(os.path.exists(self.cfgfile))
 
+    def test_razor_follows_amavis(self):
+        """Razor is enabled with Amavis, which configures SpamAssassin to use it."""
+        with open(os.devnull, "w") as fp:
+            sys.stdout = fp
+            run.main([
+                "--stop-after-configfile-check",
+                "--configfile", self.cfgfile,
+                "example.test"])
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        self.assertEqual(config.get("antispam", "type"), "amavis")
+        self.assertTrue(config.getboolean("spamassassin", "enabled"))
+        self.assertTrue(config.getboolean("razor", "enabled"))
+
+    def test_razor_disabled_with_rspamd(self):
+        """Razor stays disabled when Rspamd replaces Amavis/SpamAssassin."""
+        from modoboa_installer import config_dict_template, utils
+        config = configparser.ConfigParser()
+        config.add_section("antispam")
+        config.set("antispam", "enabled", "true")
+        config.set("antispam", "type", "rspamd")
+        razor = next(
+            section for section in config_dict_template.ConfigDictTemplate
+            if section["name"] == "razor")
+        entry = next(
+            value for value in razor["values"] if value["option"] == "enabled")
+        self.assertEqual(utils.get_entry_value(entry, False, config), "false")
+
     @patch("modoboa_installer.utils.user_input")
     def test_interactive_mode(self, mock_user_input):
         """Check interactive mode."""
@@ -126,7 +154,7 @@ class ConfigFileTestCase(unittest.TestCase):
             "example.test"])
         self.assertTrue(os.path.exists(self.cfgfile))
         self.assertIn(
-            "fail2ban modoboa amavis clamav dovecot nginx "
+            "fail2ban modoboa amavis clamav dovecot nginx razor "
             "postfix postwhite spamassassin uwsgi radicale opendkim",
             out.getvalue()
         )
