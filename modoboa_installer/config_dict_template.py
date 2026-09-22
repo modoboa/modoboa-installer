@@ -380,7 +380,9 @@ ConfigDictTemplate = [
         "values": [
             {
                 "option": "enabled",
-                "default": "false",
+                # SpamAssassin's local.cf loads the Razor2 plugin, so Razor has
+                # to be installed whenever SpamAssassin is (i.e. with Amavis).
+                "default": ["antispam.enabled=true", "antispam.type=amavis"],
             },
             {
                 "option": "config_dir",
