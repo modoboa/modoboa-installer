@@ -10,6 +10,9 @@ from .. import utils
 
 from . import base
 
+# Instance serving the OAuth2 introspection endpoint only
+INTROSPECTION_INSTANCE = "modoboa_introspect"
+
 
 class Uwsgi(base.Installer):
     """uWSGI installer."""
@@ -57,20 +60,31 @@ class Uwsgi(base.Installer):
             return
         os.symlink(dst, link)
 
-    def _setup_config(self, app):
-        """Common setup code."""
+    def _setup_config(self, app, name=None):
+        """Common setup code.
+
+        :param app: the application section to read settings from
+        :param name: the instance name, when an application runs more
+                     than one instance (defaults to ``app``)
+        """
+        name = name or app
         context = self.get_template_context(app)
-        src = self.get_file_path("{}.ini.tpl".format(app))
+        context["uwsgi_socket_path"] = self.get_socket_path(name)
+        src = self.get_file_path("{}.ini.tpl".format(name))
         dst = os.path.join(
-            self.get_config_dir(), "{}_instance.ini".format(app))
+            self.get_config_dir(), "{}_instance.ini".format(name))
         utils.copy_from_template(src, dst, context)
         return dst
 
     def _setup_modoboa_config(self):
         """Custom modoboa configuration."""
         dst = self._setup_config("modoboa")
+        # The OAuth2 introspection endpoint, called by Dovecot while
+        # the main instance waits for it, gets its own workers
+        introspection_dst = self._setup_config("modoboa", INTROSPECTION_INSTANCE)
         if package.backend.FORMAT == "deb":
             self._enable_config_debian(dst)
+            self._enable_config_debian(introspection_dst)
         else:
             system.add_user_to_group(
                 "uwsgi", self.config.get("modoboa", "user"))

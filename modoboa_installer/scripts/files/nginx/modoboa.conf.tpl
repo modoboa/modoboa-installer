@@ -2,6 +2,10 @@ upstream modoboa {
     server unix:%uwsgi_socket_path fail_timeout=0;
 }
 
+upstream modoboa_introspect {
+    server unix:%uwsgi_introspect_socket_path fail_timeout=0;
+}
+
 server {
     listen 80;
     listen [::]:80;
@@ -43,6 +47,15 @@ server {
 %{rspamd_enabled}        proxy_set_header Host      $host;
 %{rspamd_enabled}        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 %{rspamd_enabled}    }
+
+    # Called by Dovecot to validate OAuth2 tokens while a request of the
+    # main instance waits for it: served by dedicated workers.
+    location = /api/o/introspect/ {
+        include uwsgi_params;
+        uwsgi_param UWSGI_SCRIPT instance.wsgi:application;
+        uwsgi_pass modoboa_introspect;
+        uwsgi_read_timeout 15s;
+    }
 
     location ~ ^/(api|accounts|autodiscover|reset) {
         include uwsgi_params;

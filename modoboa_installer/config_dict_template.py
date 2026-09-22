@@ -467,6 +467,10 @@ ConfigDictTemplate = [
                 "option": "nb_processes",
                 "default": "4",
             },
+            {
+                "option": "nb_introspection_processes",
+                "default": "2",
+            },
         ]
     },
     {
