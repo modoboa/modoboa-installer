@@ -7,7 +7,7 @@ from .. import system
 from .. import utils
 
 from . import base
-from .uwsgi import Uwsgi
+from .uwsgi import INTROSPECTION_INSTANCE, Uwsgi
 
 
 class Nginx(base.Installer):
@@ -22,12 +22,14 @@ class Nginx(base.Installer):
     def get_template_context(self):
         """Additionnal variables."""
         context = super().get_template_context()
+        uwsgi = Uwsgi(self.config, self.upgrade, self.restore)
         context.update({
             "app_instance_path": (
                 self.config.get("modoboa", "instance_path")),
-            "uwsgi_socket_path": (
-                Uwsgi(self.config, self.upgrade, self.restore).get_socket_path("modoboa")
-            )
+            "uwsgi_socket_path": uwsgi.get_socket_path("modoboa"),
+            "uwsgi_introspect_socket_path": (
+                uwsgi.get_socket_path(INTROSPECTION_INSTANCE)
+            ),
         })
         return context
 

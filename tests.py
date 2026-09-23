@@ -203,5 +203,78 @@ class ConfigFileTestCase(unittest.TestCase):
         )
 
 
+class IntrospectionInstanceTestCase(unittest.TestCase):
+    """The OAuth2 introspection endpoint gets its own uWSGI instance."""
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp()
+        cfgfile = os.path.join(self.workdir, "installer.cfg")
+        with open(os.devnull, "w") as fp:
+            sys.stdout = fp
+            run.main([
+                "--stop-after-configfile-check",
+                "--configfile", cfgfile,
+                "example.test"])
+        self.config = configparser.ConfigParser()
+        self.config.read(cfgfile)
+        self.config.set("general", "domain", "example.test")
+        self.config.set("uwsgi", "config_dir", self.workdir)
+        for name in ["apps-available", "apps-enabled"]:
+            os.mkdir(os.path.join(self.workdir, name))
+        patcher = patch("modoboa_installer.package.backend")
+        patcher.start().FORMAT = "deb"
+        self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        shutil.rmtree(self.workdir)
+
+    def test_uwsgi_instances(self):
+        from modoboa_installer.scripts.uwsgi import Uwsgi
+
+        Uwsgi(self.config, False, None)._setup_modoboa_config()
+
+        for name in ["modoboa_instance", "modoboa_introspect_instance"]:
+            self.assertTrue(os.path.islink(os.path.join(
+                self.workdir, "apps-enabled", "{}.ini".format(name))))
+        with open(os.path.join(
+                self.workdir, "apps-available",
+                "modoboa_introspect_instance.ini")) as fp:
+            content = fp.read()
+        self.assertIn("processes = 2\n", content)
+        self.assertIn(
+            "socket = /run/uwsgi/app/modoboa_introspect_instance/socket\n",
+            content)
+        with open(os.path.join(
+                self.workdir, "apps-available", "modoboa_instance.ini")) as fp:
+            content = fp.read()
+        self.assertIn("processes = 4\n", content)
+        self.assertIn(
+            "socket = /run/uwsgi/app/modoboa_instance/socket\n", content)
+
+    def test_nginx_routes_introspection(self):
+        from modoboa_installer import utils
+        from modoboa_installer.scripts.nginx import Nginx
+
+        nginx = Nginx(self.config, False, None)
+        context = nginx.get_template_context()
+        context.update({
+            "hostname": "mail.example.test",
+            "extra_config": "",
+            "tls_cert_file": "cert.pem",
+            "tls_key_file": "key.pem",
+        })
+        with open(nginx.get_file_path("modoboa.conf.tpl")) as fp:
+            content = utils.ConfigFileTemplate(fp.read()).substitute(context)
+        self.assertIn(
+            "server unix:/run/uwsgi/app/modoboa_introspect_instance/socket",
+            content)
+        self.assertIn(
+            "location = /api/o/introspect/ {\n"
+            "        include uwsgi_params;\n"
+            "        uwsgi_param UWSGI_SCRIPT instance.wsgi:application;\n"
+            "        uwsgi_pass modoboa_introspect;",
+            content)
+
+
 if __name__ == "__main__":
     unittest.main()
