@@ -87,6 +87,10 @@ type = radicale_modoboa_auth_oauth2
 
 oauth2_introspection_endpoint = %{oauth2_introspection_url}
 
+# Cache successful logins to avoid one introspection call per request
+cache_logins = True
+cache_successful_logins_expiry = 60
+
 
 [rights]
 
