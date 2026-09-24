@@ -183,7 +183,8 @@ def check_config_file(dest,
                       interactive=False,
                       upgrade=False,
                       backup=False,
-                      restore=False):
+                      restore=False,
+                      domain=None):
     """Create a new installer config file if needed."""
     is_present = True
     if os.path.exists(dest):
@@ -207,7 +208,7 @@ def check_config_file(dest,
     printcolor(
         "Configuration file {} not found, creating new one."
         .format(dest), YELLOW)
-    gen_config(dest, interactive)
+    gen_config(dest, interactive, domain=domain)
     return is_present, None
 
 
@@ -354,7 +355,7 @@ def get_entry_value(entry: dict, interactive: bool, config: configparser.ConfigP
     return user_value if user_value else default_value
 
 
-def load_config_template(interactive):
+def load_config_template(interactive, domain=None):
     """Instantiate a configParser object with the predefined template."""
     tpl_dict = config_dict_template.ConfigDictTemplate
     config = configparser.ConfigParser()
@@ -366,6 +367,8 @@ def load_config_template(interactive):
             interactive_section = condition and interactive
 
         config.add_section(section["name"])
+        if section["name"] == "general" and domain is not None:
+            config.set("general", "domain", domain)
         for config_entry in section["values"]:
             if config_entry.get("if") is not None:
                 interactive_section = (interactive_section and
@@ -450,9 +453,9 @@ def update_config(path, apply_update=True):
         return update
 
 
-def gen_config(dest, interactive=False):
+def gen_config(dest, interactive=False, domain=None):
     """Create config file from dict template"""
-    config = load_config_template(interactive)
+    config = load_config_template(interactive, domain=domain)
 
     with open(dest, "w") as configfile:
         config.write(configfile)
