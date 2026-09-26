@@ -96,10 +96,13 @@ cache_successful_logins_expiry = 60
 
 # Rights backend
 # Value: none | authenticated | owner_only | owner_write | from_file
-type = from_file
+type = radicale_modoboa_rights
 
-# File for rights management from_file
-file = %{config_dir}/rights
+# Rights are fetched from the Modoboa API with the credentials of the
+# OAuth2 application used for authentication
+modoboa_rights_endpoint = %{modoboa_rights_endpoint}
+modoboa_client_id = %{oauth2_client_id}
+modoboa_client_secret = %{oauth2_client_secret}
 
 
 [storage]
