@@ -33,7 +33,7 @@ class Radicale(base.Installer):
         """Prepare a dedicated virtualenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
         packages = [
-            "Radicale", "pytz", "\"radicale-modoboa-auth-oauth2>=0.5.0\"",
+            "Radicale", "pytz", "\"radicale-modoboa-auth-oauth2>=0.6.0\"",
             "radicale-modoboa-rights"
         ]
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
@@ -48,12 +48,9 @@ class Radicale(base.Installer):
             self.config
         )
         hostname = self.config.get("general", "hostname")
-        oauth2_introspection_url = (
-            f"https://{oauth2_client_id}:{oauth2_client_secret}"
-            f"@{hostname}/api/o/introspect/"
-        )
         context.update({
-            "oauth2_introspection_url": oauth2_introspection_url,
+            "oauth2_introspection_url": (
+                f"https://{hostname}/api/o/introspect/"),
             "oauth2_client_id": oauth2_client_id,
             "oauth2_client_secret": oauth2_client_secret,
             "modoboa_rights_endpoint": (
