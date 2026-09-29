@@ -87,7 +87,7 @@ service imap {
 service pop3 {
   # Max. number of POP3 processes (connections)
   #process_limit = 1024
-  executable = imap postlogin
+  executable = pop3 postlogin
 }
 
 service submission {
