@@ -33,8 +33,8 @@ class Radicale(base.Installer):
         """Prepare a dedicated virtualenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
         packages = [
-            "Radicale", "pytz", "\"radicale-modoboa-auth-oauth2>=0.6.0\"",
-            "radicale-modoboa-rights"
+            "Radicale", "pytz", "\"radicale-modoboa-auth-oauth2>=1.0.0\"",
+            "\"radicale-modoboa-rights>=1.0.0\""
         ]
         python.install_packages(packages, self.venv_path, sudo_user=self.user)
 
