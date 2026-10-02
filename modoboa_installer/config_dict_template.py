@@ -272,6 +272,10 @@ ConfigDictTemplate = [
             {
                 "option": "whitelist_auth_weigth",
                 "default": "-5"
+            },
+            {
+                "option": "learn_from_imap",
+                "default": "true"
             }
         ],
     },
