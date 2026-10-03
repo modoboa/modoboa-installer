@@ -56,6 +56,14 @@ class Dovecot(base.Installer):
             self._version = package.backend.get_installed_version("dovecot-core")[:3]
         return self._version
 
+    @property
+    def learn_from_imap(self) -> bool:
+        """Feed rspamd with messages moved to/from Junk by users."""
+        return (
+            self.config.getboolean("rspamd", "enabled") and
+            self.config.getboolean("rspamd", "learn_from_imap")
+        )
+
     def setup_user(self):
         """Setup mailbox user."""
         super().setup_user()
@@ -94,6 +102,12 @@ class Dovecot(base.Installer):
             _config_files += [
                 "custom_after_sieve/spam-to-junk.sieve=conf.d/custom_after_sieve/spam-to-junk.sieve",
                 f"{self.version}/conf.d/90-sieve.conf=conf.d/90-sieve.conf",
+            ]
+        if self.learn_from_imap:
+            _config_files += [
+                f"{self.version}/conf.d/95-imapsieve.conf=conf.d/95-imapsieve.conf",
+                "sieve/report-spam.sieve=sieve/report-spam.sieve",
+                "sieve/report-ham.sieve=sieve/report-ham.sieve",
             ]
 
         return _config_files
@@ -208,6 +222,17 @@ class Dovecot(base.Installer):
                 0,
                 0,
             )
+        if self.learn_from_imap:
+            utils.mkdir_safe(
+                f"{self.config_dir}/sieve",
+                stat.S_IRWXU
+                | stat.S_IRGRP
+                | stat.S_IXGRP
+                | stat.S_IROTH
+                | stat.S_IXOTH,
+                0,
+                0,
+            )
         super().install_config_files()
 
     def post_run(self):
@@ -245,6 +270,23 @@ class Dovecot(base.Installer):
                 f"{self.config_dir}/conf.d/custom_after_sieve/spam-to-junk.sieve"
             )
             utils.exec_cmd(f"/usr/bin/sievec {sieve_file}")
+        imapsieve_conf = f"{self.config_dir}/conf.d/95-imapsieve.conf"
+        if self.learn_from_imap:
+            sieve_dir = f"{self.config_dir}/sieve"
+            # Copied as is (not rendered) to keep the shebang on first line
+            for script in ["rspamd-learn-spam.sh", "rspamd-learn-ham.sh"]:
+                utils.copy_file(self.get_file_path(f"sieve/{script}"), sieve_dir)
+                utils.exec_cmd(f"chmod 755 {sieve_dir}/{script}")
+            # sievec does not load sieve_plugins and compiles scripts as
+            # personal ones, so plugins and global extensions are forced
+            for script in ["report-spam.sieve", "report-ham.sieve"]:
+                utils.exec_cmd(
+                    "/usr/bin/sievec -P sieve_imapsieve -P sieve_extprograms "
+                    f"-x +vnd.dovecot.pipe {sieve_dir}/{script}"
+                )
+        elif os.path.isfile(imapsieve_conf):
+            # Learning has been disabled since a previous run
+            os.remove(imapsieve_conf)
         system.add_user_to_group(self.mailboxes_owner, "dovecot")
 
     def restart_daemon(self):
