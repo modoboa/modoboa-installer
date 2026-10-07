@@ -14,12 +14,9 @@ def installation_disclaimer(args, config):
         "Warning:\n"
         "Before you start the installation, please make sure the following "
         "DNS records exist for domain '{}':\n"
-        "  {} IN A   <IP ADDRESS OF YOUR SERVER>\n"
-        "     @ IN MX  {}.\n".format(
-            args.domain,
-            hostname.replace(".{}".format(args.domain), ""),
-            hostname
-            ),
+        "  {}. IN A   <IP ADDRESS OF YOUR SERVER>\n"
+        "  {}. IN MX  {}.\n".format(
+            args.domain, hostname, args.domain, hostname),
         utils.YELLOW
         )
     utils.printcolor(
