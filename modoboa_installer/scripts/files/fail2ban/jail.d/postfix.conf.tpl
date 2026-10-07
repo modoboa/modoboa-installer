@@ -1,9 +1,9 @@
-[modoboa]
+[postfix]
 enabled = true
 port = %ports_blocked
-protocol = tcp
-filter = modoboa-auth
 maxretry = %max_retry
 bantime = %ban_time
 findtime = %find_time
-logpath = /var/log/auth.log
+filter = postfix[mode=aggressive]
+logpath = /var/log/mail.log
+ignoreip = ::1 127.0.0.1/8
