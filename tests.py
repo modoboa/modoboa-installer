@@ -203,6 +203,59 @@ class ConfigFileTestCase(unittest.TestCase):
         )
 
 
+class HostnameConsistencyTestCase(unittest.TestCase):
+    """Detect domains passed with a mail prefix (eg. mail.mail.domain)."""
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp()
+        self.cfgfile = os.path.join(self.workdir, "installer.cfg")
+
+    def tearDown(self):
+        shutil.rmtree(self.workdir)
+
+    def test_check(self):
+        from modoboa_installer import utils
+
+        self.assertEqual(utils.check_hostname_consistency(
+            "example.test", "mail.example.test"), [])
+        self.assertEqual(utils.check_hostname_consistency(
+            "example.co.uk", "mail.example.co.uk"), [])
+        warnings = utils.check_hostname_consistency(
+            "mail.example.test", "mail.mail.example.test")
+        self.assertEqual(len(warnings), 2)
+        self.assertIn("duplicated 'mail.' prefix", warnings[0])
+        self.assertIn("you probably meant 'example.test'", warnings[1])
+        warnings = utils.check_hostname_consistency(
+            "MX.example.test", "mx.mx.example.test.")
+        self.assertEqual(len(warnings), 2)
+        warnings = utils.check_hostname_consistency(
+            "mail.example.test", "mail.example.test")
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("you probably meant 'example.test'", warnings[0])
+
+    @patch("modoboa_installer.utils.user_input")
+    def test_install_aborted(self, mock_user_input):
+        mock_user_input.side_effect = [""]
+        out = StringIO()
+        sys.stdout = out
+        run.main([
+            "--configfile", self.cfgfile,
+            "mail.example.test"])
+        self.assertIn("duplicated 'mail.' prefix", out.getvalue())
+        self.assertNotIn("Your mail server will be installed", out.getvalue())
+
+    @patch("modoboa_installer.utils.user_input")
+    def test_install_continued(self, mock_user_input):
+        mock_user_input.side_effect = ["y", "no"]
+        out = StringIO()
+        sys.stdout = out
+        run.main([
+            "--configfile", self.cfgfile,
+            "mail.example.test"])
+        self.assertIn("duplicated 'mail.' prefix", out.getvalue())
+        self.assertIn("Your mail server will be installed", out.getvalue())
+
+
 class IntrospectionInstanceTestCase(unittest.TestCase):
     """The OAuth2 introspection endpoint gets its own uWSGI instance."""
 

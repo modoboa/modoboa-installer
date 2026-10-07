@@ -20,6 +20,7 @@ from .compatibility_matrix import APP_INCOMPATIBILITY
 
 ENV = {}
 BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
+MAIL_HOSTNAME_PREFIXES = ("mail", "mx", "smtp", "imap", "webmail")
 
 
 class FatalError(Exception):
@@ -544,3 +545,22 @@ def check_app_compatibility(section, config):
                       "Please disable one of them.")
                 incompatible_app.append(app)
     return len(incompatible_app) == 0
+
+
+def check_hostname_consistency(domain, hostname):
+    """Return warnings about a suspicious domain/hostname combination."""
+    warnings = []
+    domain_labels = domain.lower().strip(".").split(".")
+    host_labels = hostname.lower().strip(".").split(".")
+    if len(host_labels) > 2 and host_labels[0] == host_labels[1]:
+        warnings.append(
+            f"The hostname '{hostname}' starts with a duplicated "
+            f"'{host_labels[0]}.' prefix.")
+    if len(domain_labels) > 2 and domain_labels[0] in MAIL_HOSTNAME_PREFIXES:
+        suggested = ".".join(domain_labels[1:])
+        warnings.append(
+            f"The domain '{domain}' looks like a hostname, you probably "
+            f"meant '{suggested}'. The hostname is built from the domain "
+            "using the 'hostname' option of the [general] section of "
+            "your configuration file.")
+    return warnings

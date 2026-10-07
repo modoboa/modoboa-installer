@@ -204,6 +204,16 @@ def main(input_args):
         backup_system(config, args)
         return
 
+    if not args.upgrade and not args.restore:
+        hostname_warnings = utils.check_hostname_consistency(
+            args.domain, config.get("general", "hostname"))
+        if hostname_warnings:
+            utils.error("\n".join(hostname_warnings))
+            if not args.force:
+                answer = utils.user_input("Continue anyway? (y/N) ")
+                if not answer.lower().startswith("y"):
+                    return
+
     # Display disclaimer python 3 linux distribution
     if args.upgrade:
         disclaimers.upgrade_disclaimer(config)
