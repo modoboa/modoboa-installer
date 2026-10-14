@@ -154,7 +154,7 @@ class ConfigFileTestCase(unittest.TestCase):
             "example.test"])
         self.assertTrue(os.path.exists(self.cfgfile))
         self.assertIn(
-            "fail2ban modoboa amavis clamav dovecot nginx razor "
+            "fail2ban redis modoboa amavis clamav dovecot nginx razor "
             "postfix postwhite spamassassin uwsgi radicale opendkim",
             out.getvalue()
         )
@@ -327,6 +327,207 @@ class IntrospectionInstanceTestCase(unittest.TestCase):
             "        uwsgi_param UWSGI_SCRIPT instance.wsgi:application;\n"
             "        uwsgi_pass modoboa_introspect;",
             content)
+
+
+class RedisTestCase(unittest.TestCase):
+    """Redis is installed by its own script, or provided by another server."""
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp()
+        cfgfile = os.path.join(self.workdir, "installer.cfg")
+        with open(os.devnull, "w") as fp:
+            sys.stdout = fp
+            run.main([
+                "--stop-after-configfile-check",
+                "--configfile", cfgfile,
+                "example.test"])
+        self.config = configparser.ConfigParser()
+        self.config.read(cfgfile)
+        self.config.set("general", "domain", "example.test")
+        self.config.set("modoboa", "version", "latest")
+        patcher = patch("modoboa_installer.package.backend")
+        patcher.start().FORMAT = "deb"
+        self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        shutil.rmtree(self.workdir)
+
+    def set_external_redis(self, password=""):
+        self.config.set("redis", "enabled", "false")
+        self.config.set("redis", "host", "redis.example.test")
+        self.config.set("redis", "port", "6380")
+        self.config.set("redis", "password", password)
+
+    def get_rspamd(self):
+        from modoboa_installer.scripts.rspamd import Rspamd
+
+        installer = Rspamd(self.config, False, None)
+        installer.generate_password_condition = False
+        return installer
+
+    def get_modoboa(self):
+        from modoboa_installer.scripts.modoboa import Modoboa
+
+        return Modoboa(self.config, False, None)
+
+    def render(self, installer, name):
+        from modoboa_installer import utils
+
+        with open(installer.get_file_path(name)) as fp:
+            return utils.ConfigFileTemplate(fp.read()).substitute(
+                installer.get_template_context())
+
+    def test_redis_is_installed_first_by_its_own_script(self):
+        from modoboa_installer.scripts.redis import Redis
+
+        self.assertEqual(run.PRIMARY_APPS[0], "redis")
+        self.assertTrue(self.config.getboolean("redis", "enabled"))
+        redis = Redis(self.config, False, None)
+        self.assertEqual(redis.get_packages(), ["redis-server"])
+        self.assertEqual(redis.get_daemon_name(), "redis-server")
+        with patch("modoboa_installer.package.backend") as backend:
+            backend.FORMAT = "rpm"
+            self.assertEqual(redis.get_packages(), ["redis"])
+            self.assertEqual(redis.get_daemon_name(), "redis")
+
+    def test_other_scripts_do_not_install_redis(self):
+        for fmt in ["deb", "rpm"]:
+            with patch("modoboa_installer.package.backend") as backend:
+                backend.FORMAT = fmt
+                packages = (
+                    list(self.get_modoboa().get_packages()) +
+                    list(self.get_rspamd().get_packages())
+                )
+            self.assertNotIn("redis", packages)
+            self.assertNotIn("redis-server", packages)
+
+    def test_local_install_starts_the_service(self):
+        from modoboa_installer.scripts.redis import Redis
+
+        with patch("modoboa_installer.system.enable_and_start_service") as svc:
+            Redis(self.config, False, None).post_run()
+        svc.assert_called_with("redis-server")
+
+    def test_local_install_refuses_a_remote_host(self):
+        from modoboa_installer import utils
+        from modoboa_installer.scripts.redis import Redis
+
+        self.config.set("redis", "host", "redis.example.test")
+        with self.assertRaises(utils.FatalError):
+            Redis(self.config, False, None).pre_run()
+        self.config.set("redis", "host", "localhost")
+        Redis(self.config, False, None).pre_run()
+
+    def test_local_install_refuses_custom_port_or_password(self):
+        from modoboa_installer import utils
+        from modoboa_installer.scripts.redis import Redis
+
+        self.config.set("redis", "port", "6380")
+        with self.assertRaises(utils.FatalError):
+            Redis(self.config, False, None).pre_run()
+        self.config.set("redis", "port", "6379")
+        self.config.set("redis", "password", "secret")
+        with self.assertRaises(utils.FatalError):
+            Redis(self.config, False, None).pre_run()
+
+    def test_ipv6_host_is_bracketed(self):
+        from modoboa_installer.scripts import redis
+
+        self.set_external_redis()
+        self.config.set("redis", "host", "2001:db8::1")
+        self.assertEqual(
+            redis.get_url(self.config), "redis://[2001:db8::1]:6380/0")
+        content = self.render(self.get_rspamd(), "local.d/redis.conf.tpl")
+        self.assertIn('write_servers = "[2001:db8::1]:6380";\n', content)
+
+    def test_disabled_redis_is_not_installed(self):
+        from modoboa_installer import scripts
+
+        self.set_external_redis()
+        with patch("modoboa_installer.scripts.redis.Redis.run") as run_redis:
+            scripts.install("redis", self.config, False, None)
+        run_redis.assert_not_called()
+
+    def test_redis_url(self):
+        from modoboa_installer.scripts import redis
+
+        self.assertEqual(redis.get_url(self.config), redis.DEFAULT_URL)
+        self.set_external_redis()
+        self.assertEqual(
+            redis.get_url(self.config), "redis://redis.example.test:6380/0")
+        self.config.set("redis", "password", "p@ss:w/'rd")
+        self.assertEqual(
+            redis.get_url(self.config),
+            "redis://:p%40ss%3Aw%2F%27rd@redis.example.test:6380/0")
+        self.config.set("redis", "password", "a$b\\c d%%e")
+        self.assertEqual(
+            redis.get_url(self.config),
+            "redis://:a%24b%5Cc%20d%25e@redis.example.test:6380/0")
+
+    def test_config_without_redis_section(self):
+        """An outdated installer.cfg that was not updated still works."""
+        from modoboa_installer.scripts import redis
+
+        self.config.remove_section("redis")
+        self.assertEqual(redis.get_url(self.config), redis.DEFAULT_URL)
+        context = self.get_rspamd().get_template_context()
+        self.assertEqual(context["redis_host"], "127.0.0.1")
+        self.assertEqual(context["redis_port"], "6379")
+        self.assertEqual(context["redis_password_line"], "")
+        self.get_modoboa().pre_run()
+
+    def test_rspamd_default_configuration(self):
+        content = self.render(self.get_rspamd(), "local.d/redis.conf.tpl")
+        self.assertIn('write_servers = "127.0.0.1:6379";\n', content)
+        self.assertIn('read_servers = "127.0.0.1:6379";\n', content)
+        self.assertNotIn("password", content)
+
+    def test_rspamd_configuration(self):
+        self.set_external_redis(password='pa"ss')
+        rspamd = self.get_rspamd()
+        content = self.render(rspamd, "local.d/redis.conf.tpl")
+        self.assertIn('write_servers = "redis.example.test:6380";\n', content)
+        self.assertIn('read_servers = "redis.example.test:6380";\n', content)
+        self.assertIn('password = "pa\\"ss";', content)
+        content = self.render(rspamd, "local.d/greylist.conf.tpl")
+        self.assertIn('servers = "redis.example.test:6380";\n', content)
+        self.assertIn('password = "pa\\"ss";', content)
+
+    def test_modoboa_deploy_uses_redisurl(self):
+        modoboa = self.get_modoboa()
+        modoboa.user = "modoboa"
+        modoboa.home_dir = self.workdir
+        modoboa.venv_path = os.path.join(self.workdir, "env")
+        with patch("modoboa_installer.utils.exec_cmd") as exec_cmd:
+            exec_cmd.return_value = (0, "")
+            modoboa._deploy_instance()
+            self.assertNotIn("--redisurl", exec_cmd.call_args[0][0])
+
+            self.set_external_redis("secret")
+            shutil.rmtree(os.path.join(self.workdir, "instance"), True)
+            modoboa._deploy_instance()
+            self.assertIn(
+                "--redisurl 'redis://:secret@redis.example.test:6380/0'",
+                exec_cmd.call_args[0][0])
+
+    def test_redisurl_needs_recent_modoboa(self):
+        from modoboa_installer import utils
+
+        self.set_external_redis()
+        modoboa = self.get_modoboa()
+        for version in ["latest", "2.11.1", "2.12.0"]:
+            self.config.set("modoboa", "version", version)
+            modoboa._check_redisurl_support()
+        self.config.set("modoboa", "version", "2.10.0")
+        with self.assertRaises(utils.FatalError):
+            modoboa._check_redisurl_support()
+        # The installer must stop before installing anything
+        with self.assertRaises(utils.FatalError):
+            modoboa.pre_run()
+        # The default local server works with any version
+        self.config.set("redis", "host", "127.0.0.1")
+        self.config.set("redis", "port", "6379")
+        modoboa.pre_run()
 
 
 if __name__ == "__main__":

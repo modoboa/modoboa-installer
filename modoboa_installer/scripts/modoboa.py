@@ -15,6 +15,7 @@ from .. import system
 from .. import utils
 
 from . import base
+from . import redis
 
 
 class Modoboa(base.Installer):
@@ -26,13 +27,13 @@ class Modoboa(base.Installer):
         "deb": [
             "build-essential", "python3-dev", "libxml2-dev", "libxslt-dev",
             "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron",
-            "libssl-dev", "redis-server", "supervisor", "pkg-config",
+            "libssl-dev", "supervisor", "pkg-config",
             "libcairo2-dev", "libmagic-dev"
         ],
         "rpm": [
             "gcc", "gcc-c++", "python3-devel", "libxml2-devel", "libxslt-devel",
             "libjpeg-turbo-devel", "rrdtool-devel", "rrdtool", "libffi-devel",
-            "supervisor", "redis"
+            "supervisor"
         ]
     }
     config_files = [
@@ -113,6 +114,29 @@ class Modoboa(base.Installer):
             beta=self.config.getboolean("modoboa", "install_beta")
         )
 
+    @property
+    def redis_url(self) -> str:
+        """Return the URL used to connect to Redis."""
+        return redis.get_url(self.config)
+
+    def pre_run(self):
+        """Fail early if the selected version cannot use a custom Redis URL."""
+        if self.redis_url != redis.DEFAULT_URL:
+            self._check_redisurl_support()
+
+    def _check_redisurl_support(self):
+        """Make sure the selected Modoboa version supports --redisurl."""
+        version = self.config.get("modoboa", "version")
+        if version == "latest":
+            return
+        min_version = compatibility_matrix.REDIS_URL_MIN_VERSION
+        if (utils.convert_version_to_int(version) <
+                utils.convert_version_to_int(min_version)):
+            raise utils.FatalError(
+                "Using a custom Redis server requires Modoboa {} or "
+                "later (selected version: {}).".format(min_version, version)
+            )
+
     def _deploy_instance(self):
         """Deploy Modoboa."""
         target = os.path.join(self.home_dir, "instance")
@@ -151,6 +175,8 @@ class Modoboa(base.Installer):
                 self.dbname
             )
         ]
+        if self.redis_url != redis.DEFAULT_URL:
+            args += ["--redisurl", "'{}'".format(self.redis_url)]
         if self.devmode:
             args = ["--devel"] + args
         if self.amavis_enabled:
@@ -310,10 +336,6 @@ class Modoboa(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
-        if 'centos' in utils.dist_name():
-            system.enable_and_start_service("redis")
-        else:
-            system.enable_and_start_service("redis-server")
         self._deploy_instance()
         if not self.upgrade:
             self.apply_settings()
