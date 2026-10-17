@@ -174,6 +174,27 @@ ConfigDictTemplate = [
         ]
     },
     {
+        "name": "redis",
+        "values": [
+            {
+                "option": "enabled",
+                "default": "true",
+            },
+            {
+                "option": "host",
+                "default": "127.0.0.1",
+            },
+            {
+                "option": "port",
+                "default": "6379",
+            },
+            {
+                "option": "password",
+                "default": "",
+            },
+        ]
+    },
+    {
         "name": "modoboa",
         "values": [
             {

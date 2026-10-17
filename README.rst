@@ -228,6 +228,28 @@ If you want to use already generated certs, simply edit the
     tls_cert_file_path = *path to tls fullchain file*
     tls_key_file_path = *path to tls key file*
 
+External Redis server
+=====================
+
+By default, the installer installs and starts a local Redis server. If
+you already have a Redis server (on another machine for example), edit
+the ``installer.cfg`` file before running the installation::
+
+    [redis]
+    enabled = false
+    host = redis.example.com
+    port = 6379
+    password = *optional password*
+
+With ``enabled = false``, the installer will not install Redis and will
+use this server for Modoboa (including its RQ workers) and Rspamd. If
+your password contains a ``%`` character, write it as ``%%`` in the file.
+
+.. note::
+
+   This requires Modoboa 2.11.1 or later. Use the default ``latest``
+   version.
+
 Antispam
 ========
 

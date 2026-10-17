@@ -9,6 +9,7 @@ from .. import utils
 from .. import system
 
 from . import base
+from . import redis
 from . import install
 
 
@@ -18,7 +19,7 @@ class Rspamd(base.Installer):
     appname = "rspamd"
     packages = {
         "deb": [
-            "rspamd", "redis"
+            "rspamd"
         ]
     }
     config_files = [
@@ -102,6 +103,14 @@ class Rspamd(base.Installer):
     def get_template_context(self):
         _context = super().get_template_context()
         _context["greylisting_disabled"] = "" if not self.app_config["greylisting"].lower() == "true" else "#"
+        redis_host, redis_port, redis_password = redis.get_settings(self.config)
+        _context["redis_host"] = redis.format_host(redis_host)
+        _context["redis_port"] = redis_port
+        _context["redis_password_line"] = (
+            'password = "{}";'.format(
+                redis_password.replace("\\", "\\\\").replace('"', '\\"'))
+            if redis_password else ""
+        )
         _context["whitelist_auth_enabled"] = "" if self.app_config["whitelist_auth"].lower() == "true" else "#"
         if self.generate_password_condition:
             code, controller_password = utils.exec_cmd(

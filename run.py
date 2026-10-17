@@ -20,6 +20,7 @@ from modoboa_installer import disclaimers
 
 
 PRIMARY_APPS = [
+    "redis",
     "fail2ban",
     "modoboa",
     "radicale",

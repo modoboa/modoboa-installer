@@ -1,2 +1,3 @@
 %{greylisting_disabled}enabled = false;
-servers = "127.0.0.1:6379";
+servers = "%{redis_host}:%{redis_port}";
+%{redis_password_line}
