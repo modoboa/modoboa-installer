@@ -381,6 +381,21 @@ def load_config_template(interactive):
     return config
 
 
+def get_upgrade_default(section: str, option: str) -> str | None:
+    """Return the value of an option added to an existing config file.
+
+    It differs from the default when the default would change the
+    behaviour of existing installations.
+    """
+    for tpl_section in config_dict_template.ConfigDictTemplate:
+        if tpl_section["name"] != section:
+            continue
+        for entry in tpl_section["values"]:
+            if entry["option"] == option:
+                return entry.get("upgrade_default")
+    return None
+
+
 def update_config(path, apply_update=True):
     """Update an existing config file."""
     config = configparser.ConfigParser()
@@ -427,6 +442,10 @@ def update_config(path, apply_update=True):
                         if value != new_config.get(section, option, raw=True):
                             update = True
                             new_config.set(section, option, value)
+                for option in added_options:
+                    value = get_upgrade_default(section, option)
+                    if value is not None:
+                        new_config.set(section, option, value)
     if apply_update:
         if update:
             # Backing up old config file

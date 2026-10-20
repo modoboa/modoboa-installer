@@ -44,19 +44,18 @@ class Installer:
         self.dbuser = self.config.get(self.appname, "dbuser")
         self.dbpasswd = self.config.get(self.appname, "dbpassword")
 
-    @property
-    def modoboa_2_2_or_greater(self) -> bool:
-        # Check if modoboa version > 2.2
+    def modoboa_version_at_least(self, major: int, minor: int) -> bool:
+        """Check the version of the installed modoboa package."""
         modoboa_version = python.get_package_version(
             "modoboa",
             self.config.get("modoboa", "venv_path"),
             sudo_user=self.config.get("modoboa", "user")
             )
-        condition = (
-            (int(modoboa_version[0]) == 2 and int(modoboa_version[1]) >= 2) or
-            int(modoboa_version[0]) > 2
-            )
-        return condition
+        return (int(modoboa_version[0]), int(modoboa_version[1])) >= (major, minor)
+
+    @property
+    def modoboa_2_2_or_greater(self) -> bool:
+        return self.modoboa_version_at_least(2, 2)
 
     @property
     def config_dir(self):
