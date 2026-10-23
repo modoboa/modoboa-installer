@@ -199,6 +199,7 @@ class Modoboa(base.Installer):
             sudo_user=self.user, cwd=self.home_dir)
         if code:
             raise utils.FatalError(output)
+        self._allow_autoconfig_hosts(target)
         if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
             # Restore view previously deleted
             self.backend.load_sql_file(
@@ -209,6 +210,23 @@ class Modoboa(base.Installer):
                 self.dbname, "dkim", self.config.get("opendkim", "dbuser"),
                 "SELECT"
             )
+
+    def _allow_autoconfig_hosts(self, target):
+        """Let Django answer to mail client auto-configuration requests."""
+        settings_file = os.path.join(target, "instance", "settings.py")
+        if not os.path.exists(settings_file):
+            return
+        domain = self.config.get("general", "domain")
+        hostname_line = "    '{}',\n".format(
+            self.config.get("general", "hostname"))
+        extra_lines = "".join(
+            "    '{}.{}',\n".format(prefix, domain)
+            for prefix in ["autoconfig", "autodiscover"])
+        with open(settings_file) as fp:
+            content = fp.read()
+        with open(settings_file, "w") as fp:
+            fp.write(content.replace(
+                hostname_line, hostname_line + extra_lines, 1))
 
     def setup_database(self):
         """Additional config."""
