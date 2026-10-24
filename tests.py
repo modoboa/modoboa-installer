@@ -598,9 +598,12 @@ class AutoconfigTestCase(unittest.TestCase):
     @patch("modoboa_installer.utils.exec_cmd")
     def test_letsencrypt_autoconfig_cert_failure(self, exec_cmd):
         # The main certificate succeeds, not the auto-configuration one
-        exec_cmd.side_effect = [(0, ""), (1, ""), (0, "")]
+        exec_cmd.side_effect = lambda cmd, **kwargs: (
+            (1, "") if "--cert-name autoconfig." in cmd else (0, ""))
         self.generate_cert(exists=False)
-        self.assertEqual(exec_cmd.call_count, 3)
+        commands = [call[0][0] for call in exec_cmd.call_args_list]
+        self.assertEqual(len(commands), 3)
+        self.assertNotIn("renewal/autoconfig.example.test.conf", commands[2])
         self.assertFalse(
             self.config.has_option("general", "autoconfig_tls_cert_file"))
         self.assertIn(
