@@ -38,6 +38,47 @@ dict_server {
       }
     }
   }
+
+  # Who shares folders with whom (shared namespace listing). Tables are
+  # created by Modoboa.
+  dict acl {
+    driver = sql
+    sql_driver = %db_driver
+    hostname = %dbhost
+
+    dict_map shared/shared-boxes/user/$to/$from {
+      sql_table = admin_usershare
+      value_field dummy {
+      }
+      key_field from_user {
+        value = $from
+      }
+      key_field to_user {
+        value = $to
+      }
+    }
+
+    dict_map shared/shared-user-boxes-rev/$from/$to {
+      sql_table = admin_usershare
+      value_field dummy {
+      }
+      key_field from_user {
+        value = $from
+      }
+      key_field to_user {
+        value = $to
+      }
+    }
+
+    dict_map shared/shared-boxes/anyone/$from {
+      sql_table = admin_anyoneshare
+      value_field dummy {
+      }
+      key_field from_user {
+        value = $from
+      }
+    }
+  }
 }
 
 quota_clone {

@@ -37,3 +37,37 @@ map {
     mailbox = $mailbox
   }
 }
+
+# Who shares folders with whom (shared namespace listing). Tables are
+# created by Modoboa.
+map {
+  pattern = shared/shared-boxes/user/$to/$from
+  table = admin_usershare
+  value_field = dummy
+
+  fields {
+    from_user = $from
+    to_user = $to
+  }
+}
+
+map {
+  pattern = shared/shared-user-boxes-rev/$from/$to
+  table = admin_usershare
+  value_field = dummy
+
+  fields {
+    from_user = $from
+    to_user = $to
+  }
+}
+
+map {
+  pattern = shared/shared-boxes/anyone/$from
+  table = admin_anyoneshare
+  value_field = dummy
+
+  fields {
+    from_user = $from
+  }
+}

@@ -385,6 +385,14 @@ ConfigDictTemplate = [
                 "option": "oauth2_client_secret",
                 "default": make_client_secret
             },
+            {
+                # Shared folders (IMAP ACL). It switches the IMAP hierarchy
+                # separator to '/', which breaks existing Sieve filters:
+                # existing installations must migrate first.
+                "option": "enable_sharing",
+                "default": "true",
+                "upgrade_default": "false",
+            },
         ]
     },
     {

@@ -90,6 +90,15 @@ You can activate it as follows::
 
 It will automatically install latest versions of modoboa and its plugins.
 
+.. note::
+
+   Folder sharing (``enable_sharing`` option of the ``[dovecot]``
+   section, Modoboa >= 2.12) changes the IMAP hierarchy separator
+   from ``.`` to ``/``, which breaks existing Sieve filters. It is
+   therefore disabled when an existing configuration file is
+   updated. Migrate your installation as described in the Modoboa
+   upgrade notes before enabling it.
+
 Backup mode
 ===========
 

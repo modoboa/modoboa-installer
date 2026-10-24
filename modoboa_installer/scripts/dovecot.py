@@ -64,6 +64,20 @@ class Dovecot(base.Installer):
             self.config.getboolean("rspamd", "learn_from_imap")
         )
 
+    @property
+    def sharing_enabled(self) -> bool:
+        """Let users share their folders (IMAP ACL)."""
+        if not hasattr(self, "_sharing_enabled"):
+            self._sharing_enabled = self.config.getboolean(
+                "dovecot", "enable_sharing", fallback=False)
+            # The sharing dictionary lives in tables created by Modoboa 2.12
+            if self._sharing_enabled and not self.modoboa_version_at_least(2, 12):
+                utils.printcolor(
+                    "Folder sharing requires Modoboa >= 2.12, skipping",
+                    utils.YELLOW)
+                self._sharing_enabled = False
+        return self._sharing_enabled
+
     def setup_user(self):
         """Setup mailbox user."""
         super().setup_user()
@@ -109,6 +123,10 @@ class Dovecot(base.Installer):
                 "sieve/report-spam.sieve=sieve/report-spam.sieve",
                 "sieve/report-ham.sieve=sieve/report-ham.sieve",
             ]
+        if self.sharing_enabled:
+            _config_files.append(
+                f"{self.version}/conf.d/15-acl.conf=conf.d/15-acl.conf"
+            )
 
         return _config_files
 
@@ -287,6 +305,10 @@ class Dovecot(base.Installer):
         elif os.path.isfile(imapsieve_conf):
             # Learning has been disabled since a previous run
             os.remove(imapsieve_conf)
+        acl_conf = f"{self.config_dir}/conf.d/15-acl.conf"
+        if not self.sharing_enabled and os.path.isfile(acl_conf):
+            # Sharing has been disabled since a previous run
+            os.remove(acl_conf)
         system.add_user_to_group(self.mailboxes_owner, "dovecot")
 
     def restart_daemon(self):
