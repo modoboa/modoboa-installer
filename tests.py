@@ -42,6 +42,10 @@ class ConfigFileTestCase(unittest.TestCase):
             "--configfile", self.cfgfile,
             "example.test"])
         self.assertTrue(os.path.exists(self.cfgfile))
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        self.assertEqual(config.get("general", "domain"), "example.test")
+        self.assertEqual(config.get("general", "hostname"), "mail.example.test")
 
     def test_razor_follows_amavis(self):
         """Razor is enabled with Amavis, which configures SpamAssassin to use it."""
