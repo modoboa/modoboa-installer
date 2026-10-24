@@ -102,6 +102,20 @@ class LetsEncryptCertificate(CertificateBackend):
             "/etc/letsencrypt/live/{}/fullchain.pem".format(self.hostname)))
         self.config.set("general", "tls_key_file", (
             "/etc/letsencrypt/live/{}/privkey.pem".format(self.hostname)))
+        self.autoconfig_names = [
+            "{}.{}".format(prefix, self.config.get("general", "domain"))
+            for prefix in ["autoconfig", "autodiscover"]
+        ]
+        self._use_autoconfig_cert()
+
+    def _use_autoconfig_cert(self):
+        """Serve auto-configuration with its own certificate, if any."""
+        cert_dir = "/etc/letsencrypt/live/{}".format(self.autoconfig_names[0])
+        if os.path.exists(cert_dir):
+            self.config.set("general", "autoconfig_tls_cert_file",
+                            "{}/fullchain.pem".format(cert_dir))
+            self.config.set("general", "autoconfig_tls_key_file",
+                            "{}/privkey.pem".format(cert_dir))
 
     def install_certbot(self):
         """Install certbot script to generate cert."""
@@ -143,9 +157,26 @@ class LetsEncryptCertificate(CertificateBackend):
         with open("/etc/cron.d/letsencrypt", "w") as fp:
             fp.write("0 */12 * * * root certbot renew "
                      "--quiet\n")
-        cfg_file = "/etc/letsencrypt/renewal/{}.conf".format(self.hostname)
+        lineages = [self.hostname]
+        # Separate certificate: missing DNS records must not block the main one
+        code, _output = utils.exec_cmd(
+            "certbot certonly -n --standalone --cert-name {} -d {} -m {} "
+            "--agree-tos".format(
+                self.autoconfig_names[0], " -d ".join(self.autoconfig_names),
+                self.config.get("letsencrypt", "email")))
+        if code:
+            utils.printcolor(
+                "Failed to generate a certificate for {}, check their DNS "
+                "records. Mail clients will get their configuration over "
+                "HTTP only.".format(" and ".join(self.autoconfig_names)),
+                utils.YELLOW)
+        else:
+            lineages.append(self.autoconfig_names[0])
+            self._use_autoconfig_cert()
         pattern = "s/authenticator = standalone/authenticator = nginx/"
-        utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfg_file))
+        for lineage in lineages:
+            cfg_file = "/etc/letsencrypt/renewal/{}.conf".format(lineage)
+            utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfg_file))
         with open("/etc/letsencrypt/renewal-hooks/deploy/reload-services.sh", "w") as fp:
             fp.write(f"""#!/bin/bash
 

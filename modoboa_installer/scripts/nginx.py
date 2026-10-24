@@ -31,6 +31,10 @@ class Nginx(base.Installer):
                 uwsgi.get_socket_path(INTROSPECTION_INSTANCE)
             ),
         })
+        for kind in ["cert", "key"]:
+            context.setdefault(
+                "autoconfig_tls_{}_file".format(kind),
+                context.get("tls_{}_file".format(kind)))
         return context
 
     def _setup_config(self, app, hostname=None, extra_config=None):

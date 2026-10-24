@@ -558,5 +558,104 @@ class RedisTestCase(unittest.TestCase):
         modoboa.pre_run()
 
 
+class AutoconfigTestCase(unittest.TestCase):
+    """Mail client auto-configuration is reachable over HTTPS."""
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp()
+        cfgfile = os.path.join(self.workdir, "installer.cfg")
+        with open(os.devnull, "w") as fp:
+            sys.stdout = fp
+            run.main([
+                "--stop-after-configfile-check",
+                "--configfile", cfgfile,
+                "example.test"])
+        self.config = configparser.ConfigParser()
+        self.config.read(cfgfile)
+        self.config.set("general", "domain", "example.test")
+        self.config.set("certificate", "type", "letsencrypt")
+        if not self.config.has_section("letsencrypt"):
+            self.config.add_section("letsencrypt")
+        self.config.set("letsencrypt", "email", "admin@example.test")
+        patcher = patch("modoboa_installer.package.backend")
+        patcher.start().FORMAT = "deb"
+        self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        shutil.rmtree(self.workdir)
+
+    def render_autoconfig_vhost(self):
+        from modoboa_installer import utils
+        from modoboa_installer.scripts.nginx import Nginx
+
+        nginx = Nginx(self.config, False, None)
+        context = nginx.get_template_context()
+        context["hostname"] = "autoconfig.example.test"
+        with open(nginx.get_file_path("autoconfig.conf.tpl")) as fp:
+            return utils.ConfigFileTemplate(fp.read()).substitute(context)
+
+    def generate_cert(self, exists):
+        from modoboa_installer import ssl
+
+        backend = ssl.get_backend(self.config)
+        with patch("modoboa_installer.ssl.os.path.exists",
+                   return_value=exists), \
+                patch("modoboa_installer.ssl.open"), \
+                patch("modoboa_installer.utils.printcolor"), \
+                patch.object(backend, "install_certbot"):
+            backend.generate_cert()
+
+    @patch("modoboa_installer.utils.exec_cmd")
+    def test_letsencrypt_autoconfig_cert(self, exec_cmd):
+        exec_cmd.return_value = (0, "")
+        self.generate_cert(exists=True)
+        commands = [call[0][0] for call in exec_cmd.call_args_list]
+        self.assertIn(
+            "--cert-name autoconfig.example.test -d autoconfig.example.test "
+            "-d autodiscover.example.test", commands[1])
+        self.assertIn("renewal/autoconfig.example.test.conf", commands[3])
+        content = self.render_autoconfig_vhost()
+        self.assertIn("server_name autoconfig.example.test "
+                      "autodiscover.example.test;", content)
+        self.assertIn("listen 443 ssl;", content)
+        self.assertIn(
+            "ssl_certificate /etc/letsencrypt/live/autoconfig.example.test/"
+            "fullchain.pem;", content)
+        self.assertIn("autodiscover/autodiscover.xml", content)
+
+    @patch("modoboa_installer.utils.exec_cmd")
+    def test_letsencrypt_autoconfig_cert_failure(self, exec_cmd):
+        # The main certificate succeeds, not the auto-configuration one
+        exec_cmd.side_effect = lambda cmd, **kwargs: (
+            (1, "") if "--cert-name autoconfig." in cmd else (0, ""))
+        self.generate_cert(exists=False)
+        commands = [call[0][0] for call in exec_cmd.call_args_list]
+        self.assertEqual(len(commands), 3)
+        self.assertNotIn("renewal/autoconfig.example.test.conf", commands[2])
+        self.assertFalse(
+            self.config.has_option("general", "autoconfig_tls_cert_file"))
+        self.assertIn(
+            "ssl_certificate /etc/letsencrypt/live/mail.example.test/"
+            "fullchain.pem;", self.render_autoconfig_vhost())
+
+    def test_allowed_hosts(self):
+        from modoboa_installer.scripts.modoboa import Modoboa
+
+        settings_dir = os.path.join(self.workdir, "instance")
+        os.mkdir(settings_dir)
+        settings_file = os.path.join(settings_dir, "settings.py")
+        with open(settings_file, "w") as fp:
+            fp.write("ALLOWED_HOSTS = [\n    'mail.example.test',\n]\n")
+        Modoboa(self.config, False, None)._allow_autoconfig_hosts(self.workdir)
+        with open(settings_file) as fp:
+            self.assertEqual(
+                fp.read(),
+                "ALLOWED_HOSTS = [\n"
+                "    'mail.example.test',\n"
+                "    'autoconfig.example.test',\n"
+                "    'autodiscover.example.test',\n"
+                "]\n")
+
+
 if __name__ == "__main__":
     unittest.main()
