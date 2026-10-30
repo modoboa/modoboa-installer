@@ -1,5 +1,7 @@
 """Installer unit tests."""
 
+import argparse
+import configparser
 import os
 import shutil
 import sys
@@ -8,18 +10,21 @@ import unittest
 
 from io import StringIO
 from pathlib import Path
-
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
-try:
-    from unittest.mock import MagicMock, patch
-except ImportError:
-    from mock import MagicMock, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 import run
 from modoboa_installer import utils
+
+
+def setUpModule():
+    """Tests must reach neither GitHub nor the system they run on."""
+    for target, return_value in [
+        ("modoboa_installer.checks.handle", None),
+        ("modoboa_installer.utils.exec_cmd", (0, b"")),
+    ]:
+        patcher = patch(target, return_value=return_value)
+        patcher.start()
+        unittest.addModuleCleanup(patcher.stop)
 
 
 class ConfigFileTestCase(unittest.TestCase):
@@ -304,7 +309,7 @@ class IntrospectionInstanceTestCase(unittest.TestCase):
         for name in ["apps-available", "apps-enabled"]:
             os.mkdir(os.path.join(self.workdir, name))
         patcher = patch("modoboa_installer.package.backend")
-        patcher.start().FORMAT = "deb"
+        patcher.start()
         self.addCleanup(patcher.stop)
 
     def tearDown(self):
@@ -375,7 +380,7 @@ class RedisTestCase(unittest.TestCase):
         self.config.set("general", "domain", "example.test")
         self.config.set("modoboa", "version", "latest")
         patcher = patch("modoboa_installer.package.backend")
-        patcher.start().FORMAT = "deb"
+        patcher.start()
         self.addCleanup(patcher.stop)
 
     def tearDown(self):
@@ -414,21 +419,14 @@ class RedisTestCase(unittest.TestCase):
         redis = Redis(self.config, False, None)
         self.assertEqual(redis.get_packages(), ["redis-server"])
         self.assertEqual(redis.get_daemon_name(), "redis-server")
-        with patch("modoboa_installer.package.backend") as backend:
-            backend.FORMAT = "rpm"
-            self.assertEqual(redis.get_packages(), ["redis"])
-            self.assertEqual(redis.get_daemon_name(), "redis")
 
     def test_other_scripts_do_not_install_redis(self):
-        for fmt in ["deb", "rpm"]:
-            with patch("modoboa_installer.package.backend") as backend:
-                backend.FORMAT = fmt
-                packages = (
-                    list(self.get_modoboa().get_packages()) +
-                    list(self.get_rspamd().get_packages())
-                )
-            self.assertNotIn("redis", packages)
-            self.assertNotIn("redis-server", packages)
+        packages = (
+            list(self.get_modoboa().get_packages()) +
+            list(self.get_rspamd().get_packages())
+        )
+        self.assertNotIn("redis", packages)
+        self.assertNotIn("redis-server", packages)
 
     def test_local_install_starts_the_service(self):
         from modoboa_installer.scripts.redis import Redis
@@ -579,7 +577,7 @@ class AutoconfigTestCase(unittest.TestCase):
             self.config.add_section("letsencrypt")
         self.config.set("letsencrypt", "email", "admin@example.test")
         patcher = patch("modoboa_installer.package.backend")
-        patcher.start().FORMAT = "deb"
+        patcher.start()
         self.addCleanup(patcher.stop)
 
     def tearDown(self):
@@ -711,7 +709,6 @@ class DataSafetyTestCase(unittest.TestCase):
         self.config.set("modoboa", "version", "latest")
         patcher = patch("modoboa_installer.package.backend")
         self.package_backend = patcher.start()
-        self.package_backend.FORMAT = "deb"
         self.addCleanup(patcher.stop)
 
     def tearDown(self):
@@ -1067,6 +1064,297 @@ class DataSafetyTestCase(unittest.TestCase):
         utils.backup_file(path)
         old_file = next(Path(self.workdir).glob("main.cf.old.*"))
         self.assertEqual(old_file.stat().st_mode & 0o777, 0o600)
+
+
+class BackupRestoreCycleTestCase(unittest.TestCase):
+    """What a backup writes must be what a restore finds."""
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp()
+        self.cfgfile = os.path.join(self.workdir, "installer.cfg")
+        sys.stdout = StringIO()
+        run.main([
+            "--skip-checks",
+            "--stop-after-configfile-check",
+            "--configfile", self.cfgfile,
+            "example.test"])
+        self.config = configparser.ConfigParser()
+        self.config.read(self.cfgfile)
+        self.config.set("general", "domain", "example.test")
+        self.config.set("dovecot", "domain", "example.test")
+        self.config.set("dovecot", "home_dir", self.mkdir("vmail"))
+        self.write(self.path("vmail", "message"))
+        self.config.set("radicale", "home_dir", self.mkdir("radicale"))
+        self.write(os.path.join(
+            self.mkdir("radicale", "collections"), "calendar.ics"))
+        self.mkdir("dkim")
+        self.write(self.path("dkim", "example.pem"))
+        self.config.set("opendkim", "keys_storage_dir", self.path("dkim"))
+        self.config.set("rspamd", "dkim_keys_storage_dir", self.path("dkim"))
+        patcher = patch("modoboa_installer.package.backend")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        shutil.rmtree(self.workdir)
+
+    def path(self, *paths):
+        return os.path.join(self.workdir, *paths)
+
+    def mkdir(self, *paths):
+        os.makedirs(self.path(*paths), exist_ok=True)
+        return self.path(*paths)
+
+    def write(self, path):
+        with open(path, "w") as fp:
+            fp.write("content")
+
+    def use_rspamd(self):
+        self.config.set("rspamd", "enabled", "true")
+        for section in ["amavis", "spamassassin", "opendkim", "postwhite"]:
+            self.config.set(section, "enabled", "false")
+
+    def fake_exec_cmd(self, cmd, **kwargs):
+        """Dumps are done by the shell: create their target file."""
+        if cmd.startswith(("pg_dump", "mysqldump")):
+            self.write(cmd.rsplit(" > ", 1)[1])
+        return 0, b""
+
+    def backup(self, antispam_apps, *options):
+        path = self.mkdir("backup")
+        args = run.parser_setup([
+            "--silent-backup", *options,
+            "--backup-path", path,
+            "--configfile", self.cfgfile,
+            "example.test"])
+        with patch("modoboa_installer.utils.exec_cmd",
+                   side_effect=self.fake_exec_cmd), \
+                patch("modoboa_installer.database.PostgreSQL._setup_pgpass"), \
+                patch("os.chown"):
+            run.backup_system(self.config, args, antispam_apps)
+        return path
+
+    def assertBackedUp(self, *paths):
+        for path in paths:
+            self.assertTrue(
+                os.path.isfile(self.path("backup", path)), path)
+
+    def test_amavis(self):
+        from modoboa_installer import scripts
+        from modoboa_installer.scripts.amavis import Amavis
+        from modoboa_installer.scripts.opendkim import Opendkim
+        from modoboa_installer.scripts.spamassassin import Spamassassin
+
+        path = self.backup(["amavis", "opendkim"])
+        self.assertBackedUp(
+            "installer.cfg",
+            "databases/modoboa.sql",
+            "databases/amavis.sql",
+            "databases/spamassassin.sql",
+            "custom/dkim/example.pem",
+            "custom/radicale/calendar.ics",
+            "mails/message",
+        )
+        scripts.restore_prep(path)
+        for app in [Amavis, Spamassassin]:
+            self.assertIsNotNone(
+                app(self.config, False, path).get_sql_schema_from_backup())
+        self.config.set("opendkim", "keys_storage_dir", self.mkdir("newdkim"))
+        Opendkim(self.config, False, path).restore()
+        self.assertTrue(os.path.isfile(self.path("newdkim", "example.pem")))
+
+    def test_rspamd(self):
+        from modoboa_installer.scripts.rspamd import Rspamd
+
+        self.use_rspamd()
+        self.write(os.path.join(self.mkdir("rspamd", "local.d"), "custom.conf"))
+        with patch.object(Rspamd, "config_dir", self.path("rspamd")):
+            path = self.backup(["rspamd"])
+        self.assertBackedUp(
+            "custom/rspamd/custom.conf", "custom/dkim/example.pem")
+
+        self.mkdir("newrspamd", "local.d")
+        self.config.set(
+            "rspamd", "dkim_keys_storage_dir", self.mkdir("newdkim"))
+        with patch.object(Rspamd, "config_dir", self.path("newrspamd")):
+            Rspamd(self.config, False, path).restore()
+        self.assertTrue(os.path.isfile(
+            self.path("newrspamd", "local.d", "custom.conf")))
+        self.assertTrue(os.path.isfile(self.path("newdkim", "example.pem")))
+
+    def test_no_mail(self):
+        from modoboa_installer.scripts.dovecot import Dovecot
+
+        path = self.backup(["amavis", "opendkim"], "--no-mail")
+        self.assertFalse(os.path.exists(self.path("backup", "mails")))
+        Dovecot(self.config, False, path).restore()
+        self.assertTrue(os.path.isfile(self.path("vmail", "message")))
+
+
+class DistributionTestCase(unittest.TestCase):
+    """The supported distributions are detected from /etc/os-release."""
+
+    @patch("modoboa_installer.utils.platform.freedesktop_os_release")
+    def test_rolling_release_has_no_version(self, os_release):
+        os_release.return_value = {"NAME": "Debian GNU/Linux"}
+        self.assertEqual(utils.dist_info(), ("Debian GNU/Linux", ""))
+        self.assertEqual(utils.dist_codename(), "")
+
+    @patch("modoboa_installer.utils.platform.freedesktop_os_release",
+           return_value={"NAME": "Debian GNU/Linux",
+                         "VERSION_CODENAME": "Trixie"})
+    def test_codename(self, os_release):
+        self.assertEqual(utils.dist_codename(), "trixie")
+
+    @patch("modoboa_installer.utils.platform.freedesktop_os_release",
+           side_effect=OSError)
+    def test_unknown_system(self, os_release):
+        sys.stdout = StringIO()
+        with self.assertRaises(SystemExit):
+            utils.dist_info()
+
+    @patch("modoboa_installer.utils.dist_name", return_value="fedora linux")
+    def test_unsupported_distribution(self, dist_name):
+        from modoboa_installer import package
+
+        with self.assertRaises(NotImplementedError):
+            package.get_backend()
+
+    @patch("modoboa_installer.utils.dist_name",
+           return_value="debian gnu/linux")
+    def test_debian(self, dist_name):
+        from modoboa_installer import package
+
+        self.assertIsInstance(package.get_backend(), package.DEBPackage)
+
+
+class SettingsTestCase(unittest.TestCase):
+    """Options of the configuration file are honoured."""
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp()
+        cfgfile = os.path.join(self.workdir, "installer.cfg")
+        sys.stdout = StringIO()
+        run.main([
+            "--skip-checks",
+            "--stop-after-configfile-check",
+            "--configfile", cfgfile,
+            "example.test"])
+        self.config = configparser.ConfigParser()
+        self.config.read(cfgfile)
+        self.config.set("general", "domain", "example.test")
+        self.config.set("dovecot", "domain", "example.test")
+        self.config.set("modoboa", "version", "latest")
+        patcher = patch("modoboa_installer.package.backend")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        shutil.rmtree(self.workdir)
+
+    def get_dovecot_files(self):
+        from modoboa_installer.scripts.dovecot import Dovecot
+
+        dovecot = Dovecot(self.config, False, None)
+        dovecot._version = "2.4"
+        dovecot._sharing_enabled = False
+        return " ".join(dovecot.get_config_files())
+
+    def test_move_spam_to_junk(self):
+        self.assertIn("spam-to-junk.sieve", self.get_dovecot_files())
+        self.config.set("dovecot", "move_spam_to_junk", "false")
+        files = self.get_dovecot_files()
+        self.assertNotIn("spam-to-junk.sieve", files)
+        # It also configures users' Sieve scripts
+        self.assertIn("90-sieve.conf", files)
+
+    def get_nginx_extra_config(self):
+        from modoboa_installer.scripts.nginx import Nginx
+
+        nginx = Nginx(self.config, False, None)
+        with patch.object(nginx, "_setup_config") as setup_config:
+            nginx.post_run()
+        return setup_config.call_args[1]["extra_config"]
+
+    def test_radicale_proxy(self):
+        self.assertIn("/radicale/", self.get_nginx_extra_config())
+        self.config.set("radicale", "enabled", "false")
+        self.assertEqual(self.get_nginx_extra_config(), "")
+
+    def test_opendkim_port(self):
+        from modoboa_installer.scripts.opendkim import Opendkim
+
+        self.config.set("opendkim", "port", "12346")
+        opendkim = Opendkim(self.config, False, None)
+        with patch("builtins.open", mock_open()) as opener, \
+                patch("modoboa_installer.utils.mkdir"):
+            opendkim.post_run()
+        written = "".join(
+            call[0][0] for call in opener().write.call_args_list)
+        self.assertIn('SOCKET="inet:12346@localhost"', written)
+
+    def test_version_argument(self):
+        for version in ["latest", "2.11", "2.11.1"]:
+            self.assertEqual(
+                run.modoboa_version(version), version)
+        for version in ["", "2", "2.11.1; reboot", "2.11.1rc1"]:
+            with self.assertRaises(argparse.ArgumentTypeError):
+                run.modoboa_version(version)
+
+    def get_installed_packages(self, version):
+        from modoboa_installer.scripts.modoboa import Modoboa
+
+        self.config.set("modoboa", "version", version)
+        self.config.set("modoboa", "install_beta", "False")
+        self.config.set(
+            "modoboa", "extensions", "modoboa-webmail modoboa-custom")
+        modoboa = Modoboa(self.config, True, None)
+        modoboa.user = "modoboa"
+        with patch("modoboa_installer.python.setup_virtualenv"), \
+                patch("modoboa_installer.python.install_packages") as install:
+            modoboa._setup_venv()
+        return install.call_args[0][0], modoboa.extensions
+
+    def test_removed_extensions_are_not_installed(self):
+        packages, extensions = self.get_installed_packages("latest")
+        self.assertEqual(
+            packages, ["modoboa[postgresql]", "modoboa-custom"])
+        self.assertEqual(extensions, ["modoboa-custom"])
+        packages, extensions = self.get_installed_packages("2.2.0")
+        self.assertEqual(
+            packages,
+            ["modoboa[postgresql]==2.2.0", "modoboa-webmail", "modoboa-custom"])
+        packages, extensions = self.get_installed_packages("2.4.0")
+        self.assertEqual(
+            packages, ["modoboa[postgresql]==2.4.0", "modoboa-custom"])
+
+    def test_third_party_sources_are_pinned(self):
+        from modoboa_installer.scripts import postwhite
+        from modoboa_installer.scripts.postfix import Postfix
+
+        def download(cmd, **kwargs):
+            if cmd.startswith("wget"):
+                Path(self.workdir, "abc123.zip").touch()
+            return 0, b""
+
+        installer = postwhite.Postwhite(self.config, False, None)
+        with patch("modoboa_installer.utils.exec_cmd",
+                   side_effect=download) as exec_cmd:
+            installer.install_from_archive(
+                "https://example.test/repo", "abc123", self.workdir)
+        commands = [call[0][0] for call in exec_cmd.call_args_list]
+        self.assertEqual(commands, [
+            "wget https://example.test/repo/archive/abc123.zip",
+            "unzip abc123.zip",
+            "mv repo-abc123 repo",
+        ])
+        postfix = Postfix(self.config, False, None)
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(0, b"")) as exec_cmd, \
+                patch("modoboa_installer.scripts.postfix.os.path.exists",
+                      return_value=False):
+            postfix.check_dhe_group_file()
+        self.assertNotIn("/main/", exec_cmd.call_args[0][0])
 
 
 if __name__ == "__main__":

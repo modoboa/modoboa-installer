@@ -15,10 +15,7 @@ class Razor(base.Installer):
 
     appname = "razor"
     no_daemon = True
-    packages = {
-        "deb": ["razor"],
-        "rpm": ["perl-Razor-Agent"]
-    }
+    packages = ["razor"]
 
     def post_run(self):
         """Additional tasks."""

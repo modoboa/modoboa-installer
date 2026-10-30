@@ -6,8 +6,8 @@ import datetime
 import getpass
 import glob
 import os
+import platform
 import pwd
-import random
 import shutil
 import stat
 import string
@@ -80,22 +80,15 @@ def exec_or_fail(cmd, error_message, **kwargs):
 
 def dist_info():
     """Try to return information about the system we're running on."""
-    path = "/etc/os-release"
-    if os.path.exists(path):
-        info = {}
-        with open(path) as fp:
-            for line in fp.readlines():
-                if line == '\n':
-                    continue
-                key, value = line.split("=")
-                value = value.rstrip('"\n')
-                value = value.strip('"')
-                info[key] = value
-        return info["NAME"], info["VERSION_ID"]
-    printcolor(
-        "Failed to retrieve information about your system, aborting.",
-        RED)
-    sys.exit(1)
+    try:
+        info = platform.freedesktop_os_release()
+    except OSError:
+        printcolor(
+            "Failed to retrieve information about your system, aborting.",
+            RED)
+        sys.exit(1)
+    # Rolling releases such as Debian testing have no VERSION_ID
+    return info["NAME"], info.get("VERSION_ID", "")
 
 
 def dist_name():
@@ -103,18 +96,10 @@ def dist_name():
     return dist_info()[0].lower()
 
 
-def is_dist_debian_based() -> (bool, str):
-    """Check if current OS is Debian based or not."""
-    status, codename = exec_cmd("lsb_release -c -s")
-    codename = codename.decode().strip().lower()
-    return codename in [
-        # Debian
-        "duke", "forky", "trixie",  "bookworm", "bullseye",
-        "buster","jessie", "sid", "stretch", "wheezy",
-        # Ubuntu
-        "resolute", "questing", "plucky", "noble", "bionic", 
-        "focal", "jammy", "trusty",  "xenial"
-    ], codename
+def dist_codename():
+    """Return the codename of the distribution, if any."""
+    return platform.freedesktop_os_release().get(
+        "VERSION_CODENAME", "").lower()
 
 
 def mkdir(path, mode, uid, gid):
@@ -131,13 +116,6 @@ def mkdir_safe(path, mode, uid, gid):
     if not os.path.exists(path):
         os.makedirs(os.path.abspath(path), mode)
     mkdir(path, mode, uid, gid)
-
-
-def make_password(length=16):
-    """Create a random password."""
-    return "".join(
-        random.SystemRandom().choice(
-            string.ascii_letters + string.digits) for _ in range(length))
 
 
 @contextlib.contextmanager
@@ -282,20 +260,6 @@ def convert_version_to_int(version):
         number += num << total_bits
         total_bits += bits
     return number
-
-
-def random_key(l=16):
-    """Generate a random key.
-
-    :param integer l: the key's length
-    :return: a string
-    """
-    punctuation = """!#$%&()*+,-./:;<=>?@[]^_`{|}~"""
-    population = string.digits + string.ascii_letters + punctuation
-    while True:
-        key = "".join(random.sample(population * l, l))
-        if len(key) == l:
-            return key
 
 
 def check_if_condition(config, entry):

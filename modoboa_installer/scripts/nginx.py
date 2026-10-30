@@ -2,7 +2,6 @@
 
 import os
 
-from .. import package
 from .. import system
 from .. import utils
 
@@ -14,10 +13,7 @@ class Nginx(base.Installer):
     """Nginx installer."""
 
     appname = "nginx"
-    packages = {
-        "deb": ["nginx", "ssl-cert"],
-        "rpm": ["nginx"]
-    }
+    packages = ["nginx", "ssl-cert"]
 
     def get_template_context(self):
         """Additionnal variables."""
@@ -44,27 +40,16 @@ class Nginx(base.Installer):
         context = self.get_template_context()
         context.update({"hostname": hostname, "extra_config": extra_config})
         src = self.get_file_path("{}.conf.tpl".format(app))
-        group = None
-        if package.backend.FORMAT == "deb":
-            dst = os.path.join(
-                self.config_dir, "sites-available", "{}.conf".format(hostname))
-            utils.copy_from_template(src, dst, context)
-            link = os.path.join(
-                self.config_dir, "sites-enabled", os.path.basename(dst))
-            if os.path.exists(link):
-                return
-            os.symlink(dst, link)
-            if self.config.has_section(app):
-                group = self.config.get(app, "user")
-            user = "www-data"
-        else:
-            dst = os.path.join(
-                self.config_dir, "conf.d", "{}.conf".format(hostname))
-            utils.copy_from_template(src, dst, context)
-            group = "uwsgi"
-            user = "nginx"
-        if user and group:
-            system.add_user_to_group(user, group)
+        dst = os.path.join(
+            self.config_dir, "sites-available", "{}.conf".format(hostname))
+        utils.copy_from_template(src, dst, context)
+        link = os.path.join(
+            self.config_dir, "sites-enabled", os.path.basename(dst))
+        if os.path.exists(link):
+            return
+        os.symlink(dst, link)
+        if self.config.has_section(app):
+            system.add_user_to_group("www-data", self.config.get(app, "user"))
 
     def post_run(self):
         """Additionnal tasks."""
@@ -74,7 +59,7 @@ class Nginx(base.Installer):
             self.config.get("general", "domain"))
         self._setup_config("autoconfig", hostname)
 
-        if self.config.get("radicale", "enabled"):
+        if self.config.getboolean("radicale", "enabled"):
             extra_modoboa_config += """
     location /radicale/ {
         proxy_pass http://localhost:5232/; # The / is important!

@@ -1,9 +1,5 @@
 """Postfix related tools."""
 
-try:
-    import configparser
-except ImportError:
-    import ConfigParser as configparser
 import os
 
 from .. import package
@@ -12,37 +8,23 @@ from .. import utils
 from . import base
 from . import backup, install
 
+# Downloaded file ends up in the TLS configuration: never follow a branch
+DHE_GROUPS_COMMIT = "67925fd34156d223ac82f0a9719de9b8a33414d6"
+
 
 class Postfix(base.Installer):
     """Postfix installer."""
 
     appname = "postfix"
-    packages = {
-        "deb": ["postfix", "postfix-pcre"],
-    }
+    packages = ["postfix", "postfix-pcre"]
     config_files = ["main.cf", "master.cf", "anonymize_headers.pcre"]
 
     def get_packages(self):
         """Additional packages."""
-        if package.backend.FORMAT == "deb":
-            packages = ["postfix-{}".format(self.db_driver)]
-        else:
-            packages = []
-        return super().get_packages() + packages
+        return super().get_packages() + ["postfix-{}".format(self.db_driver)]
 
     def install_packages(self):
         """Preconfigure postfix package installation."""
-        if "centos" in utils.dist_name():
-            config = configparser.ConfigParser()
-            with open("/etc/yum.repos.d/CentOS-Base.repo") as fp:
-                config.read_file(fp)
-            config.set("centosplus", "enabled", "1")
-            config.set("centosplus", "includepkgs", "postfix-*")
-            config.set("base", "exclude", "postfix-*")
-            config.set("updates", "exclude", "postfix-*")
-            with open("/etc/yum.repos.d/CentOS-Base.repo", "w") as fp:
-                config.write(fp)
-
         package.backend.preconfigure(
             "postfix", "main_mailer_type", "select", "No configuration")
         super().install_packages()
@@ -69,7 +51,10 @@ class Postfix(base.Installer):
         group = self.config.get(self.appname, "dhe_group")
         file_name = f"ffdhe{group}.pem"
         if not os.path.exists(f"{self.config_dir}/{file_name}"):
-            url = f"https://raw.githubusercontent.com/internetstandards/dhe_groups/main/{file_name}"
+            url = (
+                "https://raw.githubusercontent.com/internetstandards/"
+                f"dhe_groups/{DHE_GROUPS_COMMIT}/{file_name}"
+            )
             utils.exec_cmd(f"wget {url}", cwd=self.config_dir)
 
     def post_run(self):
