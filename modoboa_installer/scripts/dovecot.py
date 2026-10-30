@@ -274,7 +274,7 @@ class Dovecot(base.Installer):
                 self.get_file_path("fix_modoboa_postgres_schema.sql"),
             )
         for f in glob.glob(f"{self.get_file_path(f'{self.version}/conf.d')}/*"):
-            if os.path.isfile(f):
+            if os.path.isfile(f) and not f.endswith(".tpl"):
                 utils.copy_file(f, "{}/conf.d".format(self.config_dir))
         # Make postlogin script executable
         utils.exec_cmd("chmod +x /usr/local/bin/postlogin.sh")

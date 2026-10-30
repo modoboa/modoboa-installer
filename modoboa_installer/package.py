@@ -2,8 +2,6 @@
 
 import re
 
-from os.path import isfile as file_exists
-
 from . import utils
 
 
@@ -43,14 +41,12 @@ class DEBPackage:
         line_types = ["deb"]
         if with_source:
             line_types.append("deb-src")
-        for line_type in line_types:
-            line = (
-                f"{line_type} [arch=amd64 signed-by={key_file}] "
-                f"{url} {codename} main"
-            )
-            target_file = f"/etc/apt/sources.list.d/{name}.list"
-            tee_option = "-a" if file_exists(target_file) else ""
-            utils.exec_cmd(f'echo "{line}" | tee {tee_option} {target_file}')
+        with open(f"/etc/apt/sources.list.d/{name}.list", "w") as fp:
+            for line_type in line_types:
+                fp.write(
+                    f"{line_type} [arch=amd64 signed-by={key_file}] "
+                    f"{url} {codename} main\n"
+                )
         self.index_updated = False
 
     def update(self, force=False):

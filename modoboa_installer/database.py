@@ -53,9 +53,7 @@ class PostgreSQL(Database):
                 self._setup_pgpass(dbname, dbuser, dbpassword)
                 cmd += " -h {} -p {} -U {} -w".format(
                     self.dbhost, self.dbport, dbuser)
-        query = query.replace("'", "'\"'\"'")
-        cmd = "{} -c '{}' ".format(cmd, query)
-        utils.exec_cmd(cmd, sudo_user=self.dbuser)
+        utils.exec_cmd(cmd, sudo_user=self.dbuser, stdin_data=query + ";\n")
 
     def create_user(self, name, password):
         """Create a user."""
@@ -101,8 +99,8 @@ class PostgreSQL(Database):
         pw = pwd.getpwnam(self.dbuser)
         target = os.path.join(pw[5], ".pgpass")
         with open(target, "w") as fp:
-            fp.write("127.0.0.1:*:{}:{}:{}\n".format(
-                dbname, dbname, dbpasswd))
+            fp.write("{}:*:{}:{}:{}\n".format(
+                self.dbhost, dbname, dbuser, dbpasswd))
         mode = stat.S_IRUSR | stat.S_IWUSR
         os.chmod(target, mode)
         os.chown(target, pw[2], pw[3])
@@ -120,8 +118,8 @@ class PostgreSQL(Database):
         # Reset pgpass since we backup multiple db (different secret set)
         self._pgpass_done = False
         self._setup_pgpass(dbname, dbuser, dbpassword)
-        cmd = "pg_dump -h {} -d {} -U {} -O  -w > {}".format(
-            self.dbhost, dbname, dbuser, path)
+        cmd = "pg_dump -h {} -p {} -d {} -U {} -O  -w > {}".format(
+            self.dbhost, self.dbport, dbname, dbuser, path)
         utils.exec_or_fail(
             cmd, "Failed to dump database {}".format(dbname),
             sudo_user=self.dbuser)
@@ -134,9 +132,9 @@ class MySQL(Database):
     packages = ["mariadb-server", "libmariadb-dev"]
     service = "mariadb"
 
-    def _escape(self, query):
-        """Replace special characters."""
-        return query.replace("'", "'\"'\"'")
+    def _get_env(self, password):
+        """Return the environment giving a password to mysql commands."""
+        return {**os.environ, "MYSQL_PWD": password}
 
     def install_package(self):
         """Preseed package installation."""
@@ -155,8 +153,7 @@ class MySQL(Database):
                 "flush privileges"
             ]
         for query in queries:
-            utils.exec_cmd(
-                "mysql -D mysql -e '{}'".format(self._escape(query)))
+            utils.exec_cmd("mysql -D mysql", stdin_data=query + ";\n")
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a mysql query."""
@@ -165,11 +162,10 @@ class MySQL(Database):
             dbpassword = self.dbpassword
         cmd = "mysql -h {} -P {} -u {}".format(
             self.dbhost, self.dbport, dbuser)
-        if dbpassword:
-            cmd += " -p{}".format(dbpassword)
         if dbname:
             cmd += " -D {}".format(dbname)
-        return utils.exec_cmd(cmd + """ -e '{}' """.format(self._escape(query)))
+        return utils.exec_cmd(
+            cmd, env=self._get_env(dbpassword), stdin_data=query + ";\n")
 
     def create_user(self, name, password):
         """Create a user."""
@@ -206,24 +202,25 @@ class MySQL(Database):
 
     def grant_right_on_table(self, dbname, table, user, right):
         """Grant specific right to user on table."""
-        query = "GRANT {} ON {}.{} TO '{}'@'%'".format(
-            right.upper(), dbname, table, user)
-        self._exec_query(query)
+        for host in ["%", "localhost"]:
+            self._exec_query("GRANT {} ON {}.{} TO '{}'@'{}'".format(
+                right.upper(), dbname, table, user, host))
 
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""
         return utils.exec_cmd(
-            "mysql -h {} -P {} -u {} -p{} {} < {}".format(
-                self.dbhost, self.dbport, dbuser, dbpassword, dbname, path)
+            "mysql -h {} -P {} -u {} {} < {}".format(
+                self.dbhost, self.dbport, dbuser, dbname, path),
+            env=self._get_env(dbpassword)
         )
 
     def dump_database(self, dbname, dbuser, dbpassword, path):
         """Dump DB to SQL file."""
-        cmd = "mysqldump -h {} -u {} -p{} {} > {}".format(
-            self.dbhost, dbuser, dbpassword, dbname, path)
+        cmd = "mysqldump -h {} -P {} -u {} {} > {}".format(
+            self.dbhost, self.dbport, dbuser, dbname, path)
         utils.exec_or_fail(
             cmd, "Failed to dump database {}".format(dbname),
-            sudo_user=self.dbuser)
+            env=self._get_env(dbpassword))
 
 
 def get_backend(config):

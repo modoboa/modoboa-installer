@@ -174,7 +174,7 @@ class Modoboa(base.Installer):
             ]
         if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
             # Drop dkim view to prevent an error during migration (2.0)
-            self.backend._exec_query("DROP VIEW IF EXISTS dkim")
+            self.backend._exec_query("DROP VIEW IF EXISTS dkim", self.dbname)
         code, output = utils.exec_cmd(
             "bash -c '{} modoboa-admin.py deploy instance {}'".format(
                 prefix, " ".join(args)),
@@ -184,6 +184,8 @@ class Modoboa(base.Installer):
                 shutil.rmtree(target, ignore_errors=True)
                 os.rename(previous_instance, target)
             raise utils.FatalError(output)
+        if previous_instance:
+            self._restore_media(previous_instance, target)
         self._allow_autoconfig_hosts(target)
         if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
             # Restore view previously deleted
@@ -195,6 +197,18 @@ class Modoboa(base.Installer):
                 self.dbname, "dkim", self.config.get("opendkim", "dbuser"),
                 "SELECT"
             )
+
+    def _restore_media(self, previous_instance, target):
+        """Files uploaded by users do not come with a new instance."""
+        media_dir = os.path.join(previous_instance, "media")
+        if not os.path.isdir(media_dir):
+            return
+        target_dir = os.path.join(target, "media")
+        shutil.copytree(media_dir, target_dir, dirs_exist_ok=True)
+        utils.exec_or_fail(
+            f"chown -R {self.user}:{self.user} {target_dir}",
+            "Failed to reset media permissions",
+        )
 
     def _allow_autoconfig_hosts(self, target):
         """Let Django answer to mail client auto-configuration requests."""

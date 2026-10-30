@@ -16,6 +16,9 @@ import run
 from modoboa_installer import utils
 
 
+REAL_EXEC_CMD = utils.exec_cmd
+
+
 def setUpModule():
     """Tests must reach neither GitHub nor the system they run on."""
     for target, return_value in [
@@ -1189,6 +1192,188 @@ class BackupRestoreCycleTestCase(unittest.TestCase):
         self.assertFalse(os.path.exists(self.path("backup", "mails")))
         Dovecot(self.config, False, path).restore()
         self.assertTrue(os.path.isfile(self.path("vmail", "message")))
+
+
+class DatabaseTestCase(unittest.TestCase):
+    """Secrets stay out of the process list and settings are honoured."""
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp()
+        cfgfile = os.path.join(self.workdir, "installer.cfg")
+        sys.stdout = StringIO()
+        run.main([
+            "--skip-checks",
+            "--stop-after-configfile-check",
+            "--configfile", cfgfile,
+            "example.test"])
+        self.config = configparser.ConfigParser()
+        self.config.read(cfgfile)
+        self.config.set("database", "port", "6543")
+        self.config.set("dovecot", "domain", "example.test")
+        if not self.config.has_section("mysql"):
+            self.config.add_section("mysql")
+        self.config.set("mysql", "user", "root")
+        self.config.set("mysql", "password", "rootsecret")
+        patcher = patch("modoboa_installer.package.backend")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        shutil.rmtree(self.workdir)
+
+    def get_backend(self, engine):
+        from modoboa_installer import database
+
+        self.config.set("database", "engine", engine)
+        return database.get_backend(self.config)
+
+    def commands(self, exec_cmd):
+        return [call[0][0] for call in exec_cmd.call_args_list]
+
+    def stdin(self, exec_cmd):
+        return [
+            call[1].get("stdin_data") for call in exec_cmd.call_args_list]
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(1, b""))
+    def test_postgres_user_password(self, exec_cmd):
+        self.get_backend("postgres").create_user("modoboa", "it's secret")
+        self.assertNotIn("secret", " ".join(self.commands(exec_cmd)))
+        self.assertEqual(
+            self.stdin(exec_cmd)[-1],
+            "CREATE USER modoboa PASSWORD 'it's secret';\n")
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    def test_mysql_passwords(self, exec_cmd):
+        backend = self.get_backend("mysql")
+        backend.create_user("modoboa", "usersecret")
+        backend.load_sql_file("modoboa", "modoboa", "dbsecret", "/f.sql")
+        backend.dump_database("modoboa", "modoboa", "dbsecret", "/d.sql")
+        self.assertNotIn("secret", " ".join(self.commands(exec_cmd)))
+        self.assertIn("usersecret", self.stdin(exec_cmd)[0])
+        self.assertEqual(
+            exec_cmd.call_args_list[0][1]["env"]["MYSQL_PWD"], "rootsecret")
+        self.assertEqual(
+            exec_cmd.call_args[1]["env"]["MYSQL_PWD"], "dbsecret")
+        self.assertIn("-P 6543", self.commands(exec_cmd)[-1])
+        # sudo would drop the environment holding the password
+        self.assertNotIn("sudo_user", exec_cmd.call_args[1])
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    def test_mysql_root_password(self, exec_cmd):
+        with patch("modoboa_installer.utils.dist_info",
+                   return_value=("Debian GNU/Linux", "13")), \
+                patch("modoboa_installer.system.enable_and_start_service"):
+            self.get_backend("mysql").install_package()
+        self.assertNotIn("rootsecret", " ".join(self.commands(exec_cmd)))
+        self.assertIn("rootsecret", self.stdin(exec_cmd)[0])
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    def test_mysql_table_right(self, exec_cmd):
+        self.get_backend("mysql").grant_right_on_table(
+            "modoboa", "dkim", "opendkim", "select")
+        queries = " ".join(self.stdin(exec_cmd))
+        self.assertIn("TO 'opendkim'@'%'", queries)
+        self.assertIn("TO 'opendkim'@'localhost'", queries)
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    def test_postgres_dump(self, exec_cmd):
+        backend = self.get_backend("postgres")
+        with patch.object(backend, "_setup_pgpass"):
+            backend.dump_database("modoboa", "modoboa", "secret", "/d.sql")
+        self.assertIn("-p 6543", self.commands(exec_cmd)[0])
+
+    def test_pgpass(self):
+        backend = self.get_backend("postgres")
+        backend.dbhost = "localhost"
+        with patch("modoboa_installer.database.pwd.getpwnam",
+                   return_value=(0, 0, 1000, 1000, 0, self.workdir, "")), \
+                patch("os.chown"):
+            backend._setup_pgpass("modoboa", "dbuser", "secret")
+        with open(os.path.join(self.workdir, ".pgpass")) as fp:
+            self.assertEqual(fp.read(), "localhost:*:modoboa:dbuser:secret\n")
+
+    def test_exec_cmd_stdin(self):
+        """Run the real command: the module-level patch hides it."""
+        code, output = REAL_EXEC_CMD("cat", stdin_data="hello\n")
+        self.assertEqual((code, output), (0, b"hello\n"))
+        code, output = REAL_EXEC_CMD("exit 3", stdin_data="x" * 200000)
+        self.assertEqual(code, 3)
+
+    def test_dkim_view_dropped_from_modoboa_database(self):
+        from modoboa_installer.scripts.modoboa import Modoboa
+
+        self.config.set("modoboa", "version", "latest")
+        self.config.set("general", "domain", "example.test")
+        modoboa = Modoboa(self.config, True, None)
+        modoboa.user = "modoboa"
+        modoboa.home_dir = self.workdir
+        with patch.object(modoboa.backend, "_exec_query") as exec_query, \
+                patch.object(modoboa.backend, "load_sql_file"), \
+                patch.object(modoboa.backend, "grant_right_on_table"):
+            modoboa._deploy_instance()
+        exec_query.assert_called_once_with(
+            "DROP VIEW IF EXISTS dkim", "modoboa")
+
+    def test_upgrade_keeps_media(self):
+        from modoboa_installer.scripts.modoboa import Modoboa
+
+        self.config.set("modoboa", "version", "latest")
+        self.config.set("general", "domain", "example.test")
+        self.config.set("opendkim", "enabled", "false")
+        media_dir = os.path.join(self.workdir, "instance", "media", "logos")
+        os.makedirs(media_dir)
+        Path(media_dir, "logo.png").touch()
+
+        def deploy(cmd, **kwargs):
+            if "deploy instance" in cmd:
+                os.makedirs(os.path.join(self.workdir, "instance", "media"))
+            return 0, b""
+
+        modoboa = Modoboa(self.config, True, None)
+        modoboa.user = "modoboa"
+        modoboa.home_dir = self.workdir
+        with patch("modoboa_installer.utils.exec_cmd",
+                   side_effect=deploy) as exec_cmd:
+            modoboa._deploy_instance()
+        self.assertTrue(os.path.isfile(os.path.join(media_dir, "logo.png")))
+        self.assertIn("chown -R modoboa:modoboa", " ".join(
+            call[0][0] for call in exec_cmd.call_args_list))
+
+    def test_invalid_silent_backup_path(self):
+        path = os.path.join(self.workdir, "afile")
+        Path(path).touch()
+        args = run.parser_setup([
+            "--silent-backup", "--backup-path", path, "example.test"])
+        with self.assertRaises(SystemExit) as ctx:
+            run.backup_system(self.config, args, [])
+        self.assertEqual(ctx.exception.code, 1)
+
+    def test_custom_repository_written_once(self):
+        from modoboa_installer import package
+
+        backend = package.DEBPackage()
+        with patch("builtins.open", mock_open()) as opener:
+            for _ in range(2):
+                backend.add_custom_repository(
+                    "rspamd", "http://rspamd.test/", "http://rspamd.test/key",
+                    "trixie")
+        opener.assert_called_with("/etc/apt/sources.list.d/rspamd.list", "w")
+        self.assertEqual(opener().write.call_count, 4)
+
+    def test_dovecot_templates_are_not_copied(self):
+        from modoboa_installer.scripts.dovecot import Dovecot
+
+        dovecot = Dovecot(self.config, False, None)
+        dovecot._version = "2.4"
+        dovecot._sharing_enabled = False
+        dovecot.mailboxes_owner = "vmail"
+        with patch("modoboa_installer.utils.copy_file") as copy_file, \
+                patch("modoboa_installer.system.add_user_to_group"), \
+                patch.object(dovecot, "protect_file"):
+            dovecot.post_run()
+        copied = [call[0][0] for call in copy_file.call_args_list]
+        self.assertTrue(copied)
+        self.assertEqual([f for f in copied if f.endswith(".tpl")], [])
 
 
 class DistributionTestCase(unittest.TestCase):
