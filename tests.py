@@ -1122,6 +1122,17 @@ class DataSafetyTestCase(unittest.TestCase):
             checks.check_version()
         self.assertIn("Could not check", sys.stdout.getvalue())
 
+    def test_version_check_from_another_directory(self):
+        from urllib.error import URLError
+        from modoboa_installer import checks
+
+        self.addCleanup(os.chdir, os.getcwd())
+        os.chdir(self.workdir)
+        with patch("modoboa_installer.checks.urlopen",
+                   side_effect=URLError("unreachable")):
+            checks.check_version()
+        self.assertIn("Could not check", sys.stdout.getvalue())
+
     def test_failed_upgrade_keeps_instance(self):
         from modoboa_installer import utils
 
@@ -2164,6 +2175,9 @@ class DryRunTestCase(unittest.TestCase):
                 self.installed("etc/rspamd/local.d/worker-controller.inc"),
                 mode != "upgrade")
         self.assertSecretsProtected()
+        # Its workers run as users created by the last scripts
+        self.assertEqual(self.commands[-2:], [
+            "service supervisor restart", "service cron restart"])
         self.assertIn(
             "chmod 600 /etc/dovecot/conf.d/10-ssl-keys.try", self.commands)
         self.assertEqual(
