@@ -150,10 +150,14 @@ class LetsEncryptCertificate(CertificateBackend):
         utils.printcolor(
             "Generating new certificate using letsencrypt", utils.YELLOW)
         self.install_certbot()
-        utils.exec_cmd(
+        code, output = utils.exec_cmd(
             "certbot certonly -n --standalone -d {} -m {} --agree-tos"
             .format(
                 self.hostname, self.config.get("letsencrypt", "email")))
+        if code:
+            utils.error("Failed to generate a certificate for {}: {}".format(
+                self.hostname, output.decode()))
+            sys.exit(1)
         with open("/etc/cron.d/letsencrypt", "w") as fp:
             fp.write("0 */12 * * * root certbot renew "
                      "--quiet\n")
@@ -177,7 +181,8 @@ class LetsEncryptCertificate(CertificateBackend):
         for lineage in lineages:
             cfg_file = "/etc/letsencrypt/renewal/{}.conf".format(lineage)
             utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfg_file))
-        with open("/etc/letsencrypt/renewal-hooks/deploy/reload-services.sh", "w") as fp:
+        hook = "/etc/letsencrypt/renewal-hooks/deploy/reload-services.sh"
+        with open(hook, "w") as fp:
             fp.write(f"""#!/bin/bash
 
 HOSTNAME=$(basename $RENEWED_LINEAGE)
@@ -188,6 +193,8 @@ then
 	systemctl reload postfix
 fi
 """)
+        # certbot silently skips hooks that are not executable
+        os.chmod(hook, 0o755)
 
 
 def get_backend(config):

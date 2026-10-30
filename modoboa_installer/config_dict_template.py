@@ -334,7 +334,7 @@ ConfigDictTemplate = [
         "values": [
             {
                 "option": "enabled",
-                "default": "true",
+                "default": ["antispam.enabled=true"],
             },
             {
                 "option": "user",

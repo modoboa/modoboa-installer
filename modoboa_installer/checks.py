@@ -11,8 +11,17 @@ def check_version():
     with open("version.txt", "r") as version:
         local_version = version.readline()
     remote_version = ""
-    with urlopen("https://raw.githubusercontent.com/modoboa/modoboa-installer/master/version.txt") as r_version:
-        remote_version = r_version.read().decode()
+    try:
+        with urlopen(
+                "https://raw.githubusercontent.com/modoboa/modoboa-installer/master/version.txt",
+                timeout=10) as r_version:
+            remote_version = r_version.read().decode()
+    except OSError as exc:
+        utils.printcolor(
+            f"Could not check that your installer is up-to-date: {exc}",
+            utils.YELLOW
+        )
+        return
     if local_version == "" or remote_version == "":
         utils.printcolor(
             "Could not check that your installer is up-to-date: "

@@ -18,7 +18,7 @@ class Database:
     service: Optional[str] = None
 
     def __init__(self, config):
-        """Install if necessary."""
+        """Read settings."""
         self.config = config
         engine = self.config.get("database", "engine")
         self.dbhost = self.config.get("database", "host")
@@ -26,8 +26,6 @@ class Database:
             "database", "port", fallback=self.default_port)
         self.dbuser = config.get(engine, "user")
         self.dbpassword = config.get(engine, "password")
-        if self.config.getboolean("database", "install"):
-            self.install_package()
 
     def install_package(self):
         """Install database package if required."""
@@ -102,12 +100,13 @@ class PostgreSQL(Database):
     def create_database(self, name, owner):
         """Create a database."""
         code, output = utils.exec_cmd(
-            "psql -lqt | cut -d \\| -f 1 | grep -w {} | wc -l"
+            "psql -lqt | cut -d \\| -f 1 | grep -qw {}"
             .format(name), sudo_user=self.dbuser)
-        if code:
+        if not code:
             return
-        utils.exec_cmd(
+        utils.exec_or_fail(
             "createdb {} -O {}".format(name, owner),
+            "Failed to create database {}".format(name),
             sudo_user=self.dbuser)
 
     def grant_access(self, dbname, user):
@@ -143,7 +142,7 @@ class PostgreSQL(Database):
         self._setup_pgpass(dbname, dbuser, dbpassword)
         cmd = "psql -h {} -p {} -d {} -U {} -w < {}".format(
             self.dbhost, self.dbport, dbname, dbuser, path)
-        utils.exec_cmd(cmd, sudo_user=self.dbuser)
+        return utils.exec_cmd(cmd, sudo_user=self.dbuser)
 
     def dump_database(self, dbname, dbuser, dbpassword, path):
         """Dump DB to SQL file."""
@@ -152,7 +151,9 @@ class PostgreSQL(Database):
         self._setup_pgpass(dbname, dbuser, dbpassword)
         cmd = "pg_dump -h {} -d {} -U {} -O  -w > {}".format(
             self.dbhost, dbname, dbuser, path)
-        utils.exec_cmd(cmd, sudo_user=self.dbuser)
+        utils.exec_or_fail(
+            cmd, "Failed to dump database {}".format(dbname),
+            sudo_user=self.dbuser)
 
 
 class MySQL(Database):
@@ -228,7 +229,7 @@ class MySQL(Database):
             cmd += " -p{}".format(dbpassword)
         if dbname:
             cmd += " -D {}".format(dbname)
-        utils.exec_cmd(cmd + """ -e '{}' """.format(self._escape(query)))
+        return utils.exec_cmd(cmd + """ -e '{}' """.format(self._escape(query)))
 
     def create_user(self, name, password):
         """Create a user."""
@@ -241,13 +242,17 @@ class MySQL(Database):
 
     def create_database(self, name, owner):
         """Create a database."""
-        self._exec_query(
+        code, output = self._exec_query(
             "CREATE DATABASE IF NOT EXISTS {} "
             "DEFAULT CHARACTER SET {} "
             "DEFAULT COLLATE {}".format(
                 name, self.config.get("mysql", "charset"),
                 self.config.get("mysql", "collation"))
         )
+        if code:
+            raise utils.FatalError(
+                "Failed to create database {}: {}".format(
+                    name, output.decode()))
         self.grant_access(name, owner)
 
     def grant_access(self, dbname, user):
@@ -267,7 +272,7 @@ class MySQL(Database):
 
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""
-        utils.exec_cmd(
+        return utils.exec_cmd(
             "mysql -h {} -P {} -u {} -p{} {} < {}".format(
                 self.dbhost, self.dbport, dbuser, dbpassword, dbname, path)
         )
@@ -276,7 +281,9 @@ class MySQL(Database):
         """Dump DB to SQL file."""
         cmd = "mysqldump -h {} -u {} -p{} {} > {}".format(
             self.dbhost, dbuser, dbpassword, dbname, path)
-        utils.exec_cmd(cmd, sudo_user=self.dbuser)
+        utils.exec_or_fail(
+            cmd, "Failed to dump database {}".format(dbname),
+            sudo_user=self.dbuser)
 
 
 def get_backend(config):

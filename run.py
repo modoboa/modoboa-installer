@@ -11,6 +11,7 @@ import sys
 from modoboa_installer import checks
 from modoboa_installer import compatibility_matrix
 from modoboa_installer import constants
+from modoboa_installer import database
 from modoboa_installer import package
 from modoboa_installer import scripts
 from modoboa_installer import ssl
@@ -31,7 +32,7 @@ PRIMARY_APPS = [
 ]
 
 
-def backup_system(config, args):
+def backup_system(config, args, antispam_apps):
     """Launch backup procedure."""
     disclaimers.backup_disclaimer()
     backup_path = None
@@ -65,7 +66,7 @@ def backup_system(config, args):
     # Backup configuration file
     utils.copy_file(args.configfile, backup_path)
     # Backup applications
-    for app in PRIMARY_APPS:
+    for app in PRIMARY_APPS + antispam_apps:
         if app == "dovecot" and args.no_mail:
             utils.printcolor("Skipping mail backup", utils.BLUE)
             continue
@@ -155,22 +156,23 @@ def main(input_args):
 
     utils.success("Welcome to Modoboa installer!\n")
 
-    # Checks
-    if not args.skip_checks:
+    # Checks (they may ask questions, a silent backup must not)
+    if not args.skip_checks and not args.silent_backup:
         utils.printcolor("Checking the installer...", utils.BLUE)
         checks.handle()
         utils.success("Checks complete\n")
 
     is_config_file_available, outdate_config = utils.check_config_file(
-        args.configfile, args.interactive, args.upgrade, args.backup, is_restoring)
+        args.configfile, args.interactive, args.upgrade,
+        args.backup or args.silent_backup, is_restoring)
 
     if not is_config_file_available and (
             args.upgrade or args.backup or args.silent_backup):
         utils.error("No config file found.")
-        return
+        sys.exit(1)
 
     # Check if config is outdated and ask user if it needs to be updated
-    if is_config_file_available and outdate_config:
+    if is_config_file_available and outdate_config and not args.silent_backup:
         answer = utils.user_input("It seems that your config file is outdated. "
                                   "Would you like to update it? (Y/n) ")
         if not answer or answer.lower().startswith("y"):
@@ -202,7 +204,7 @@ def main(input_args):
         antispam_apps = ["rspamd"]
 
     if args.backup or args.silent_backup:
-        backup_system(config, args)
+        backup_system(config, args, antispam_apps)
         return
 
     if not args.upgrade and not args.restore:
@@ -248,14 +250,18 @@ def main(input_args):
         "and come back later ;)", utils.BLUE)
     utils.success("Starting...")
     package.backend.prepare_system()
-    package.backend.install_many(["sudo", "wget"])
-    ssl_backend = ssl.get_backend(config)
-    if ssl_backend and not args.upgrade:
-        ssl_backend.generate_cert()
-    for appname in PRIMARY_APPS + antispam_apps:
-        scripts.install(appname, config, args.upgrade, args.restore)
-    system.restart_service("cron")
-    package.backend.restore_system()
+    try:
+        package.backend.install_many(["sudo", "wget"])
+        if config.getboolean("database", "install"):
+            database.get_backend(config).install_package()
+        ssl_backend = ssl.get_backend(config)
+        if ssl_backend and not args.upgrade:
+            ssl_backend.generate_cert()
+        for appname in PRIMARY_APPS + antispam_apps:
+            scripts.install(appname, config, args.upgrade, args.restore)
+        system.restart_service("cron")
+    finally:
+        package.backend.restore_system()
     hostname = config.get("general", "hostname")
     if not args.restore:
         utils.success(

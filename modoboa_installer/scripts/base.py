@@ -1,6 +1,7 @@
 """Base classes."""
 
 import os
+import shutil
 import sys
 from typing import Optional
 
@@ -101,8 +102,14 @@ class Installer:
         if not schema:
             schema = self.get_sql_schema_path()
         if schema:
-            self.backend.load_sql_file(
+            code, output = self.backend.load_sql_file(
                 self.dbname, self.dbuser, self.dbpasswd, schema)
+            if code:
+                message = f"Failed to load {schema}: {output.decode()}"
+                if self.archive_path:
+                    raise utils.FatalError(message)
+                # The schema may already be there if the installer is run twice
+                utils.error(message)
 
     def setup_user(self):
         """Setup a system user."""
@@ -169,6 +176,12 @@ class Installer:
             if not dst.startswith("/"):
                 dst = os.path.join(self.config_dir, dst)
             utils.copy_from_template(src, dst, context)
+
+    def protect_file(self, path, group, mode=0o640):
+        """Keep a file holding secrets away from other local users."""
+        if os.path.isfile(path):
+            shutil.chown(path, "root", group)
+            os.chmod(path, mode)
 
     def backup(self, path):
         if self.with_db:

@@ -57,6 +57,11 @@ class Spamassassin(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
+        amavis_user = self.config.get("amavis", "user")
+        self.protect_file(
+            os.path.join(self.config_dir, "local.cf"), amavis_user)
+        # sa-update runs as debian-spamd (if it exists) and reads local.cf
+        utils.exec_cmd(f"usermod -a -G {amavis_user} debian-spamd")
         install("razor", self.config, self.upgrade, self.restore)
         if utils.dist_name() in ["debian", "ubuntu"]:
             utils.exec_cmd(

@@ -85,6 +85,9 @@ class Opendkim(base.Installer):
         - update opendkim isocket port config
         - make sure opendkim starts after db service started
         """
+        self.protect_file(
+            os.path.join(self.config_dir, "opendkim.conf"),
+            self.app_config["user"])
         if package.backend.FORMAT == "deb":
             params_file = "/etc/default/opendkim"
         else:

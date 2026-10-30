@@ -140,6 +140,7 @@ class Modoboa(base.Installer):
     def _deploy_instance(self):
         """Deploy Modoboa."""
         target = os.path.join(self.home_dir, "instance")
+        previous_instance = None
         if os.path.exists(target):
             condition = (
                 not self.upgrade and
@@ -155,7 +156,11 @@ class Modoboa(base.Installer):
                 answer = utils.user_input("Do you confirm? (Y/n) ")
                 if answer.lower().startswith("n"):
                     return
-            shutil.rmtree(target)
+            # Kept until the new instance is deployed, in case it fails
+            previous_instance = "{}.old".format(target)
+            if os.path.exists(previous_instance):
+                shutil.rmtree(previous_instance)
+            os.rename(target, previous_instance)
 
         prefix = ". {}; ".format(
             os.path.join(self.venv_path, "bin", "activate"))
@@ -198,6 +203,9 @@ class Modoboa(base.Installer):
                 prefix, " ".join(args)),
             sudo_user=self.user, cwd=self.home_dir)
         if code:
+            if previous_instance:
+                shutil.rmtree(target, ignore_errors=True)
+                os.rename(previous_instance, target)
             raise utils.FatalError(output)
         self._allow_autoconfig_hosts(target)
         if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
@@ -307,6 +315,9 @@ class Modoboa(base.Installer):
         pw = pwd.getpwnam(self.user)
         for d in [rrd_root_dir, pdf_storage_dir, webmail_media_dir]:
             utils.mkdir_safe(d, stat.S_IRWXU | stat.S_IRWXG, pw[2], pw[3])
+        if self.archive_path:
+            # Settings come from the restored database
+            return
         settings = {
             "admin": {
                 "handle_mailboxes": True,
