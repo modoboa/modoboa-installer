@@ -6,7 +6,6 @@ import shutil
 import stat
 
 from .. import database
-from .. import package
 from .. import utils
 
 from . import base
@@ -16,21 +15,13 @@ class Opendkim(base.Installer):
     """OpenDKIM installer."""
 
     appname = "opendkim"
-    packages = {
-        "deb": ["opendkim"],
-        "rpm": ["opendkim"]
-    }
+    packages = ["opendkim"]
     config_files = ["opendkim.conf", "opendkim.hosts"]
 
     def get_packages(self):
         """Additional packages."""
-        packages = super(Opendkim, self).get_packages()
-        if package.backend.FORMAT == "deb":
-            packages += ["libopendbx1-{}".format(self.db_driver)]
-        else:
-            dbengine = "postgresql" if self.dbengine == "postgres" else "mysql"
-            packages += ["opendbx-{}".format(dbengine)]
-        return packages
+        return super().get_packages() + [
+            "libopendbx1-{}".format(self.db_driver)]
 
     def install_config_files(self):
         """Make sure config directory exists."""
@@ -80,35 +71,28 @@ class Opendkim(base.Installer):
 
     def post_run(self):
         """Additional tasks.
-        Check linux distribution (package deb, rpm), to adapt
-        to config file location and syntax.
         - update opendkim isocket port config
         - make sure opendkim starts after db service started
         """
         self.protect_file(
             os.path.join(self.config_dir, "opendkim.conf"),
             self.app_config["user"])
-        if package.backend.FORMAT == "deb":
-            params_file = "/etc/default/opendkim"
-        else:
-            params_file = "/etc/opendkim.conf"
+        params_file = "/etc/default/opendkim"
         pattern = r"s/^(SOCKET=.*)/#\1/"
         utils.exec_cmd(
             "perl -pi -e '{}' {}".format(pattern, params_file))
         with open(params_file, "a") as f:
             f.write('\n'.join([
                 "",
-                'SOCKET="inet:12345@localhost"',
+                'SOCKET="inet:{}@localhost"'.format(self.app_config["port"]),
             ]))
 
         # Make sure opendkim is started after postgresql and mysql,
         # respectively.
-        if (self.dbengine != "postgres" and package.backend.FORMAT == "deb"):
-            dbservice = "mysql.service"
-        elif (self.dbengine != "postgres" and package.backend.FORMAT != "deb"):
-            dbservice = "mysqld.service"
-        else:
-            dbservice = "postgresql.service"
+        dbservice = (
+            "postgresql.service" if self.dbengine == "postgres"
+            else "mysql.service"
+        )
         # Use systemd drop-in override (survives package upgrades)
         override_dir = "/etc/systemd/system/opendkim.service.d"
         utils.mkdir(

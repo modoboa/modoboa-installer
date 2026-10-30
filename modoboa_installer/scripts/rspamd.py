@@ -18,11 +18,7 @@ class Rspamd(base.Installer):
     """Rspamd installer."""
 
     appname = "rspamd"
-    packages = {
-        "deb": [
-            "rspamd"
-        ]
-    }
+    packages = ["rspamd"]
     config_files = [
         "local.d/arc.conf",
         "local.d/dkim_signing.conf",
@@ -52,8 +48,8 @@ class Rspamd(base.Installer):
         return "/etc/rspamd"
 
     def install_packages(self):
-        debian_based_dist, codename = utils.is_dist_debian_based()
-        if debian_based_dist:
+        codename = utils.dist_codename()
+        if codename:
             utils.mkdir_safe(
                 "/etc/apt/keyrings",
                 stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP |

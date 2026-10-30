@@ -41,7 +41,7 @@
 #ssl_parameters_regenerate = 168
 
 # SSL protocols to use
-%ssl_protocol_parameter = %ssl_protocols
+ssl_min_protocol = TLSv1.2
 
 
 # SSL ciphers to use

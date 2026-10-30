@@ -18,7 +18,6 @@
 
 # Enable installed protocols
 !include_try /usr/share/dovecot/protocols.d/*.protocol
-%protocols
 
 # A comma separated list of IPs or hosts where to listen in for connections. 
 # "*" listens in all IPv4 interfaces, "::" listens in all IPv6 interfaces.

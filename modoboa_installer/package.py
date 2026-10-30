@@ -7,31 +7,10 @@ from os.path import isfile as file_exists
 from . import utils
 
 
-class Package:
-    """Base classe."""
-
-    def __init__(self, dist_name):
-        """Constructor."""
-        self.dist_name = dist_name
-
-    def preconfigure(self, name, question, qtype, answer):
-        """Empty method."""
-        pass
-
-    def prepare_system(self):
-        pass
-
-    def restore_system(self):
-        pass
-
-
-class DEBPackage(Package):
+class DEBPackage:
     """DEB based operations."""
 
-    FORMAT = "deb"
-
-    def __init__(self, dist_name):
-        super().__init__(dist_name)
+    def __init__(self):
         self.index_updated = False
         self.policy_file = "/usr/sbin/policy-rc.d"
 
@@ -107,47 +86,12 @@ class DEBPackage(Package):
         return None
 
 
-class RPMPackage(Package):
-    """RPM based operations."""
-
-    FORMAT = "rpm"
-
-    def __init__(self, dist_name):
-        """Initialize backend."""
-        super().__init__(dist_name)
-        if "centos" in dist_name:
-            self.install("epel-release")
-
-    def install(self, name):
-        """Install a package."""
-        utils.exec_cmd("yum install -y --quiet {}".format(name))
-
-    def install_many(self, names):
-        """Install many packages."""
-        return utils.exec_cmd("yum install -y --quiet {}".format(" ".join(names)))
-
-    def get_installed_version(self, name):
-        """Get installed package version."""
-        code, output = utils.exec_cmd(
-            "rpm -qi {} | grep Version".format(name))
-        match = re.match(r"Version\s+: (.+)", output.decode())
-        if match:
-            return match.group(1)
-        return None
-
-
 def get_backend():
     """Return the appropriate package backend."""
-    distname = utils.dist_name()
-    backend = None
-    if distname in ["debian", "debian gnu/linux", "ubuntu", "linuxmint"]:
-        backend = DEBPackage
-    elif "centos" in distname:
-        backend = RPMPackage
-    else:
+    if utils.dist_name() not in ["debian", "debian gnu/linux", "ubuntu"]:
         raise NotImplementedError(
             "Sorry, this distribution is not supported yet.")
-    return backend(distname)
+    return DEBPackage()
 
 
 backend = get_backend()

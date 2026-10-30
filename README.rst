@@ -65,7 +65,7 @@ a previous one using the ``--version`` option::
 
 .. note::
 
-   Version selection is available only for Modoboa >= 1.8.1.
+   Use an exact version number, ``--version=2.11.0`` for example.
 
 You can also install beta releases using the ``--beta`` flag::
 

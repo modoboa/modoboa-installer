@@ -1,7 +1,7 @@
 """Spamassassin related functions."""
 
 import os
-import pwd
+import tempfile
 
 from .. import package
 from .. import utils
@@ -16,10 +16,7 @@ class Spamassassin(base.Installer):
 
     appname = "spamassassin"
     no_daemon = True
-    packages = {
-        "deb": ["spamassassin", "pyzor"],
-        "rpm": ["spamassassin", "pyzor"]
-    }
+    packages = ["spamassassin", "pyzor"]
     with_db = True
     config_files = ["v310.pre", "local.cf"]
 
@@ -34,10 +31,13 @@ class Spamassassin(base.Installer):
             version = package.backend.get_installed_version("spamassassin")
             version = version.replace(".", "_")
             url = (
-                "http://svn.apache.org/repos/asf/spamassassin/tags/"
+                "https://svn.apache.org/repos/asf/spamassassin/tags/"
                 "spamassassin_release_{}/sql/{}".format(version, fname))
-            schema = "/tmp/{}".format(fname)
-            utils.exec_cmd("wget {} -O {}".format(url, schema))
+            fd, schema = tempfile.mkstemp(suffix=".sql")
+            os.close(fd)
+            utils.exec_or_fail(
+                "wget {} -O {}".format(url, schema),
+                "Failed to download the SpamAssassin schema")
         return schema
 
     def get_template_context(self):
@@ -63,6 +63,5 @@ class Spamassassin(base.Installer):
         # sa-update runs as debian-spamd (if it exists) and reads local.cf
         utils.exec_cmd(f"usermod -a -G {amavis_user} debian-spamd")
         install("razor", self.config, self.upgrade, self.restore)
-        if utils.dist_name() in ["debian", "ubuntu"]:
-            utils.exec_cmd(
-                "perl -pi -e 's/^CRON=0/CRON=1/' /etc/cron.daily/spamassassin")
+        utils.exec_cmd(
+            "perl -pi -e 's/^CRON=0/CRON=1/' /etc/cron.daily/spamassassin")

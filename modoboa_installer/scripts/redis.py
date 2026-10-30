@@ -2,7 +2,6 @@
 
 from urllib.parse import quote
 
-from .. import package
 from .. import system
 from .. import utils
 
@@ -45,16 +44,8 @@ class Redis(base.Installer):
     """
 
     appname = "redis"
-    packages = {
-        "deb": ["redis-server"],
-        "rpm": ["redis"],
-    }
-
-    def get_daemon_name(self):
-        """Return appropriate daemon name."""
-        if package.backend.FORMAT == "rpm":
-            return "redis"
-        return "redis-server"
+    daemon_name = "redis-server"
+    packages = ["redis-server"]
 
     def pre_run(self):
         """A local installation only provides a default local server."""

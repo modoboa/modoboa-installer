@@ -18,15 +18,12 @@ class Dovecot(base.Installer):
     """Dovecot installer."""
 
     appname = "dovecot"
-    packages = {
-        "deb": [
-            "dovecot-imapd",
-            "dovecot-lmtpd",
-            "dovecot-managesieved",
-            "dovecot-sieve",
-        ],
-        "rpm": ["dovecot", "dovecot-pigeonhole"],
-    }
+    packages = [
+        "dovecot-imapd",
+        "dovecot-lmtpd",
+        "dovecot-managesieved",
+        "dovecot-sieve",
+    ]
     per_version_config_files = {
         "2.3": [
             "dovecot.conf",
@@ -55,6 +52,11 @@ class Dovecot(base.Installer):
         if not hasattr(self, "_version"):
             self._version = package.backend.get_installed_version("dovecot-core")[:3]
         return self._version
+
+    @property
+    def move_spam_to_junk(self) -> bool:
+        """Move messages flagged as spam to the Junk folder."""
+        return self.config.getboolean("dovecot", "move_spam_to_junk")
 
     @property
     def learn_from_imap(self) -> bool:
@@ -112,11 +114,14 @@ class Dovecot(base.Installer):
         _config_files.append(
             f"postlogin-{self.dbengine}.sh=/usr/local/bin/postlogin.sh"
         )
-        if self.app_config["move_spam_to_junk"]:
-            _config_files += [
-                "custom_after_sieve/spam-to-junk.sieve=conf.d/custom_after_sieve/spam-to-junk.sieve",
-                f"{self.version}/conf.d/90-sieve.conf=conf.d/90-sieve.conf",
-            ]
+        # Always needed: it also holds the location of users' Sieve scripts
+        _config_files.append(
+            f"{self.version}/conf.d/90-sieve.conf=conf.d/90-sieve.conf"
+        )
+        if self.move_spam_to_junk:
+            _config_files.append(
+                "custom_after_sieve/spam-to-junk.sieve=conf.d/custom_after_sieve/spam-to-junk.sieve"
+            )
         if self.learn_from_imap:
             _config_files += [
                 f"{self.version}/conf.d/95-imapsieve.conf=conf.d/95-imapsieve.conf",
@@ -133,9 +138,8 @@ class Dovecot(base.Installer):
     def get_packages(self):
         """Additional packages."""
         packages = ["dovecot-{}".format(self.db_driver)]
-        if package.backend.FORMAT == "deb":
-            if "pop3" in self.config.get("dovecot", "extra_protocols"):
-                packages += ["dovecot-pop3d"]
+        if "pop3" in self.config.get("dovecot", "extra_protocols"):
+            packages += ["dovecot-pop3d"]
         packages += super().get_packages()
         backports_codename = getattr(self, "backports_codename", None)
         if backports_codename:
@@ -160,30 +164,6 @@ class Dovecot(base.Installer):
         """Additional variables."""
         context = super().get_template_context()
         pw_mailbox = pwd.getpwnam(self.mailboxes_owner)
-        dovecot_package = {"deb": "dovecot-core", "rpm": "dovecot"}
-        ssl_protocol_parameter = "ssl_protocols"
-        if (
-            package.backend.get_installed_version(
-                dovecot_package[package.backend.FORMAT]
-            )
-            > "2.3"
-        ):
-            ssl_protocol_parameter = "ssl_min_protocol"
-        ssl_protocols = "!SSLv2 !SSLv3"
-        if package.backend.get_installed_version("openssl").startswith(
-            "1.1"
-        ) or package.backend.get_installed_version("openssl").startswith("3"):
-            ssl_protocols = "!SSLv3"
-        if ssl_protocol_parameter == "ssl_min_protocol":
-            ssl_protocols = "TLSv1.2"
-        if "centos" in utils.dist_name():
-            protocols = "protocols = imap lmtp sieve"
-            extra_protocols = self.config.get("dovecot", "extra_protocols")
-            if extra_protocols:
-                protocols += " {}".format(extra_protocols)
-        else:
-            # Protocols are automatically guessed on debian/ubuntu
-            protocols = ""
 
         oauth2_client_id, oauth2_client_secret = utils.create_oauth2_app(
             "Dovecot",
@@ -207,15 +187,12 @@ class Dovecot(base.Installer):
                 "modoboa_dbname": self.config.get("modoboa", "dbname"),
                 "modoboa_dbuser": self.config.get("modoboa", "dbuser"),
                 "modoboa_dbpassword": self.config.get("modoboa", "dbpassword"),
-                "protocols": protocols,
-                "ssl_protocols": ssl_protocols,
-                "ssl_protocol_parameter": ssl_protocol_parameter,
                 "modoboa_2_2_or_greater": "" if self.modoboa_2_2_or_greater else "#",
                 "not_modoboa_2_2_or_greater": (
                     "" if not self.modoboa_2_2_or_greater else "#"
                 ),
                 "do_move_spam_to_junk": (
-                    "" if self.app_config["move_spam_to_junk"] else "#"
+                    "" if self.move_spam_to_junk else "#"
                 ),
                 "oauth2_introspection_url": oauth2_introspection_url,
                 "radicale_user": self.config.get("radicale", "user"),
@@ -229,7 +206,7 @@ class Dovecot(base.Installer):
 
     def install_config_files(self):
         """Create sieve dir if needed."""
-        if self.app_config["move_spam_to_junk"]:
+        if self.move_spam_to_junk:
             utils.mkdir_safe(
                 f"{self.config_dir}/conf.d/custom_after_sieve",
                 stat.S_IRWXU
@@ -312,7 +289,7 @@ class Dovecot(base.Installer):
         self._protect_secrets()
         # Add mailboxes user to dovecot group for modoboa mailbox commands.
         # See https://github.com/modoboa/modoboa/issues/2157.
-        if self.app_config["move_spam_to_junk"]:
+        if self.move_spam_to_junk:
             # Compile sieve script
             sieve_file = (
                 f"{self.config_dir}/conf.d/custom_after_sieve/spam-to-junk.sieve"

@@ -20,7 +20,6 @@ dovecot_config_version = 2.4.0
 dovecot_storage_version = 2.4.0
 
 # Protocols we want to be serving.
-%protocols
 !include_try /usr/share/dovecot/protocols.d/*.protocol
 
 # A comma separated list of IPs or hosts where to listen in for connections. 
