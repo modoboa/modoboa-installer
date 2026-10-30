@@ -1,3 +1,6 @@
 [run]
 branch = True
 source = modoboa_installer,run
+
+[report]
+fail_under = 90
