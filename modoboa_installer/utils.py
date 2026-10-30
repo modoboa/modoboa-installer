@@ -36,7 +36,7 @@ def user_input(message):
     return answer
 
 
-def exec_cmd(cmd, sudo_user=None, login=True, **kwargs):
+def exec_cmd(cmd, sudo_user=None, login=True, stdin_data=None, **kwargs):
     """
     Execute a shell command.
 
@@ -45,6 +45,8 @@ def exec_cmd(cmd, sudo_user=None, login=True, **kwargs):
 
     :param str cmd: the command to execute
     :param str sudo_user: a valid system username
+    :param str stdin_data: text sent to the command, for the secrets that
+                           must not appear in the process list
     :rtype: tuple
     :return: return code, command output
     """
@@ -59,8 +61,17 @@ def exec_cmd(cmd, sudo_user=None, login=True, **kwargs):
     if capture_output:
         kwargs.update(stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     kwargs["universal_newlines"] = True
+    if stdin_data is not None:
+        kwargs["stdin"] = subprocess.PIPE
     output: str = ""
     with subprocess.Popen(cmd, **kwargs) as process:
+        if stdin_data is not None:
+            try:
+                process.stdin.write(stdin_data)
+                process.stdin.close()
+            except BrokenPipeError:
+                # The command stopped early: its exit code tells why
+                pass
         if capture_output:
             for line in process.stdout:
                 output += line

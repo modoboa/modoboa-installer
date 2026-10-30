@@ -49,7 +49,7 @@ def backup_system(config, args, antispam_apps):
         backup_path = utils.validate_backup_path(path, args.silent_backup)
         if not backup_path:
             utils.printcolor(f"Path provided: {path}", utils.BLUE)
-            return
+            sys.exit(1)
     else:
         user_value = None
         while not user_value or not backup_path:
