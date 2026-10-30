@@ -10,7 +10,7 @@ An installer which deploys a complete mail server based on Modoboa.
    This tool is still in beta, it has been tested on:
 
    * Debian 12 and upper
-   * Ubuntu Focal Fossa (20.04) and upper
+   * Ubuntu Noble Numbat (24.04) and upper
 
 .. warning::
 
