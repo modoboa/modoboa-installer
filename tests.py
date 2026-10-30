@@ -19,6 +19,7 @@ except ImportError:
     from mock import patch
 
 import run
+from modoboa_installer import utils
 
 
 class ConfigFileTestCase(unittest.TestCase):
@@ -655,6 +656,30 @@ class AutoconfigTestCase(unittest.TestCase):
                 "    'autoconfig.example.test',\n"
                 "    'autodiscover.example.test',\n"
                 "]\n")
+
+
+class ValidateBackupPathTestCase(unittest.TestCase):
+    """Test backup directory validation."""
+
+    def setUp(self):
+        """Create temp dir."""
+        self.workdir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        """Delete temp dir."""
+        shutil.rmtree(self.workdir)
+
+    @patch("modoboa_installer.utils.mkdir_safe")
+    def test_purge_no_mail_backup(self, mkdir_safe):
+        """Reusing a --no-mail backup directory must not crash."""
+        Path(self.workdir, "installer.cfg").touch()
+        os.mkdir(os.path.join(self.workdir, "custom"))
+        os.mkdir(os.path.join(self.workdir, "databases"))
+
+        result = utils.validate_backup_path(self.workdir, True)
+
+        self.assertEqual(result, self.workdir)
+        self.assertEqual(os.listdir(self.workdir), [])
 
 
 if __name__ == "__main__":

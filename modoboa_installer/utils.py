@@ -518,11 +518,11 @@ def validate_backup_path(path: str, silent_mode: bool):
             except FileNotFoundError:
                 pass
 
-            shutil.rmtree(os.path.join(path, "custom"),
-                          ignore_errors=False)
-            shutil.rmtree(os.path.join(path, "mails"), ignore_errors=False)
-            shutil.rmtree(os.path.join(path, "databases"),
-                          ignore_errors=False)
+            # mails/ is absent from --no-mail backups
+            for dirname in ["custom", "mails", "databases"]:
+                dirpath = os.path.join(path, dirname)
+                if os.path.exists(dirpath):
+                    shutil.rmtree(dirpath)
         else:
             printcolor(
                 "Error: backup directory not clean.", RED
