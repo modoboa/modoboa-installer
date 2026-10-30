@@ -43,7 +43,7 @@ def install_packages(names, venv=None, upgrade=False, **kwargs):
         " --pre" if kwargs.pop("beta", False) else "",
         " ".join(names)
     )
-    utils.exec_cmd(cmd, **kwargs)
+    utils.exec_or_fail(cmd, "Failed to install Python packages", **kwargs)
 
 
 def get_package_version(name, venv=None, **kwargs):

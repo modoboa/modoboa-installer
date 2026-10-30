@@ -70,6 +70,14 @@ def exec_cmd(cmd, sudo_user=None, login=True, **kwargs):
     return process.returncode, output.encode()
 
 
+def exec_or_fail(cmd, error_message, **kwargs):
+    """Execute a shell command and raise a FatalError if it fails."""
+    code, output = exec_cmd(cmd, **kwargs)
+    if code:
+        raise FatalError(f"{error_message}: {output.decode()}")
+    return output
+
+
 def dist_info():
     """Try to return information about the system we're running on."""
     path = "/etc/os-release"
@@ -155,6 +163,8 @@ def backup_file(fname):
     bak_name = "{}.old.{}".format(
         fname, datetime.datetime.now().isoformat())
     shutil.copy(fname, bak_name)
+    # The original may hold secrets and be protected once rewritten
+    os.chmod(bak_name, stat.S_IRUSR | stat.S_IWUSR)
 
 
 def copy_file(src, dest):
@@ -290,12 +300,12 @@ def random_key(l=16):
 
 def check_if_condition(config, entry):
     """Check if the "if" directive is present and computes it"""
-    section_if = True
     for condition in entry:
         config_key, value = condition.split("=")
         section_name, option = config_key.split(".")
-        section_if = config.get(section_name, option) == value
-    return section_if
+        if config.get(section_name, option) != value:
+            return False
+    return True
 
 
 def validate(value, config_entry):

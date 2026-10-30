@@ -253,6 +253,30 @@ class Dovecot(base.Installer):
             )
         super().install_config_files()
 
+    def _protect_secrets(self):
+        """Restrict access to the files holding secrets."""
+        if self.version == "2.3":
+            # Read at runtime by the auth and dict services
+            group = self.app_config["user"]
+            files = [
+                "dovecot-sql.conf.ext",
+                "dovecot-sql-master.conf.ext",
+                "dovecot-dict-sql.conf.ext",
+                "conf.d/dovecot-oauth2.conf.ext",
+            ]
+        else:
+            # Part of the main configuration: services get it from the
+            # master process but doveadm reads it, as the mailboxes owner
+            group = self.mailboxes_owner
+            files = [
+                "conf.d/auth-sql.conf.ext",
+                "conf.d/auth-master.conf.ext",
+                "conf.d/auth-oauth2.conf.ext",
+                "conf.d/30-dict-server.conf",
+            ]
+        for fname in files:
+            self.protect_file(os.path.join(self.config_dir, fname), group)
+
     def post_run(self):
         """Additional tasks."""
         if self.version == "2.3" and self.dbengine == "postgres":
@@ -277,9 +301,15 @@ class Dovecot(base.Installer):
                 utils.copy_file(f, "{}/conf.d".format(self.config_dir))
         # Make postlogin script executable
         utils.exec_cmd("chmod +x /usr/local/bin/postlogin.sh")
+        if self.dbengine == "mysql":
+            # This variant holds the database password
+            self.protect_file(
+                "/usr/local/bin/postlogin.sh",
+                self.config.get("modoboa", "user"), 0o750)
         # Only root should have read access to the 10-ssl-keys.try
         # See https://github.com/modoboa/modoboa/issues/2570
         utils.exec_cmd("chmod 600 /etc/dovecot/conf.d/10-ssl-keys.try")
+        self._protect_secrets()
         # Add mailboxes user to dovecot group for modoboa mailbox commands.
         # See https://github.com/modoboa/modoboa/issues/2157.
         if self.app_config["move_spam_to_junk"]:
@@ -341,27 +371,26 @@ class Dovecot(base.Installer):
         dst = os.path.join(path, "mails/")
         if os.path.exists(dst):
             shutil.rmtree(dst)
-        shutil.copytree(home_dir, dst)
+        # The active Sieve script of a mailbox is a symbolic link
+        shutil.copytree(home_dir, dst, symlinks=True)
         utils.success("Mail backup complete!")
 
     def restore(self):
         """Restore emails."""
         home_dir = self.config.get("dovecot", "home_dir")
         mail_dir = os.path.join(self.archive_path, "mails/")
-        if len(os.listdir(mail_dir)) > 0:
+        # mails/ is absent from --no-mail backups
+        if os.path.isdir(mail_dir) and os.listdir(mail_dir):
             utils.success("Copying mail backup over dovecot directory.")
             if os.path.exists(home_dir):
                 shutil.rmtree(home_dir)
-            shutil.copytree(mail_dir, home_dir)
+            shutil.copytree(mail_dir, home_dir, symlinks=True)
             # Resetting permission for vmail
-            for dirpath, dirnames, filenames in os.walk(home_dir):
-                shutil.chown(dirpath, self.mailboxes_owner, self.mailboxes_owner)
-                for filename in filenames:
-                    shutil.chown(
-                        os.path.join(dirpath, filename),
-                        self.mailboxes_owner,
-                        self.mailboxes_owner,
-                    )
+            utils.exec_or_fail(
+                f"chown -hR {self.mailboxes_owner}:{self.mailboxes_owner} "
+                f"{home_dir}",
+                "Failed to reset mailbox permissions",
+            )
         else:
             utils.printcolor(
                 "It seems that emails were not backed up, skipping restoration.",

@@ -14,9 +14,9 @@ try:
 except ImportError:
     import ConfigParser as configparser
 try:
-    from unittest.mock import patch
+    from unittest.mock import MagicMock, patch
 except ImportError:
-    from mock import patch
+    from mock import MagicMock, patch
 
 import run
 from modoboa_installer import utils
@@ -602,6 +602,7 @@ class AutoconfigTestCase(unittest.TestCase):
         with patch("modoboa_installer.ssl.os.path.exists",
                    return_value=exists), \
                 patch("modoboa_installer.ssl.open"), \
+                patch("modoboa_installer.ssl.os.chmod") as self.chmod, \
                 patch("modoboa_installer.utils.printcolor"), \
                 patch.object(backend, "install_certbot"):
             backend.generate_cert()
@@ -623,6 +624,15 @@ class AutoconfigTestCase(unittest.TestCase):
             "ssl_certificate /etc/letsencrypt/live/autoconfig.example.test/"
             "fullchain.pem;", content)
         self.assertIn("autodiscover/autodiscover.xml", content)
+        self.chmod.assert_called_once_with(
+            "/etc/letsencrypt/renewal-hooks/deploy/reload-services.sh", 0o755)
+
+    @patch("modoboa_installer.utils.exec_cmd")
+    def test_letsencrypt_main_cert_failure(self, exec_cmd):
+        exec_cmd.return_value = (1, b"DNS problem")
+        with self.assertRaises(SystemExit):
+            self.generate_cert(exists=False)
+        self.assertEqual(exec_cmd.call_count, 1)
 
     @patch("modoboa_installer.utils.exec_cmd")
     def test_letsencrypt_autoconfig_cert_failure(self, exec_cmd):
@@ -680,6 +690,383 @@ class ValidateBackupPathTestCase(unittest.TestCase):
 
         self.assertEqual(result, self.workdir)
         self.assertEqual(os.listdir(self.workdir), [])
+
+
+class DataSafetyTestCase(unittest.TestCase):
+    """Backup, restore and upgrade must neither lose data nor hide failures."""
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp()
+        self.cfgfile = os.path.join(self.workdir, "installer.cfg")
+        sys.stdout = StringIO()
+        run.main([
+            "--skip-checks",
+            "--stop-after-configfile-check",
+            "--configfile", self.cfgfile,
+            "example.test"])
+        self.config = configparser.ConfigParser()
+        self.config.read(self.cfgfile)
+        self.config.set("general", "domain", "example.test")
+        self.config.set("dovecot", "domain", "example.test")
+        self.config.set("modoboa", "version", "latest")
+        patcher = patch("modoboa_installer.package.backend")
+        self.package_backend = patcher.start()
+        self.package_backend.FORMAT = "deb"
+        self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        shutil.rmtree(self.workdir)
+
+    def mkdir(self, *paths):
+        path = os.path.join(self.workdir, *paths)
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    def write(self, path, content="content"):
+        with open(path, "w") as fp:
+            fp.write(content)
+
+    def get_modoboa(self, upgrade=False, archive_path=None):
+        from modoboa_installer.scripts.modoboa import Modoboa
+
+        modoboa = Modoboa(self.config, upgrade, archive_path)
+        modoboa.user = "modoboa"
+        modoboa.home_dir = self.workdir
+        return modoboa
+
+    def test_antispam_apps_are_backed_up(self):
+        args = run.parser_setup([
+            "--silent-backup",
+            "--backup-path", self.mkdir("backup"),
+            "--configfile", self.cfgfile,
+            "example.test"])
+        with patch("modoboa_installer.scripts.backup") as backup, \
+                patch("os.chown"):
+            run.backup_system(self.config, args, ["amavis", "opendkim"])
+        apps = [call[0][0] for call in backup.call_args_list]
+        self.assertEqual(apps, run.PRIMARY_APPS + ["amavis", "opendkim"])
+
+    def test_no_mail_backup_still_skips_dovecot_only(self):
+        args = run.parser_setup([
+            "--silent-backup", "--no-mail",
+            "--backup-path", self.mkdir("backup"),
+            "--configfile", self.cfgfile,
+            "example.test"])
+        with patch("modoboa_installer.scripts.backup") as backup, \
+                patch("os.chown"):
+            run.backup_system(self.config, args, ["rspamd"])
+        apps = [call[0][0] for call in backup.call_args_list]
+        self.assertNotIn("dovecot", apps)
+        self.assertIn("rspamd", apps)
+
+    def test_rspamd_backup_and_restore(self):
+        from modoboa_installer.scripts.rspamd import Rspamd
+
+        source = self.mkdir("source")
+        self.write(os.path.join(self.mkdir("source", "local.d"), "custom.conf"))
+        self.write(os.path.join(self.mkdir("source", "dkim"), "example.pem"))
+        self.mkdir("source", "dkim", "subdir")
+        self.config.set("rspamd", "dkim_keys_storage_dir",
+                        os.path.join(source, "dkim"))
+        archive = self.mkdir("archive")
+        with patch.object(Rspamd, "config_dir", source):
+            Rspamd(self.config, False, None).custom_backup(
+                os.path.join(archive, "custom"))
+
+        target = self.mkdir("target")
+        self.mkdir("target", "local.d")
+        dkim_dir = self.mkdir("target", "dkim")
+        self.config.set("rspamd", "dkim_keys_storage_dir", dkim_dir)
+        with patch.object(Rspamd, "config_dir", target), \
+                patch("modoboa_installer.utils.exec_cmd") as exec_cmd:
+            Rspamd(self.config, False, archive).restore()
+        self.assertTrue(os.path.isfile(
+            os.path.join(target, "local.d", "custom.conf")))
+        self.assertTrue(os.path.isfile(os.path.join(dkim_dir, "example.pem")))
+        self.assertTrue(os.path.isdir(os.path.join(dkim_dir, "subdir")))
+        self.assertIn("chown -R _rspamd:_rspamd", exec_cmd.call_args[0][0])
+
+    def test_rspamd_restore_without_custom_files(self):
+        """A backup made by a previous version has none of these files."""
+        from modoboa_installer.scripts.rspamd import Rspamd
+
+        Rspamd(self.config, False, self.mkdir("archive")).restore()
+
+    def test_restore_keeps_settings(self):
+        modoboa = self.get_modoboa(archive_path="/backup")
+        with patch("modoboa_installer.scripts.modoboa.pwd.getpwnam"), \
+                patch("modoboa_installer.utils.mkdir_safe") as mkdir_safe, \
+                patch.object(modoboa.backend, "_exec_query") as exec_query:
+            modoboa.apply_settings()
+            exec_query.assert_not_called()
+            self.assertEqual(mkdir_safe.call_count, 3)
+            modoboa.archive_path = None
+            modoboa.apply_settings()
+            exec_query.assert_called_once()
+
+    def test_failed_database_dump(self):
+        from modoboa_installer import database, utils
+
+        backend = database.get_backend(self.config)
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(1, b"connection refused")), \
+                patch.object(backend, "_setup_pgpass"):
+            with self.assertRaises(utils.FatalError) as ctx:
+                backend.dump_database("modoboa", "modoboa", "pwd", "/dump.sql")
+        self.assertIn("connection refused", str(ctx.exception))
+
+    def test_failed_pip_install(self):
+        from modoboa_installer import python, utils
+
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(1, b"no network")):
+            with self.assertRaises(utils.FatalError):
+                python.install_packages(["modoboa"], "/venv")
+
+    def test_postgres_create_database(self):
+        from modoboa_installer import database, utils
+
+        backend = database.get_backend(self.config)
+        # grep finds the database: nothing to do
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(0, b"")) as exec_cmd:
+            backend.create_database("modoboa", "modoboa")
+        self.assertEqual(exec_cmd.call_count, 1)
+        # Not found, then created
+        with patch("modoboa_installer.utils.exec_cmd",
+                   side_effect=[(1, b""), (0, b"")]) as exec_cmd:
+            backend.create_database("modoboa", "modoboa")
+        self.assertIn("createdb modoboa", exec_cmd.call_args[0][0])
+        # Not found, and creation fails
+        with patch("modoboa_installer.utils.exec_cmd",
+                   side_effect=[(1, b""), (1, b"no space left")]):
+            with self.assertRaises(utils.FatalError):
+                backend.create_database("modoboa", "modoboa")
+
+    def test_failed_schema_is_fatal_on_restore_only(self):
+        from modoboa_installer import utils
+
+        modoboa = self.get_modoboa(archive_path="/backup")
+        modoboa.backend = MagicMock()
+        modoboa.backend.load_sql_file.return_value = (1, b"syntax error")
+        with patch.object(modoboa, "get_sql_schema_from_backup",
+                          return_value="/backup/modoboa.sql"):
+            with self.assertRaises(utils.FatalError):
+                modoboa.setup_database()
+
+        modoboa.archive_path = None
+        with patch.object(modoboa, "get_sql_schema_path",
+                          return_value="/schema.sql"):
+            modoboa.setup_database()
+        self.assertIn("syntax error", sys.stdout.getvalue())
+
+    def test_database_installed_once(self):
+        from modoboa_installer.scripts.redis import Redis
+
+        with patch("modoboa_installer.database.PostgreSQL.install_package") \
+                as install_package:
+            Redis(self.config, False, None)
+        install_package.assert_not_called()
+
+    @patch("modoboa_installer.system.restart_service")
+    @patch("modoboa_installer.ssl.get_backend")
+    @patch("modoboa_installer.database.get_backend")
+    @patch("modoboa_installer.scripts.install", side_effect=SystemExit(1))
+    def test_system_restored_after_failure(self, install, get_backend, *args):
+        with self.assertRaises(SystemExit):
+            run.main([
+                "--skip-checks", "--force",
+                "--configfile", self.cfgfile,
+                "example.test"])
+        get_backend.return_value.install_package.assert_called_once()
+        self.package_backend.prepare_system.assert_called_once()
+        self.package_backend.restore_system.assert_called_once()
+
+    @patch("modoboa_installer.utils.user_input",
+           side_effect=AssertionError("Unexpected question"))
+    @patch("modoboa_installer.checks.handle")
+    @patch.object(run, "backup_system")
+    def test_silent_backup_asks_nothing(self, backup_system, handle, _input):
+        self.config.remove_option("dovecot", "enable_sharing")
+        with open(self.cfgfile, "w") as fp:
+            self.config.write(fp)
+        run.main([
+            "--silent-backup",
+            "--configfile", self.cfgfile,
+            "example.test"])
+        handle.assert_not_called()
+        backup_system.assert_called_once()
+
+    @patch.object(run, "backup_system")
+    def test_silent_backup_without_config_file(self, backup_system):
+        with self.assertRaises(SystemExit) as ctx:
+            run.main([
+                "--silent-backup",
+                "--configfile", os.path.join(self.workdir, "missing.cfg"),
+                "example.test"])
+        self.assertEqual(ctx.exception.code, 1)
+        backup_system.assert_not_called()
+
+    def test_version_check_without_network(self):
+        from urllib.error import URLError
+        from modoboa_installer import checks
+
+        with patch("modoboa_installer.checks.urlopen",
+                   side_effect=URLError("unreachable")):
+            checks.check_version()
+        self.assertIn("Could not check", sys.stdout.getvalue())
+
+    def test_failed_upgrade_keeps_instance(self):
+        from modoboa_installer import utils
+
+        self.config.set("opendkim", "enabled", "false")
+        settings = os.path.join(self.mkdir("instance"), "settings.py")
+        self.write(settings)
+        modoboa = self.get_modoboa(upgrade=True)
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(1, b"migration failed")):
+            with self.assertRaises(utils.FatalError):
+                modoboa._deploy_instance()
+        self.assertTrue(os.path.isfile(settings))
+        self.assertFalse(os.path.exists(
+            os.path.join(self.workdir, "instance.old")))
+
+    def test_successful_upgrade_keeps_previous_instance(self):
+        self.config.set("opendkim", "enabled", "false")
+        self.write(os.path.join(self.mkdir("instance"), "settings.py"))
+        self.mkdir("instance.old")
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(0, b"")):
+            self.get_modoboa(upgrade=True)._deploy_instance()
+        self.assertTrue(os.path.isfile(
+            os.path.join(self.workdir, "instance.old", "settings.py")))
+
+    def test_mailboxes_keep_symbolic_links(self):
+        from modoboa_installer.scripts.dovecot import Dovecot
+
+        home_dir = self.mkdir("vmail")
+        mailbox = self.mkdir("vmail", "example.test", "user")
+        self.write(os.path.join(self.mkdir("vmail", "example.test", "user",
+                                           "sieve"), "active.sieve"))
+        os.symlink("sieve/active.sieve",
+                   os.path.join(mailbox, ".dovecot.sieve"))
+        os.symlink("sieve/deleted.sieve", os.path.join(mailbox, ".broken"))
+        self.config.set("dovecot", "home_dir", home_dir)
+        archive = self.mkdir("archive")
+        Dovecot(self.config, False, None).backup(archive)
+        shutil.rmtree(home_dir)
+
+        dovecot = Dovecot(self.config, False, archive)
+        dovecot.mailboxes_owner = "vmail"
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(0, b"")) as exec_cmd:
+            dovecot.restore()
+        self.assertTrue(os.path.islink(
+            os.path.join(mailbox, ".dovecot.sieve")))
+        self.assertTrue(os.path.islink(os.path.join(mailbox, ".broken")))
+        self.assertIn("chown -hR vmail:vmail", exec_cmd.call_args[0][0])
+
+    def test_restore_without_mails(self):
+        """A --no-mail backup leaves existing mailboxes untouched."""
+        from modoboa_installer.scripts.dovecot import Dovecot
+
+        home_dir = self.mkdir("vmail")
+        self.write(os.path.join(home_dir, "message"))
+        self.config.set("dovecot", "home_dir", home_dir)
+        archive = self.mkdir("archive")
+        for _ in ["no mails/ directory", "empty mails/ directory"]:
+            Dovecot(self.config, False, archive).restore()
+            self.assertTrue(os.path.isfile(os.path.join(home_dir, "message")))
+            self.assertIn("emails were not backed up", sys.stdout.getvalue())
+            self.mkdir("archive", "mails")
+
+    def test_no_mail_backup_then_restore(self):
+        """Full cycle: back up without mails twice, then restore."""
+        from modoboa_installer.scripts.dovecot import Dovecot
+
+        backup_path = self.mkdir("backup")
+        for _ in range(2):
+            args = run.parser_setup([
+                "--silent-backup", "--no-mail",
+                "--backup-path", backup_path,
+                "--configfile", self.cfgfile,
+                "example.test"])
+            with patch("modoboa_installer.scripts.backup"), patch("os.chown"):
+                run.backup_system(self.config, args, [])
+        self.assertFalse(os.path.exists(os.path.join(backup_path, "mails")))
+        Dovecot(self.config, False, backup_path).restore()
+
+    def test_radicale_collections_owner(self):
+        from modoboa_installer.scripts.radicale import Radicale
+
+        self.write(os.path.join(
+            self.mkdir("archive", "custom", "radicale"), "calendar.ics"))
+        radicale = Radicale(
+            self.config, False, os.path.join(self.workdir, "archive"))
+        radicale.user = "radicale"
+        radicale.home_dir = self.mkdir("radicale")
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(0, b"")) as exec_cmd:
+            radicale.restore()
+        self.assertIn("chown -R radicale:radicale", exec_cmd.call_args[0][0])
+
+    def test_disabled_antispam(self):
+        cfgfile = os.path.join(self.workdir, "noantispam.cfg")
+        with patch("modoboa_installer.utils.user_input",
+                   side_effect=["1", "0"] + [""] * 10):
+            run.main([
+                "--skip-checks",
+                "--stop-after-configfile-check",
+                "--interactive",
+                "--configfile", cfgfile,
+                "example.test"])
+        config = configparser.ConfigParser()
+        config.read(cfgfile)
+        for section in ["amavis", "spamassassin", "razor", "postwhite",
+                        "opendkim", "rspamd", "clamav"]:
+            self.assertFalse(config.getboolean(section, "enabled"), section)
+
+    def test_protect_file(self):
+        from modoboa_installer.scripts.redis import Redis
+
+        path = os.path.join(self.workdir, "secret.conf")
+        self.write(path)
+        os.chmod(path, 0o644)
+        redis = Redis(self.config, False, None)
+        with patch("modoboa_installer.scripts.base.shutil.chown") as chown:
+            redis.protect_file(path, "amavis")
+            redis.protect_file(path + ".missing", "amavis")
+        chown.assert_called_once_with(path, "root", "amavis")
+        self.assertEqual(os.stat(path).st_mode & 0o777, 0o640)
+
+    def test_dovecot_secrets(self):
+        """Non-secret files included by Dovecot must stay readable."""
+        from modoboa_installer.scripts.dovecot import Dovecot
+
+        dovecot = Dovecot(self.config, False, None)
+        dovecot.mailboxes_owner = "vmail"
+        dovecot._version = "2.3"
+        with patch.object(dovecot, "protect_file") as protect_file:
+            dovecot._protect_secrets()
+        self.assertEqual(
+            {call[0][1] for call in protect_file.call_args_list}, {"dovecot"})
+        files = [call[0][0] for call in protect_file.call_args_list]
+        self.assertNotIn("/etc/dovecot/conf.d/auth-sql.conf.ext", files)
+        dovecot._version = "2.4"
+        with patch.object(dovecot, "protect_file") as protect_file:
+            dovecot._protect_secrets()
+        protect_file.assert_any_call(
+            "/etc/dovecot/conf.d/auth-sql.conf.ext", "vmail")
+
+    def test_old_files_are_private(self):
+        from modoboa_installer import utils
+
+        path = os.path.join(self.workdir, "main.cf")
+        self.write(path)
+        os.chmod(path, 0o644)
+        utils.backup_file(path)
+        old_file = next(Path(self.workdir).glob("main.cf.old.*"))
+        self.assertEqual(old_file.stat().st_mode & 0o777, 0o600)
 
 
 if __name__ == "__main__":

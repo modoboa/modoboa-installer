@@ -88,11 +88,17 @@ class Radicale(base.Installer):
             if os.path.isdir(restore_target):
                 shutil.rmtree(restore_target)
             shutil.copytree(radicale_backup, restore_target)
+            utils.exec_or_fail(
+                f"chown -R {self.user}:{self.user} {restore_target}",
+                "Failed to reset Radicale permissions",
+            )
             utils.success("Radicale collections restored from backup")
 
     def post_run(self):
         """Additional tasks."""
         self._setup_venv()
+        self.protect_file(
+            os.path.join(self.config_dir, "config"), self.user)
         daemon_name = (
             "supervisor" if package.backend.FORMAT == "deb" else "supervisord"
         )

@@ -102,6 +102,9 @@ class Amavis(base.Installer):
 
     def post_run(self):
         """Additional tasks."""
+        fname = "conf.d/50-user" if package.backend.FORMAT == "deb" else "amavisd.conf"
+        self.protect_file(
+            os.path.join(self.config_dir, fname), self.app_config["user"])
         install("spamassassin", self.config, self.upgrade, self.archive_path)
         install("clamav", self.config, self.upgrade, self.archive_path)
 

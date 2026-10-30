@@ -2,6 +2,7 @@
 
 import os
 import pwd
+import shutil
 import stat
 
 from .. import package
@@ -133,31 +134,41 @@ class Rspamd(base.Installer):
             self.config.get("modoboa", "user"),
             user
         )
+        for fname in ["redis.conf", "greylist.conf", "worker-controller.inc"]:
+            self.protect_file(
+                os.path.join(self.config_dir, "local.d", fname), user)
         if self.config.getboolean("clamav", "enabled"):
             install("clamav", self.config, self.upgrade, self.archive_path)
 
     def custom_backup(self, path):
-        """Backup custom configuration if any."""
-        custom_config_dir = os.path.join(self.config_dir,
-                                         "/local.d/")
-        custom_backup_dir = os.path.join(path, "/rspamd/")
-        local_files = [f for f in os.listdir(custom_config_dir)
-                       if os.path.isfile(custom_config_dir, f)
-                       ]
-        for file in local_files:
-            utils.copy_file(file, custom_backup_dir)
-        if len(local_files) != 0:
-            utils.success("Rspamd custom configuration saved!")
+        """Backup custom configuration and DKIM keys."""
+        custom_config_dir = os.path.join(self.config_dir, "local.d")
+        custom_backup_dir = os.path.join(path, "rspamd")
+        os.makedirs(custom_backup_dir, exist_ok=True)
+        for fname in os.listdir(custom_config_dir):
+            file_path = os.path.join(custom_config_dir, fname)
+            if os.path.isfile(file_path):
+                utils.copy_file(file_path, custom_backup_dir)
+        utils.success("Rspamd custom configuration saved!")
+        dkim_keys_dir = self.app_config["dkim_keys_storage_dir"]
+        if os.path.isdir(dkim_keys_dir):
+            shutil.copytree(dkim_keys_dir, os.path.join(path, "dkim"))
+            utils.success("DKIM keys saved!")
 
     def restore(self):
-        """Restore custom config files."""
-        custom_config_dir = os.path.join(self.config_dir,
-                                         "/local.d/")
-        custom_backup_dir = os.path.join(self.archive_path, "/rspamd/")
-        backed_up_files = [
-            f for f in os.listdir(custom_backup_dir)
-            if os.path.isfile(custom_backup_dir, f)
-        ]
-        for f in backed_up_files:
-            utils.copy_file(f, custom_config_dir)
-        utils.success("Custom Rspamd configuration restored.")
+        """Restore custom config files and DKIM keys."""
+        custom_backup_dir = os.path.join(self.archive_path, "custom/rspamd")
+        if os.path.isdir(custom_backup_dir):
+            custom_config_dir = os.path.join(self.config_dir, "local.d")
+            for fname in os.listdir(custom_backup_dir):
+                utils.copy_file(
+                    os.path.join(custom_backup_dir, fname), custom_config_dir)
+            utils.success("Custom Rspamd configuration restored.")
+        dkim_keys_backup = os.path.join(self.archive_path, "custom/dkim")
+        if os.path.isdir(dkim_keys_backup):
+            dkim_keys_dir = self.app_config["dkim_keys_storage_dir"]
+            shutil.copytree(
+                dkim_keys_backup, dkim_keys_dir, dirs_exist_ok=True)
+            user = self.config.get(self.appname, "user")
+            utils.exec_cmd(f"chown -R {user}:{user} {dkim_keys_dir}")
+            utils.success("DKIM keys restored from backup")
