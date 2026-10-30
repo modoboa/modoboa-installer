@@ -1,7 +1,9 @@
 """Installer unit tests."""
 
 import argparse
+import builtins
 import configparser
+import itertools
 import os
 import shutil
 import sys
@@ -17,6 +19,8 @@ from modoboa_installer import utils
 
 
 REAL_EXEC_CMD = utils.exec_cmd
+REAL_MKDIR = os.mkdir
+REAL_OPEN = builtins.open
 
 
 def setUpModule():
@@ -1540,6 +1544,152 @@ class SettingsTestCase(unittest.TestCase):
                       return_value=False):
             postfix.check_dhe_group_file()
         self.assertNotIn("/main/", exec_cmd.call_args[0][0])
+
+    def test_config_files_do_not_accumulate(self):
+        """Lists shared by all instances must stay untouched."""
+        from modoboa_installer.scripts.rspamd import Rspamd
+
+        self.assertEqual(self.get_dovecot_files(), self.get_dovecot_files())
+        rspamd = Rspamd(self.config, False, None)
+        self.assertEqual(rspamd.get_config_files(), rspamd.get_config_files())
+
+
+class DryRunTestCase(unittest.TestCase):
+    """Run the whole installer, with nothing reaching the system."""
+
+    # A real server must survive these tests, even when run as root
+    SYSTEM_CALLS = [
+        "grp.getgrnam",
+        "modoboa_installer.utils.backup_file",
+        "modoboa_installer.utils.copy_file",
+        "modoboa_installer.utils.mkdir",
+        "modoboa_installer.utils.mkdir_safe",
+        "os.chmod",
+        "os.chown",
+        "os.remove",
+        "os.rename",
+        "os.symlink",
+        "os.unlink",
+        "shutil.chown",
+        "shutil.copy",
+        "shutil.copytree",
+        "shutil.rmtree",
+    ]
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.workdir)
+        self.cfgfile = os.path.join(self.workdir, "installer.cfg")
+        self.archive = os.path.join(self.workdir, "archive")
+        os.makedirs(os.path.join(self.archive, "databases"))
+        Path(self.archive, "databases", "modoboa.sql").touch()
+        sys.stdout = StringIO()
+        run.main([
+            "--skip-checks",
+            "--stop-after-configfile-check",
+            "--configfile", self.cfgfile,
+            "example.test"])
+        self.versions = {"amavisd-new": "2.13.0", "spamassassin": "4.0.1"}
+        backend = MagicMock()
+        backend.install_many.return_value = (0, b"")
+        backend.get_installed_version.side_effect = self.versions.get
+        passwd = ("user", "x", 1000, 1000, "", self.workdir, "/bin/sh")
+        patchers = [patch(target) for target in self.SYSTEM_CALLS] + [
+            patch("builtins.open", side_effect=self.fake_open),
+            patch("modoboa_installer.package.backend", backend),
+            patch("modoboa_installer.utils.dist_codename",
+                  return_value="trixie"),
+            patch("modoboa_installer.utils.dist_info",
+                  return_value=("Debian GNU/Linux", "13")),
+            patch("modoboa_installer.utils.exec_cmd",
+                  side_effect=self.fake_exec_cmd),
+            patch("modoboa_installer.utils.user_input", return_value="n"),
+            patch("os.mkdir", side_effect=self.fake_mkdir),
+            patch("pwd.getpwnam", return_value=passwd),
+        ]
+        for patcher in patchers:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def fake_exec_cmd(self, cmd, **kwargs):
+        if " show " in cmd:
+            return 0, b"Name: modoboa\nVersion: 2.12.0\n"
+        return 0, b""
+
+    def fake_mkdir(self, path, *args, **kwargs):
+        if path.startswith(self.workdir):
+            REAL_MKDIR(path, *args, **kwargs)
+
+    def fake_open(self, path, mode="r", *args, **kwargs):
+        """Whatever the installer writes ends up in a sandbox."""
+        if "r" not in mode and not path.startswith(self.workdir):
+            path = os.path.join(self.rootfs, path.lstrip("/"))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+        return REAL_OPEN(path, mode, *args, **kwargs)
+
+    def configure(self, antispam, engine, certificate):
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        config.set("antispam", "type", antispam)
+        config.set("rspamd", "enabled", str(antispam == "rspamd"))
+        for section in ["amavis", "opendkim", "postwhite", "razor",
+                        "spamassassin"]:
+            config.set(section, "enabled", str(antispam == "amavis"))
+        config.set("database", "engine", engine)
+        config.set("certificate", "type", certificate)
+        if not config.has_section("mysql"):
+            config.add_section("mysql")
+        config.set("mysql", "user", "root")
+        config.set("mysql", "password", "secret")
+        with open(self.cfgfile, "w") as fp:
+            config.write(fp)
+
+    def installed(self, path):
+        return os.path.isfile(os.path.join(self.rootfs, path))
+
+    def check_install(self, antispam, engine, dovecot, mode, certificate):
+        self.rootfs = os.path.join(
+            self.workdir, antispam, engine, dovecot, mode, certificate)
+        self.versions["dovecot-core"] = dovecot
+        self.configure(antispam, engine, certificate)
+        options = {
+            "install": [],
+            "upgrade": ["--upgrade"],
+            "restore": ["--restore", self.archive],
+        }[mode]
+        sys.stdout = StringIO()
+        run.main([
+            "--skip-checks", "--force", *options,
+            "--configfile", self.cfgfile,
+            "example.test"])
+        self.assertIn(
+            "Restore complete" if mode == "restore" else "Congratulations",
+            sys.stdout.getvalue())
+        expected = [
+            "etc/postfix/main.cf",
+            "usr/local/bin/postlogin.sh",
+            "etc/dovecot/conf.d/auth-sql.conf.ext" if dovecot == "2.4.1"
+            else "etc/dovecot/dovecot-sql.conf.ext",
+            "etc/amavis/conf.d/50-user" if antispam == "amavis"
+            else "etc/rspamd/local.d/redis.conf",
+        ]
+        for path in expected:
+            self.assertTrue(self.installed(path), path)
+        if antispam == "rspamd":
+            # The password is only generated on demand during an upgrade
+            self.assertEqual(
+                self.installed("etc/rspamd/local.d/worker-controller.inc"),
+                mode != "upgrade")
+
+    def test_every_configuration(self):
+        for case in itertools.product(
+                ["amavis", "rspamd"],
+                ["postgres", "mysql"],
+                ["2.3.21", "2.4.1"],
+                ["install", "upgrade", "restore"],
+                ["self-signed", "letsencrypt"]):
+            with self.subTest(case=case):
+                self.check_install(*case)
 
 
 if __name__ == "__main__":

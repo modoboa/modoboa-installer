@@ -87,7 +87,7 @@ class Dovecot(base.Installer):
         system.create_user(self.mailboxes_owner, self.home_dir)
 
     def _get_config_files_for_version(self, version: str) -> list[str]:
-        files = self.per_version_config_files[version]
+        files = list(self.per_version_config_files[version])
         if version == "2.4":
             files += [
                 f"conf.d/auth-sql-{self.dbengine}.conf.ext=conf.d/auth-sql.conf.ext",
