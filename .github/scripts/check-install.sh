@@ -17,13 +17,17 @@ for service in postgresql redis-server uwsgi nginx postfix dovecot \
     }
 done
 
-# Supervisor fails until the last script creates the opendkim user, then
-# systemd restarts it: leave it the time to do so
-for _ in $(seq 18); do
-    supervisorctl status > /dev/null 2>&1 && break
-    sleep 10
+# The exit code of supervisorctl does not tell STARTING or BACKOFF from RUNNING
+for _ in $(seq 15); do
+    workers=$(supervisorctl status || true)
+    grep -qv RUNNING <<< "$workers" || break
+    sleep 2
 done
-supervisorctl status
+echo "$workers"
+if grep -v RUNNING <<< "$workers"; then
+    echo "Some workers are not running"
+    exit 1
+fi
 
 curl --silent --show-error --fail --insecure --output /dev/null \
     --resolve "$hostname:443:127.0.0.1" "https://$hostname/"

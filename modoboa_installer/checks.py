@@ -1,14 +1,17 @@
 """Checks to be performed before any install or upgrade"""
 
+import os
 import sys
 from urllib.request import urlopen
 
 from modoboa_installer import utils
 
+VERSION_FILE = os.path.join(os.path.dirname(__file__), "..", "version.txt")
+
 
 def check_version():
     local_version = ""
-    with open("version.txt", "r") as version:
+    with open(VERSION_FILE, "r") as version:
         local_version = version.readline()
     remote_version = ""
     try:

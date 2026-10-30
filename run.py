@@ -264,6 +264,8 @@ def main(input_args):
             ssl_backend.generate_cert()
         for appname in PRIMARY_APPS + antispam_apps:
             scripts.install(appname, config, args.upgrade, args.restore)
+        # Modoboa workers run as users created by the scripts that follow it
+        system.restart_service("supervisor")
         system.restart_service("cron")
     finally:
         package.backend.restore_system()
