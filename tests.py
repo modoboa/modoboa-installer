@@ -696,6 +696,60 @@ class ValidateBackupPathTestCase(unittest.TestCase):
         self.assertEqual(result, self.workdir)
         self.assertEqual(os.listdir(self.workdir), [])
 
+    def fill(self):
+        """Create a previous backup, next to a file it does not own."""
+        Path(self.workdir, "installer.cfg").touch()
+        Path(self.workdir, "notes.txt").touch()
+        for name in ["custom", "databases", "mails"]:
+            os.mkdir(os.path.join(self.workdir, name))
+
+    def test_file_instead_of_directory(self):
+        path = os.path.join(self.workdir, "afile")
+        Path(path).touch()
+        sys.stdout = StringIO()
+        self.assertIsNone(utils.validate_backup_path(path, True))
+        self.assertTrue(os.path.isfile(path))
+
+    @patch("builtins.input", return_value="n")
+    @patch("modoboa_installer.utils.mkdir_safe")
+    def test_missing_directory_refused(self, mkdir_safe, _input):
+        sys.stdout = StringIO()
+        path = os.path.join(self.workdir, "missing")
+        self.assertIsNone(utils.validate_backup_path(path, False))
+        mkdir_safe.assert_not_called()
+
+    @patch("builtins.input", return_value="y")
+    @patch("modoboa_installer.utils.mkdir_safe")
+    def test_missing_directory_accepted(self, mkdir_safe, _input):
+        path = os.path.join(self.workdir, "missing")
+        with patch("modoboa_installer.utils.os.listdir", return_value=[]):
+            self.assertEqual(utils.validate_backup_path(path, False), path)
+        self.assertEqual(mkdir_safe.call_args_list[0][0][0], path)
+
+    @patch("builtins.input", return_value="n")
+    @patch("modoboa_installer.utils.mkdir_safe")
+    def test_purge_refused_keeps_everything(self, mkdir_safe, _input):
+        self.fill()
+        sys.stdout = StringIO()
+        self.assertIsNone(utils.validate_backup_path(self.workdir, False))
+        self.assertEqual(len(os.listdir(self.workdir)), 5)
+        mkdir_safe.assert_not_called()
+
+    @patch("builtins.input", return_value="y")
+    @patch("modoboa_installer.utils.mkdir_safe")
+    def test_purge_only_removes_backup_content(self, mkdir_safe, _input):
+        self.fill()
+        self.assertEqual(
+            utils.validate_backup_path(self.workdir, False), self.workdir)
+        self.assertEqual(os.listdir(self.workdir), ["notes.txt"])
+
+    @patch("builtins.input", side_effect=AssertionError("Unexpected question"))
+    @patch("modoboa_installer.utils.mkdir_safe")
+    def test_silent_mode_asks_nothing(self, mkdir_safe, _input):
+        self.fill()
+        utils.validate_backup_path(self.workdir, True)
+        self.assertEqual(os.listdir(self.workdir), ["notes.txt"])
+
 
 class DataSafetyTestCase(unittest.TestCase):
     """Backup, restore and upgrade must neither lose data nor hide failures."""
@@ -910,6 +964,154 @@ class DataSafetyTestCase(unittest.TestCase):
                 "example.test"])
         self.assertEqual(ctx.exception.code, 1)
         backup_system.assert_not_called()
+
+    def test_interactive_backup_asks_until_valid(self):
+        path = self.mkdir("backup")
+        args = run.parser_setup([
+            "--backup", "--configfile", self.cfgfile, "example.test"])
+        with patch("modoboa_installer.utils.user_input",
+                   side_effect=["", "/invalid", path]), \
+                patch("modoboa_installer.utils.validate_backup_path",
+                      side_effect=[None, path]) as validate, \
+                patch("modoboa_installer.utils.copy_file") as copy_file, \
+                patch("modoboa_installer.scripts.backup") as backup:
+            run.backup_system(self.config, args, [])
+        self.assertEqual(
+            [call[0] for call in validate.call_args_list],
+            [("/invalid", False), (path, False)])
+        copy_file.assert_called_once_with(self.cfgfile, path)
+        self.assertEqual(backup.call_count, len(run.PRIMARY_APPS))
+
+    def get_default_backup_path(self):
+        args = run.parser_setup([
+            "--silent-backup", "--configfile", self.cfgfile, "example.test"])
+        with patch("modoboa_installer.utils.validate_backup_path",
+                   return_value="/target") as validate, \
+                patch("modoboa_installer.utils.copy_file"), \
+                patch("modoboa_installer.scripts.backup"):
+            run.backup_system(self.config, args, [])
+        return validate.call_args[0][0]
+
+    def test_silent_backup_default_path(self):
+        from modoboa_installer import constants
+
+        self.config.set("backup", "default_path", "/mybackups")
+        path = self.get_default_backup_path()
+        self.assertRegex(path, r"^/mybackups/backup_[\d_]+$")
+        self.config.remove_option("backup", "default_path")
+        self.assertTrue(self.get_default_backup_path().startswith(
+            os.path.join(constants.DEFAULT_BACKUP_DIRECTORY, "backup_")))
+
+    def test_restore_without_config_file(self):
+        archive = self.mkdir("archive")
+        with self.assertRaises(SystemExit) as ctx:
+            run.main([
+                "--restore", archive,
+                "--configfile", "installer.cfg",
+                "example.test"])
+        self.assertEqual(ctx.exception.code, 1)
+        self.assertIn("not found in backup", sys.stdout.getvalue())
+
+    def test_restore_checks_backup_before_touching_system(self):
+        archive = self.mkdir("archive")
+        shutil.copy(self.cfgfile, archive)
+        with self.assertRaises(SystemExit) as ctx:
+            run.main([
+                "--skip-checks", "--force",
+                "--restore", archive,
+                "--configfile", "installer.cfg",
+                "example.test"])
+        self.assertEqual(ctx.exception.code, 1)
+        self.assertIn("modoboa.sql not found", sys.stdout.getvalue())
+        self.package_backend.prepare_system.assert_not_called()
+
+    def test_restore_prep(self):
+        from modoboa_installer import scripts
+
+        with self.assertRaises(SystemExit) as ctx:
+            scripts.restore_prep(os.path.join(self.workdir, "missing"))
+        self.assertEqual(ctx.exception.code, 1)
+        self.assertIn("not a directory", sys.stdout.getvalue())
+        archive = self.mkdir("archive")
+        self.write(os.path.join(self.mkdir("archive", "databases"),
+                                "modoboa.sql"))
+        scripts.restore_prep(archive)
+
+    def set_outdated_config(self):
+        self.config.remove_option("dovecot", "enable_sharing")
+        with open(self.cfgfile, "w") as fp:
+            self.config.write(fp)
+
+    def test_updated_config_can_be_reviewed(self):
+        self.set_outdated_config()
+        with patch("modoboa_installer.utils.user_input",
+                   side_effect=["y", "y"]):
+            run.main([
+                "--skip-checks",
+                "--configfile", self.cfgfile,
+                "example.test"])
+        self.package_backend.prepare_system.assert_not_called()
+
+    def test_outdated_config_kept_on_demand(self):
+        self.set_outdated_config()
+        with patch("modoboa_installer.utils.user_input",
+                   side_effect=["n", "n"]):
+            run.main([
+                "--skip-checks",
+                "--configfile", self.cfgfile,
+                "example.test"])
+        self.assertIn("unexpected errors", sys.stdout.getvalue())
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        self.assertFalse(config.has_option("dovecot", "enable_sharing"))
+        self.package_backend.prepare_system.assert_not_called()
+
+    def test_incompatible_apps_stop_the_installer(self):
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        config.set("rspamd", "enabled", "true")
+        config.set("amavis", "enabled", "true")
+        with open(self.cfgfile, "w") as fp:
+            config.write(fp)
+        with self.assertRaises(SystemExit) as ctx:
+            run.main([
+                "--skip-checks", "--force",
+                "--configfile", self.cfgfile,
+                "example.test"])
+        self.assertEqual(ctx.exception.code, 0)
+        self.assertIn("cannot be installed", sys.stdout.getvalue())
+        self.package_backend.prepare_system.assert_not_called()
+
+    def test_failed_install_or_backup_stops_the_installer(self):
+        from modoboa_installer import scripts, utils
+
+        target = "modoboa_installer.scripts.fail2ban.Fail2ban"
+        for method, function in [("run", scripts.install),
+                                 ("backup", scripts.backup)]:
+            with patch(f"{target}.{method}",
+                       side_effect=utils.FatalError("it failed")):
+                with self.assertRaises(SystemExit) as ctx:
+                    if method == "run":
+                        function("fail2ban", self.config, False, None)
+                    else:
+                        function("fail2ban", self.config, "/backup")
+            self.assertEqual(ctx.exception.code, 1)
+            self.assertIn("it failed", sys.stdout.getvalue())
+
+    def test_unknown_application(self):
+        from modoboa_installer import scripts
+
+        with self.assertRaises(SystemExit) as ctx:
+            scripts.load_app_script("doesnotexist")
+        self.assertEqual(ctx.exception.code, 1)
+
+    def test_failed_packages_stop_the_installer(self):
+        from modoboa_installer.scripts.redis import Redis
+
+        self.package_backend.install_many.return_value = (1, b"")
+        with self.assertRaises(SystemExit) as ctx:
+            Redis(self.config, False, None).install_packages()
+        self.assertEqual(ctx.exception.code, 1)
 
     def test_version_check_without_network(self):
         from urllib.error import URLError
@@ -1554,9 +1756,258 @@ class SettingsTestCase(unittest.TestCase):
         self.assertEqual(rspamd.get_config_files(), rspamd.get_config_files())
 
 
+class CertificateTestCase(unittest.TestCase):
+    """Existing and user provided certificates are respected."""
+
+    def setUp(self):
+        self.workdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.workdir)
+        self.key = os.path.join(self.workdir, "mail.key")
+        self.cert = os.path.join(self.workdir, "mail.cert")
+        self.config = configparser.ConfigParser()
+        self.config["general"] = {
+            "hostname": "mail.example.test",
+            "domain": "example.test",
+            "force": "False",
+            "tls_key_file": self.key,
+            "tls_cert_file": self.cert,
+        }
+        self.config["certificate"] = {
+            "type": "manual",
+            "tls_key_file_path": self.key,
+            "tls_cert_file_path": self.cert,
+        }
+        sys.stdout = StringIO()
+
+    def self_signed(self):
+        from modoboa_installer import ssl
+
+        self.config.set("certificate", "type", "self-signed")
+        return ssl.get_backend(self.config)
+
+    def test_manual_certificate(self):
+        from modoboa_installer import ssl
+
+        self.config.remove_option("general", "tls_key_file")
+        self.config.remove_option("general", "tls_cert_file")
+        Path(self.key).touch()
+        Path(self.cert).touch()
+        self.assertIsInstance(
+            ssl.get_backend(self.config), ssl.ManualCertificate)
+        self.assertEqual(self.config.get("general", "tls_key_file"), self.key)
+        self.assertEqual(
+            self.config.get("general", "tls_cert_file"), self.cert)
+
+    def test_manual_certificate_missing_files(self):
+        from modoboa_installer import ssl
+
+        with self.assertRaises(SystemExit) as ctx:
+            ssl.get_backend(self.config)
+        self.assertEqual(ctx.exception.code, 1)
+        for option in ["tls_key_file_path", "tls_cert_file_path"]:
+            self.assertIn(option, sys.stdout.getvalue())
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    def test_new_certificate(self, exec_cmd):
+        with patch("modoboa_installer.utils.user_input",
+                   side_effect=AssertionError("Unexpected question")):
+            self.self_signed().generate_cert()
+        self.assertIn("-subj '/CN=mail.example.test'", exec_cmd.call_args[0][0])
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    def test_existing_certificate_kept_by_default(self, exec_cmd):
+        Path(self.key).touch()
+        with patch("modoboa_installer.utils.user_input", return_value=""):
+            self.self_signed().generate_cert()
+        exec_cmd.assert_not_called()
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    def test_existing_certificate_overwritten_on_demand(self, exec_cmd):
+        Path(self.key).touch()
+        with patch("modoboa_installer.utils.user_input", return_value="y"):
+            self.self_signed().generate_cert()
+        exec_cmd.assert_called_once()
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    def test_force_overwrites_without_asking(self, exec_cmd):
+        Path(self.key).touch()
+        self.config.set("general", "force", "True")
+        with patch("modoboa_installer.utils.user_input",
+                   side_effect=AssertionError("Unexpected question")):
+            self.self_signed().generate_cert()
+        exec_cmd.assert_called_once()
+
+    def test_no_directory_for_certificates(self):
+        self.config.remove_option("general", "tls_key_file")
+        with patch("modoboa_installer.ssl.os.path.exists", return_value=False):
+            with self.assertRaises(RuntimeError):
+                self.self_signed()
+
+
+class SystemTestCase(unittest.TestCase):
+    """System users and services are managed with the expected commands."""
+
+    def setUp(self):
+        sys.stdout = StringIO()
+
+    def commands(self, exec_cmd):
+        return [call[0][0] for call in exec_cmd.call_args_list]
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    @patch("modoboa_installer.system.pwd.getpwnam")
+    def test_existing_user_is_left_untouched(self, getpwnam, exec_cmd):
+        from modoboa_installer import system
+
+        system.create_user("vmail", "/srv/vmail")
+        exec_cmd.assert_not_called()
+        self.assertIn("/srv/vmail", sys.stdout.getvalue())
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    @patch("modoboa_installer.system.pwd.getpwnam", side_effect=KeyError)
+    def test_new_user(self, getpwnam, exec_cmd):
+        from modoboa_installer import system
+
+        system.create_user("vmail", "/srv/vmail")
+        self.assertEqual(self.commands(exec_cmd), [
+            "useradd -m -d /srv/vmail  vmail", "chmod 755 /srv/vmail"])
+        exec_cmd.reset_mock()
+        system.create_user("vmail")
+        self.assertEqual(self.commands(exec_cmd), ["useradd -m  vmail"])
+
+    @patch("modoboa_installer.utils.exec_cmd", return_value=(0, b""))
+    @patch("modoboa_installer.system.grp.getgrnam")
+    @patch("modoboa_installer.system.pwd.getpwnam")
+    def test_add_user_to_group(self, getpwnam, getgrnam, exec_cmd):
+        from modoboa_installer import system
+
+        system.add_user_to_group("modoboa", "dovecot")
+        self.assertEqual(
+            self.commands(exec_cmd), ["usermod -a -G dovecot modoboa"])
+        for lookup in [getpwnam, getgrnam]:
+            lookup.side_effect = KeyError
+            with self.assertRaises(SystemExit) as ctx:
+                system.add_user_to_group("modoboa", "dovecot")
+            self.assertEqual(ctx.exception.code, 1)
+        exec_cmd.assert_called_once()
+
+    @patch("modoboa_installer.utils.exec_cmd")
+    def test_service_is_started_or_restarted(self, exec_cmd):
+        from modoboa_installer import system
+
+        for status, action in [(1, "start"), (0, "restart")]:
+            exec_cmd.return_value = (status, b"")
+            system.enable_and_start_service("postfix")
+            self.assertEqual(
+                self.commands(exec_cmd)[-1], f"service postfix {action}")
+
+
+class PackageTestCase(unittest.TestCase):
+    """Packages are managed with the expected commands."""
+
+    def setUp(self):
+        from modoboa_installer import package
+
+        self.backend = package.DEBPackage()
+        patcher = patch("modoboa_installer.utils.exec_cmd",
+                        return_value=(0, b""))
+        self.exec_cmd = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def commands(self):
+        return [call[0][0] for call in self.exec_cmd.call_args_list]
+
+    def test_services_do_not_start_during_installation(self):
+        with patch("builtins.open", mock_open()) as opener:
+            self.backend.prepare_system()
+        opener.assert_called_with("/usr/sbin/policy-rc.d", "w")
+        opener().write.assert_called_once_with("exit 101\n")
+        self.backend.restore_system()
+        self.assertEqual(self.commands(), [
+            "chmod +x /usr/sbin/policy-rc.d", "rm -f /usr/sbin/policy-rc.d"])
+
+    def test_backports_enabled_once(self):
+        with patch("builtins.open", mock_open()) as opener:
+            self.backend.enable_backports("bookworm")
+            opener.assert_not_called()
+            self.exec_cmd.return_value = (1, b"")
+            self.backend.enable_backports("bookworm")
+        opener.assert_called_once_with(
+            "/etc/apt/sources.list.d/backports.list", "w")
+        self.assertIn(" update ", self.commands()[-1])
+
+    def test_index_updated_once(self):
+        self.backend.install("postfix")
+        self.assertEqual(
+            self.backend.install_many(["dovecot-core", "nginx"]), (0, b""))
+        commands = self.commands()
+        self.assertEqual(len(commands), 3)
+        self.assertIn(" update ", commands[0])
+        self.assertTrue(commands[1].endswith(" postfix"))
+        self.assertTrue(commands[2].endswith(" dovecot-core nginx"))
+
+    def test_preconfigure(self):
+        self.backend.preconfigure(
+            "dovecot-core", "create-ssl-cert", "boolean", "false")
+        self.assertEqual(self.commands(), [
+            "echo 'dovecot-core dovecot-core/create-ssl-cert boolean false' "
+            "| debconf-set-selections"])
+
+    def test_installed_version(self):
+        for output, version in [
+                (b"Version: 1:2.3.21+dfsg1-3\n", "2.3.21+dfsg1"),
+                (b"Version: 2.13.0-3\n", "2.13.0"),
+                (b"", None)]:
+            self.exec_cmd.return_value = (0, output)
+            self.assertEqual(
+                self.backend.get_installed_version("dovecot-core"), version)
+
+
+class PythonTestCase(unittest.TestCase):
+    """Features depend on the version of the installed Modoboa package."""
+
+    def setUp(self):
+        sys.stdout = StringIO()
+
+    def get_version(self, output, code=0):
+        from modoboa_installer import python
+
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(code, output)):
+            return python.get_package_version("modoboa", "/venv")
+
+    def test_version(self):
+        self.assertEqual(
+            self.get_version(b"Name: modoboa\nVersion: 2.12.0\n"), [2, 12, 0])
+
+    def test_prerelease(self):
+        self.assertEqual(
+            self.get_version(b"Version: 2.12.0rc1\n"), [2, 12, "0rc1"])
+
+    def test_unknown_version(self):
+        for output, code in [(b"not found", 1), (b"Name: modoboa\n", 0)]:
+            with self.assertRaises(SystemExit) as ctx:
+                self.get_version(output, code)
+            self.assertEqual(ctx.exception.code, 1)
+
+    @patch("modoboa_installer.package.backend")
+    def test_virtualenv(self, backend):
+        from modoboa_installer import python
+
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(0, b"")) as exec_cmd:
+            python.setup_virtualenv(tempfile.gettempdir())
+            exec_cmd.assert_not_called()
+            python.setup_virtualenv("/missing/venv")
+        self.assertEqual(
+            exec_cmd.call_args_list[0][0][0], "python3 -m venv /missing/venv")
+        self.assertIn("/missing/venv/bin/pip install -U  pip setuptools",
+                      exec_cmd.call_args[0][0])
+
+
 class DryRunTestCase(unittest.TestCase):
     """Run the whole installer, with nothing reaching the system."""
 
+    CONTROLLER_HASH = "$2$controllerhash"
     # A real server must survive these tests, even when run as root
     SYSTEM_CALLS = [
         "grp.getgrnam",
@@ -1594,8 +2045,11 @@ class DryRunTestCase(unittest.TestCase):
         backend.install_many.return_value = (0, b"")
         backend.get_installed_version.side_effect = self.versions.get
         passwd = ("user", "x", 1000, 1000, "", self.workdir, "/bin/sh")
+        self.protect_file = MagicMock()
         patchers = [patch(target) for target in self.SYSTEM_CALLS] + [
             patch("builtins.open", side_effect=self.fake_open),
+            patch("modoboa_installer.scripts.base.Installer.protect_file",
+                  self.protect_file),
             patch("modoboa_installer.package.backend", backend),
             patch("modoboa_installer.utils.dist_codename",
                   return_value="trixie"),
@@ -1612,8 +2066,11 @@ class DryRunTestCase(unittest.TestCase):
             self.addCleanup(patcher.stop)
 
     def fake_exec_cmd(self, cmd, **kwargs):
+        self.commands.append(cmd)
         if " show " in cmd:
             return 0, b"Name: modoboa\nVersion: 2.12.0\n"
+        if cmd.startswith("rspamadm pw"):
+            return 0, self.CONTROLLER_HASH.encode()
         return 0, b""
 
     def fake_mkdir(self, path, *args, **kwargs):
@@ -1635,22 +2092,48 @@ class DryRunTestCase(unittest.TestCase):
         for section in ["amavis", "opendkim", "postwhite", "razor",
                         "spamassassin"]:
             config.set(section, "enabled", str(antispam == "amavis"))
+        # Rspamd writes the password of a remote server to its configuration
+        remote_redis = antispam == "rspamd"
+        config.set("redis", "enabled", str(not remote_redis))
+        config.set("redis", "host",
+                   "redis.example.test" if remote_redis else "127.0.0.1")
+        config.set("redis", "password", "redispassword" if remote_redis else "")
         config.set("database", "engine", engine)
         config.set("certificate", "type", certificate)
         if not config.has_section("mysql"):
             config.add_section("mysql")
         config.set("mysql", "user", "root")
-        config.set("mysql", "password", "secret")
+        config.set("mysql", "password", "mysqlrootpassword")
         with open(self.cfgfile, "w") as fp:
             config.write(fp)
 
     def installed(self, path):
         return os.path.isfile(os.path.join(self.rootfs, path))
 
+    def assertSecretsProtected(self):
+        """Other local users must not read any installed secret."""
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        secrets = [self.CONTROLLER_HASH] + [
+            value for section in config.sections()
+            for option, value in config.items(section, raw=True)
+            if value and ("password" in option or "secret" in option)
+        ]
+        protected = [call[0][0] for call in self.protect_file.call_args_list]
+        for root, _dirs, files in os.walk(self.rootfs):
+            for name in files:
+                path = os.path.join(root, name)
+                with open(path) as fp:
+                    content = fp.read()
+                if any(secret in content for secret in secrets):
+                    self.assertIn(path.removeprefix(self.rootfs), protected)
+
     def check_install(self, antispam, engine, dovecot, mode, certificate):
         self.rootfs = os.path.join(
             self.workdir, antispam, engine, dovecot, mode, certificate)
         self.versions["dovecot-core"] = dovecot
+        self.commands = []
+        self.protect_file.reset_mock()
         self.configure(antispam, engine, certificate)
         options = {
             "install": [],
@@ -1680,6 +2163,12 @@ class DryRunTestCase(unittest.TestCase):
             self.assertEqual(
                 self.installed("etc/rspamd/local.d/worker-controller.inc"),
                 mode != "upgrade")
+        self.assertSecretsProtected()
+        self.assertIn(
+            "chmod 600 /etc/dovecot/conf.d/10-ssl-keys.try", self.commands)
+        self.assertEqual(
+            any(self.archive in command for command in self.commands),
+            mode == "restore")
 
     def test_every_configuration(self):
         for case in itertools.product(
