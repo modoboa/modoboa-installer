@@ -86,7 +86,7 @@ class Rspamd(base.Installer):
 
     def get_config_files(self):
         """Return appropriate config files."""
-        _config_files = self.config_files
+        _config_files = list(self.config_files)
         if self.config.getboolean("clamav", "enabled"):
             _config_files.append("local.d/antivirus.conf")
         if self.app_config["dnsbl"].lower() == "true":
