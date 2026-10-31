@@ -271,9 +271,12 @@ def main(input_args):
         package.backend.restore_system()
     hostname = config.get("general", "hostname")
     if not args.restore:
+        # Modoboa versions before 2.13.0 do not generate a password
+        admin_password = config.get(
+            "modoboa", "admin_password", fallback="password")
         utils.success(
             f"Congratulations! You can enjoy Modoboa at https://{hostname} "
-            "(admin:password)"
+            f"(admin:{admin_password})"
         )
     else:
         utils.success(
