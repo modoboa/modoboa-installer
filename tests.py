@@ -1858,6 +1858,24 @@ class CertificateTestCase(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 self.self_signed()
 
+    def test_self_signed_paths_use_the_resolved_hostname(self):
+        """The stored paths name the real host, with no `%(hostname)s` left in them.
+
+        Writing the placeholder into installer.cfg meant the file carried a value
+        only meaningful while `hostname` stayed put, and the generated
+        certificate could be named for the wrong host (#608).
+        """
+        self.config.remove_option("general", "tls_key_file")
+        self.config.remove_option("general", "tls_cert_file")
+        with patch("modoboa_installer.ssl.os.path.exists", return_value=True):
+            self.self_signed()
+        for option in ("tls_key_file", "tls_cert_file"):
+            # raw=True: the point is what installer.cfg stores, and a plain get()
+            # would interpolate the placeholder away and hide the bug.
+            stored = self.config.get("general", option, raw=True)
+            self.assertNotIn("%(", stored)
+            self.assertIn("mail.example.test", stored)
+
 
 class SystemTestCase(unittest.TestCase):
     """System users and services are managed with the expected commands."""
