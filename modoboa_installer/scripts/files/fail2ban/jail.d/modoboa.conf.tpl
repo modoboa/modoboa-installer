@@ -1,6 +1,6 @@
 [modoboa]
 enabled = true
-port = http,https
+port = %ports_blocked
 protocol = tcp
 filter = modoboa-auth
 maxretry = %max_retry

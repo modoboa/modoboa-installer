@@ -1,0 +1,81 @@
+# Fail2Ban filter for selected Postfix SMTP rejections
+#
+#
+# Author: Cyril Jaquier
+
+[INCLUDES]
+
+# Read common prefixes. If any customizations available -- read them from
+# common.local
+before = common.conf
+
+[Definition]
+
+_daemon = postfix(-\w+)?/\w+(?:/smtp[ds])?
+_port = (?::\d+)?
+
+prefregex = ^%(__prefix_line)s<mdpr-<mode>> <F-CONTENT>.+</F-CONTENT>$
+
+mdpr-normal = (?:\w+: reject:|(?:improper command pipelining|too many errors) after \S+)
+mdre-normal=^RCPT from [^[]*\[<HOST>\]%(_port)s: 55[04] 5\.7\.1\s
+            ^RCPT from [^[]*\[<HOST>\]%(_port)s: 45[04] 4\.7\.\d+ (?:Service unavailable\b|Client host rejected: cannot find your (reverse )?hostname\b)
+            ^RCPT from [^[]*\[<HOST>\]%(_port)s: 450 4\.7\.\d+ (<[^>]*>)?: Helo command rejected: Host not found\b
+            ^EHLO from [^[]*\[<HOST>\]%(_port)s: 504 5\.5\.\d+ (<[^>]*>)?: Helo command rejected: need fully-qualified hostname\b
+            ^(RCPT|VRFY) from [^[]*\[<HOST>\]%(_port)s: 550 5\.1\.1\s
+            ^RCPT from [^[]*\[<HOST>\]%(_port)s: 450 4\.1\.\d+ (<[^>]*>)?: Sender address rejected: Domain not found\b
+            ^from [^[]*\[<HOST>\]%(_port)s:?
+
+mdpr-auth = warning:
+mdre-auth = ^[^[]*\[<HOST>\]%(_port)s: SASL ((?i)LOGIN|PLAIN|(?:CRAM|DIGEST)-MD5) authentication failed:(?! Connection lost to authentication server| Invalid authentication mechanism)
+mdre-auth2= ^[^[]*\[<HOST>\]%(_port)s: SASL ((?i)LOGIN|PLAIN|(?:CRAM|DIGEST)-MD5) authentication failed:(?! Connection lost to authentication server)
+# todo: check/remove "Invalid authentication mechanism" from ignore list, if gh-1243 will get finished (see gh-1297).
+
+# Mode "rbl" currently included in mode "normal", but if needed for jail "postfix-rbl" only:
+mdpr-rbl = %(mdpr-normal)s
+mdre-rbl  = ^RCPT from [^[]*\[<HOST>\]%(_port)s: [45]54 [45]\.7\.1 Service unavailable; Client host \[\S+\] blocked\b
+
+# Mode "rbl" currently included in mode "normal" (within 1st rule)
+mdpr-more = %(mdpr-normal)s
+mdre-more = %(mdre-normal)s
+
+mdpr-ddos = (?:lost connection after(?! DATA) [A-Z]+|disconnect(?= from \S+(?: \S+=\d+)* auth=0/(?:[1-9]|\d\d+)))
+mdre-ddos = ^from [^[]*\[<HOST>\]%(_port)s:?
+
+mdpr-extra = (?:%(mdpr-auth)s|%(mdpr-normal)s)
+mdre-extra = %(mdre-auth)s
+            %(mdre-normal)s
+
+mdpr-aggressive = (?:%(mdpr-auth)s|%(mdpr-normal)s|%(mdpr-ddos)s)
+mdre-aggressive = %(mdre-auth2)s
+                  %(mdre-normal)s
+
+mdpr-errors = too many errors after \S+
+mdre-errors = ^from [^[]*\[<HOST>\]%(_port)s$
+
+
+failregex = <mdre-<mode>>
+
+# Parameter "mode": more (default combines normal and rbl), auth, normal, rbl, ddos, extra or aggressive (combines all)
+# Usage example (for jail.local):
+#   [postfix]
+#   mode = aggressive
+#
+#   # or another jail (rewrite filter parameters of jail):
+#   [postfix-rbl]
+#   filter = postfix[mode=rbl]
+#
+#   # jail to match "too many errors", related postconf `smtpd_hard_error_limit`:
+#   # (normally included in other modes (normal, more, extra, aggressive), but this jail'd allow to ban on the first message)
+#   [postfix-many-errors]
+#   filter = postfix[mode=errors]
+#   maxretry = 1
+#
+mode = more
+
+ignoreregex = 
+
+[Init]
+
+journalmatch = _SYSTEMD_UNIT=postfix.service
+
+# Author: Cyril Jaquier
