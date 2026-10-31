@@ -6,10 +6,8 @@ import pwd
 import random
 import shutil
 import stat
-import sys
 
 from .. import compatibility_matrix
-from .. import package
 from .. import python
 from .. import system
 from .. import utils
@@ -23,22 +21,16 @@ class Modoboa(base.Installer):
 
     appname = "modoboa"
     no_daemon = True
-    packages = {
-        "deb": [
-            "build-essential", "python3-dev", "libxml2-dev", "libxslt-dev",
-            "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron",
-            "libssl-dev", "supervisor", "pkg-config",
-            "libcairo2-dev", "libmagic-dev"
-        ],
-        "rpm": [
-            "gcc", "gcc-c++", "python3-devel", "libxml2-devel", "libxslt-devel",
-            "libjpeg-turbo-devel", "rrdtool-devel", "rrdtool", "libffi-devel",
-            "supervisor"
-        ]
-    }
+    packages = [
+        "build-essential", "python3-dev", "libxml2-dev", "libxslt-dev",
+        "libjpeg-dev", "librrd-dev", "rrdtool", "libffi-dev", "cron",
+        "libssl-dev", "supervisor", "pkg-config",
+        "libcairo2-dev", "libmagic-dev"
+    ]
     config_files = [
         "crontab=/etc/cron.d/modoboa",
         "sudoers=/etc/sudoers.d/modoboa",
+        "supervisor=/etc/supervisor/conf.d/policyd.conf",
     ]
     with_db = True
     with_user = True
@@ -80,33 +72,18 @@ class Modoboa(base.Installer):
         if self.devmode:
             extras += ",dev"
         if version == "latest":
-            packages += [f"modoboa[{extras}]"] + self.extensions
-            for extension in list(self.extensions):
-                if extension in compatibility_matrix.REMOVED_EXTENSIONS.keys():
-                    self.extensions.remove(extension)
+            packages.append(f"modoboa[{extras}]")
             self.extensions = [
                 extension for extension in self.extensions
                 if extension not in compatibility_matrix.REMOVED_EXTENSIONS
             ]
         else:
-            matrix = compatibility_matrix.COMPATIBILITY_MATRIX[version]
             packages.append(f"modoboa[{extras}]=={version}")
-            for extension in list(self.extensions):
-                if not self.is_extension_ok_for_version(extension, version):
-                    self.extensions.remove(extension)
-                    continue
-                if extension in matrix:
-                    req_version = matrix[extension]
-                    if req_version is None:
-                        continue
-                    req_version = req_version.replace("<", "\\<")
-                    req_version = req_version.replace(">", "\\>")
-                    packages.append("{}{}".format(extension, req_version))
-                else:
-                    packages.append(extension)
-        if sys.version_info.major == 2 and sys.version_info.micro < 9:
-            # Add extra packages to fix the SNI issue
-            packages += ["pyOpenSSL"]
+            self.extensions = [
+                extension for extension in self.extensions
+                if self.is_extension_ok_for_version(extension, version)
+            ]
+        packages += self.extensions
         python.install_packages(
             packages, self.venv_path,
             upgrade=self.upgrade,
@@ -197,7 +174,7 @@ class Modoboa(base.Installer):
             ]
         if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
             # Drop dkim view to prevent an error during migration (2.0)
-            self.backend._exec_query("DROP VIEW IF EXISTS dkim")
+            self.backend._exec_query("DROP VIEW IF EXISTS dkim", self.dbname)
         code, output = utils.exec_cmd(
             "bash -c '{} modoboa-admin.py deploy instance {}'".format(
                 prefix, " ".join(args)),
@@ -207,6 +184,8 @@ class Modoboa(base.Installer):
                 shutil.rmtree(target, ignore_errors=True)
                 os.rename(previous_instance, target)
             raise utils.FatalError(output)
+        if previous_instance:
+            self._restore_media(previous_instance, target)
         self._allow_autoconfig_hosts(target)
         if self.upgrade and self.opendkim_enabled and self.dbengine == "postgres":
             # Restore view previously deleted
@@ -218,6 +197,18 @@ class Modoboa(base.Installer):
                 self.dbname, "dkim", self.config.get("opendkim", "dbuser"),
                 "SELECT"
             )
+
+    def _restore_media(self, previous_instance, target):
+        """Files uploaded by users do not come with a new instance."""
+        media_dir = os.path.join(previous_instance, "media")
+        if not os.path.isdir(media_dir):
+            return
+        target_dir = os.path.join(target, "media")
+        shutil.copytree(media_dir, target_dir, dirs_exist_ok=True)
+        utils.exec_or_fail(
+            f"chown -R {self.user}:{self.user} {target_dir}",
+            "Failed to reset media permissions",
+        )
 
     def _allow_autoconfig_hosts(self, target):
         """Let Django answer to mail client auto-configuration requests."""
@@ -244,18 +235,6 @@ class Modoboa(base.Installer):
         self.backend.grant_access(
             self.config.get("amavis", "dbname"), self.dbuser)
 
-    def get_packages(self):
-        """Include extra packages if needed."""
-        packages = super().get_packages()
-        condition = (
-            package.backend.FORMAT == "rpm" and
-            sys.version_info.major == 2 and
-            sys.version_info.micro < 9)
-        if condition:
-            # Add extra packages to fix the SNI issue
-            packages += ["openssl-devel"]
-        return packages
-
     def setup_user(self):
         super().setup_user()
         self._setup_venv()
@@ -263,38 +242,25 @@ class Modoboa(base.Installer):
     def get_config_files(self):
         """Return appropriate path."""
         config_files = super().get_config_files()
-        if package.backend.FORMAT == "deb":
-            path = "supervisor=/etc/supervisor/conf.d/policyd.conf"
-        else:
-            path = "supervisor=/etc/supervisord.d/policyd.ini"
-        config_files.append(path)
-
         # Add RQ workers if needed
         if self.modoboa_2_2_or_greater:
-            config_files.append(
-                "supervisor-rq-dkim=/etc/supervisor/conf.d/modoboa-dkim-worker.conf")
-            config_files.append(
-                "supervisor-rq-base=/etc/supervisor/conf.d/modoboa-base-worker.conf")
-            config_files.append(
-                "supervisor-rq-dovecot=/etc/supervisor/conf.d/modoboa-dovecot-worker.conf")
-            config_files.append(
-                "supervisor-rq-privileged=/etc/supervisor/conf.d/modoboa-privileged-worker.conf")
-            config_files.append(
-                "supervisor-rq-scheduler=/etc/supervisor/conf.d/rq-scheduler.conf")
+            config_files = config_files + [
+                "supervisor-rq-dkim=/etc/supervisor/conf.d/modoboa-dkim-worker.conf",
+                "supervisor-rq-base=/etc/supervisor/conf.d/modoboa-base-worker.conf",
+                "supervisor-rq-dovecot=/etc/supervisor/conf.d/modoboa-dovecot-worker.conf",
+                "supervisor-rq-privileged=/etc/supervisor/conf.d/modoboa-privileged-worker.conf",
+                "supervisor-rq-scheduler=/etc/supervisor/conf.d/rq-scheduler.conf",
+            ]
         return config_files
 
     def get_template_context(self):
         """Additional variables."""
         context = super(Modoboa, self).get_template_context()
-        extensions = self.config.get("modoboa", "extensions")
-        extensions = extensions.split()
         random_hour = random.randint(0, 6)
         self.dkim_cron_enabled = (not self.modoboa_2_2_or_greater and
                                   self.opendkim_enabled)
         context.update({
-            "sudo_user": (
-                "uwsgi" if package.backend.FORMAT == "rpm" else context["user"]
-            ),
+            "sudo_user": context["user"],
             "dovecot_mailboxes_owner": (
                 self.config.get("dovecot", "mailboxes_owner")),
             "opendkim_user": self.config.get("opendkim", "user"),
@@ -369,11 +335,7 @@ class Modoboa(base.Installer):
         if not self.upgrade:
             self.apply_settings()
 
-        if 'centos' in utils.dist_name():
-            supervisor = "supervisord"
-        else:
-            supervisor = "supervisor"
         # Restart supervisor
-        system.enable_service(supervisor)
-        utils.exec_cmd("service {} stop".format(supervisor))
-        utils.exec_cmd("service {} start".format(supervisor))
+        system.enable_service("supervisor")
+        utils.exec_cmd("service supervisor stop")
+        utils.exec_cmd("service supervisor start")

@@ -14,7 +14,7 @@ class Database:
     """Common database backend."""
 
     default_port: Optional[int] = None
-    packages: Optional[dict[str, list[str]]] = None
+    packages: Optional[list[str]] = None
     service: Optional[str] = None
 
     def __init__(self, config):
@@ -29,7 +29,7 @@ class Database:
 
     def install_package(self):
         """Install database package if required."""
-        package.backend.install_many(self.packages[package.backend.FORMAT])
+        package.backend.install_many(self.packages)
         system.enable_and_start_service(self.service)
 
 
@@ -37,41 +37,12 @@ class PostgreSQL(Database):
     """Postgres."""
 
     default_port = 5432
-    packages = {
-        "deb": ["postgresql", "postgresql-server-dev-all"],
-        "rpm": ["postgresql-server", "postgresql-devel"]
-    }
+    packages = ["postgresql", "postgresql-server-dev-all"]
     service = "postgresql"
 
     def __init__(self, config):
         super().__init__(config)
         self._pgpass_done = False
-
-    def install_package(self):
-        """Install database if required."""
-        name, version = utils.dist_info()
-        if "CentOS" in name:
-            if version.startswith("7"):
-                # Install newer version of postgres in this case
-                package.backend.install(
-                    "https://download.postgresql.org/pub/repos/yum/"
-                    "reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm"
-                )
-                self.packages["rpm"] = [
-                    "postgresql10-server", "postgresql10-devel"]
-                self.service = "postgresql-10"
-                initdb_cmd = "/usr/pgsql-10/bin/postgresql-10-setup initdb"
-                cfgfile = "/var/lib/pgsql/10/data/pg_hba.conf"
-            else:
-                initdb_cmd = "postgresql-setup initdb"
-                cfgfile = "/var/lib/pgsql/data/pg_hba.conf"
-            package.backend.install_many(self.packages[package.backend.FORMAT])
-            utils.exec_cmd(initdb_cmd)
-            pattern = "s/^host(.+)ident$/host$1md5/"
-            utils.exec_cmd("perl -pi -e '{}' {}".format(pattern, cfgfile))
-        else:
-            package.backend.install_many(self.packages[package.backend.FORMAT])
-        system.enable_and_start_service(self.service)
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a postgresql query."""
@@ -82,9 +53,7 @@ class PostgreSQL(Database):
                 self._setup_pgpass(dbname, dbuser, dbpassword)
                 cmd += " -h {} -p {} -U {} -w".format(
                     self.dbhost, self.dbport, dbuser)
-        query = query.replace("'", "'\"'\"'")
-        cmd = "{} -c '{}' ".format(cmd, query)
-        utils.exec_cmd(cmd, sudo_user=self.dbuser)
+        utils.exec_cmd(cmd, sudo_user=self.dbuser, stdin_data=query + ";\n")
 
     def create_user(self, name, password):
         """Create a user."""
@@ -130,8 +99,8 @@ class PostgreSQL(Database):
         pw = pwd.getpwnam(self.dbuser)
         target = os.path.join(pw[5], ".pgpass")
         with open(target, "w") as fp:
-            fp.write("127.0.0.1:*:{}:{}:{}\n".format(
-                dbname, dbname, dbpasswd))
+            fp.write("{}:*:{}:{}:{}\n".format(
+                self.dbhost, dbname, dbuser, dbpasswd))
         mode = stat.S_IRUSR | stat.S_IWUSR
         os.chmod(target, mode)
         os.chown(target, pw[2], pw[3])
@@ -149,8 +118,8 @@ class PostgreSQL(Database):
         # Reset pgpass since we backup multiple db (different secret set)
         self._pgpass_done = False
         self._setup_pgpass(dbname, dbuser, dbpassword)
-        cmd = "pg_dump -h {} -d {} -U {} -O  -w > {}".format(
-            self.dbhost, dbname, dbuser, path)
+        cmd = "pg_dump -h {} -p {} -d {} -U {} -O  -w > {}".format(
+            self.dbhost, self.dbport, dbname, dbuser, path)
         utils.exec_or_fail(
             cmd, "Failed to dump database {}".format(dbname),
             sudo_user=self.dbuser)
@@ -160,54 +129,23 @@ class MySQL(Database):
     """MySQL backend."""
 
     default_port = 3306
-    packages = {
-        "deb": ["mariadb-server"],
-        "rpm": ["mariadb", "mariadb-devel", "mariadb-server"],
-    }
+    packages = ["mariadb-server", "libmariadb-dev"]
     service = "mariadb"
 
-    def _escape(self, query):
-        """Replace special characters."""
-        return query.replace("'", "'\"'\"'")
+    def _get_env(self, password):
+        """Return the environment giving a password to mysql commands."""
+        return {**os.environ, "MYSQL_PWD": password}
 
     def install_package(self):
         """Preseed package installation."""
         name, version = utils.dist_info()
-        name = name.lower()
-        if name.startswith("debian"):
-            if version.startswith("8"):
-                self.packages["deb"].append("libmysqlclient-dev")
-            elif int(version[:2]) >= 11:
-                self.packages["deb"].append("libmariadb-dev")
-            else:
-                self.packages["deb"].append("libmariadbclient-dev")
-        elif name == "ubuntu":
-            if version.startswith("2"):
-                # Works for Ubuntu 20, 22, and 24.
-                self.packages["deb"].append("libmariadb-dev")
-            else:
-                self.packages["deb"].append("libmysqlclient-dev")
         super().install_package()
-        queries = []
-        if name.startswith("debian"):
-            if version.startswith("8"):
-                package.backend.preconfigure(
-                    "mariadb-server", "root_password", "password",
-                    self.dbpassword)
-                package.backend.preconfigure(
-                    "mariadb-server", "root_password_again", "password",
-                    self.dbpassword)
-                return
-        if (
-            (name.startswith("debian") and int(version[:2]) >= 11) or
-            (name.startswith("ubuntu") and int(version[:2]) >= 22)
-        ):
-            queries = [
-                "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}')"
-                .format(self.dbpassword),
-                "flush privileges"
-            ]
-        if not queries:
+        queries = [
+            "SET PASSWORD FOR 'root'@'localhost' = PASSWORD('{}')"
+            .format(self.dbpassword),
+            "flush privileges"
+        ]
+        if name.lower().startswith("ubuntu") and int(version[:2]) < 22:
             queries = [
                 "UPDATE user SET plugin='' WHERE user='root'",
                 "UPDATE user SET password=PASSWORD('{}') WHERE USER='root'"
@@ -215,8 +153,7 @@ class MySQL(Database):
                 "flush privileges"
             ]
         for query in queries:
-            utils.exec_cmd(
-                "mysql -D mysql -e '{}'".format(self._escape(query)))
+            utils.exec_cmd("mysql -D mysql", stdin_data=query + ";\n")
 
     def _exec_query(self, query, dbname=None, dbuser=None, dbpassword=None):
         """Exec a mysql query."""
@@ -225,11 +162,10 @@ class MySQL(Database):
             dbpassword = self.dbpassword
         cmd = "mysql -h {} -P {} -u {}".format(
             self.dbhost, self.dbport, dbuser)
-        if dbpassword:
-            cmd += " -p{}".format(dbpassword)
         if dbname:
             cmd += " -D {}".format(dbname)
-        return utils.exec_cmd(cmd + """ -e '{}' """.format(self._escape(query)))
+        return utils.exec_cmd(
+            cmd, env=self._get_env(dbpassword), stdin_data=query + ";\n")
 
     def create_user(self, name, password):
         """Create a user."""
@@ -266,24 +202,25 @@ class MySQL(Database):
 
     def grant_right_on_table(self, dbname, table, user, right):
         """Grant specific right to user on table."""
-        query = "GRANT {} ON {}.{} TO '{}'@'%'".format(
-            right.upper(), dbname, table, user)
-        self._exec_query(query)
+        for host in ["%", "localhost"]:
+            self._exec_query("GRANT {} ON {}.{} TO '{}'@'{}'".format(
+                right.upper(), dbname, table, user, host))
 
     def load_sql_file(self, dbname, dbuser, dbpassword, path):
         """Load SQL file."""
         return utils.exec_cmd(
-            "mysql -h {} -P {} -u {} -p{} {} < {}".format(
-                self.dbhost, self.dbport, dbuser, dbpassword, dbname, path)
+            "mysql -h {} -P {} -u {} {} < {}".format(
+                self.dbhost, self.dbport, dbuser, dbname, path),
+            env=self._get_env(dbpassword)
         )
 
     def dump_database(self, dbname, dbuser, dbpassword, path):
         """Dump DB to SQL file."""
-        cmd = "mysqldump -h {} -u {} -p{} {} > {}".format(
-            self.dbhost, dbuser, dbpassword, dbname, path)
+        cmd = "mysqldump -h {} -P {} -u {} {} > {}".format(
+            self.dbhost, self.dbport, dbuser, dbname, path)
         utils.exec_or_fail(
             cmd, "Failed to dump database {}".format(dbname),
-            sudo_user=self.dbuser)
+            env=self._get_env(dbpassword))
 
 
 def get_backend(config):
@@ -296,15 +233,3 @@ def get_backend(config):
     else:
         raise utils.FatalError("database engine not supported")
     return backend(config)
-
-
-def create(config, name, password):
-    """Create a database and a user."""
-    backend = get_backend(config)
-    backend.create_user(name, password)
-    backend.create_database(name)
-
-
-def grant_database_access(config, name, user):
-    """Grant access to a database."""
-    get_backend(config).grant_access(name, user)

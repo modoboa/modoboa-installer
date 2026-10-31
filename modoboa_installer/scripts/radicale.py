@@ -4,7 +4,6 @@ import os
 import shutil
 import stat
 
-from .. import package
 from .. import python
 from .. import system
 from .. import utils
@@ -16,12 +15,12 @@ class Radicale(base.Installer):
     """Radicale installation."""
 
     appname = "radicale"
-    config_files = ["config"]
+    config_files = [
+        "config",
+        "supervisor=/etc/supervisor/conf.d/radicale.conf",
+    ]
     no_daemon = True
-    packages = {
-        "deb": ["supervisor"],
-        "rpm": ["supervisor"]
-    }
+    packages = ["supervisor"]
     with_user = True
 
     def __init__(self, *args, **kwargs):
@@ -58,16 +57,6 @@ class Radicale(base.Installer):
         })
         return context
 
-    def get_config_files(self):
-        """Return appropriate path."""
-        config_files = super().get_config_files()
-        if package.backend.FORMAT == "deb":
-            path = "supervisor=/etc/supervisor/conf.d/radicale.conf"
-        else:
-            path = "supervisor=/etc/supervisord.d/radicale.ini"
-        config_files.append(path)
-        return config_files
-
     def install_config_files(self):
         """Make sure config directory exists."""
         if not os.path.exists(self.config_dir):
@@ -99,12 +88,9 @@ class Radicale(base.Installer):
         self._setup_venv()
         self.protect_file(
             os.path.join(self.config_dir, "config"), self.user)
-        daemon_name = (
-            "supervisor" if package.backend.FORMAT == "deb" else "supervisord"
-        )
-        system.enable_service(daemon_name)
-        utils.exec_cmd("service {} stop".format(daemon_name))
-        utils.exec_cmd("service {} start".format(daemon_name))
+        system.enable_service("supervisor")
+        utils.exec_cmd("service supervisor stop")
+        utils.exec_cmd("service supervisor start")
 
     def custom_backup(self, path):
         """Backup collections."""

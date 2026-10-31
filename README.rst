@@ -10,7 +10,7 @@ An installer which deploys a complete mail server based on Modoboa.
    This tool is still in beta, it has been tested on:
 
    * Debian 12 and upper
-   * Ubuntu Focal Fossa (20.04) and upper
+   * Ubuntu Noble Numbat (24.04) and upper
 
 .. warning::
 
@@ -65,7 +65,7 @@ a previous one using the ``--version`` option::
 
 .. note::
 
-   Version selection is available only for Modoboa >= 1.8.1.
+   Use an exact version number, ``--version=2.11.0`` for example.
 
 You can also install beta releases using the ``--beta`` flag::
 

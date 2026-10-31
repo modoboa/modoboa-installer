@@ -63,3 +63,5 @@ target/
 *.kdev4
 
 installer.cfg
+installer_*.old
+modoboa_backup/

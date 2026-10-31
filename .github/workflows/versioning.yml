@@ -9,24 +9,20 @@ on:
 
 jobs:
   update-version:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-            fetch-depth: 0 # otherwise, there would be errors pushing refs to the destination repository.
-            ref: ${{ github.head_ref }}
-      - name: Overwrite file
-        uses: "DamianReeves/write-file-action@master"
-        with:
-          path: version.txt
-          write-mode: overwrite
-          contents: ${{ github.sha }}
-
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Commit & Push
-        uses: Andro999b/push@v1.3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref_name }}
-          force: true
-          message: '[GitHub Action] Updated version file'
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          printf '%s' "$COMMIT_SHA" > version.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.txt
+          git commit -m "[GitHub Action] Updated version file"
+          git push

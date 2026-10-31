@@ -46,7 +46,7 @@ ssl = yes
 
 # SSL protocols to use.  Debian systems specify TLSv1.2 by default, which should
 # be reasonbly secure and compatible with existing clients.
-%ssl_protocol_parameter = %ssl_protocols
+ssl_min_protocol = TLSv1.2
 
 # Diffie-Hellman parameters are no longer required and should be phased out.
 # They do not work with ECDH(E) and require DH(E) ciphers.

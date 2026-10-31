@@ -120,31 +120,18 @@ class LetsEncryptCertificate(CertificateBackend):
 
     def install_certbot(self):
         """Install certbot script to generate cert."""
-        name, version = utils.dist_info()
-        name = name.lower()
-        if name == "ubuntu":
-            package.backend.update()
+        package.backend.update()
+        if utils.dist_name() == "ubuntu":
             package.backend.install("software-properties-common")
             utils.exec_cmd("add-apt-repository -y universe")
-            if version == "18.04":
-                utils.exec_cmd("add-apt-repository -y ppa:certbot/certbot")
             package.backend.update()
-            package.backend.install("certbot")
-        elif name.startswith("debian"):
-            package.backend.update()
-            package.backend.install("certbot")
-        elif "centos" in name:
-            package.backend.install("certbot")
-        else:
-            utils.printcolor("Failed to install certbot, aborting.")
-            sys.exit(1)
+        package.backend.install("certbot")
         # Nginx plugin certbot
         if (
                 self.config.has_option("nginx", "enabled") and
                 self.config.getboolean("nginx", "enabled")
         ):
-            if name == "ubuntu" or name.startswith("debian"):
-                package.backend.install("python3-certbot-nginx")
+            package.backend.install("python3-certbot-nginx")
 
     def generate_cert(self):
         """Create a certificate."""

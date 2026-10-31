@@ -6,10 +6,10 @@ import argparse
 import configparser
 import datetime
 import os
+import re
 import sys
 
 from modoboa_installer import checks
-from modoboa_installer import compatibility_matrix
 from modoboa_installer import constants
 from modoboa_installer import database
 from modoboa_installer import package
@@ -49,7 +49,7 @@ def backup_system(config, args, antispam_apps):
         backup_path = utils.validate_backup_path(path, args.silent_backup)
         if not backup_path:
             utils.printcolor(f"Path provided: {path}", utils.BLUE)
-            return
+            sys.exit(1)
     else:
         user_value = None
         while not user_value or not backup_path:
@@ -82,11 +82,16 @@ def config_file_update_complete(backup_location):
                          utils.BLUE)
 
 
+def modoboa_version(value):
+    """Check a version number, it ends up in a shell command."""
+    if value != "latest" and not re.fullmatch(r"\d+(\.\d+){1,2}", value):
+        raise argparse.ArgumentTypeError(
+            f"'{value}' is neither 'latest' nor a version number")
+    return value
+
+
 def parser_setup(input_args):
     parser = argparse.ArgumentParser()
-    versions = (
-        ["latest"] + list(compatibility_matrix.COMPATIBILITY_MATRIX.keys())
-        )
     parser.add_argument("--debug", action="store_true", default=False,
                         help="Enable debug output")
     parser.add_argument("--force", action="store_true", default=False,
@@ -94,7 +99,7 @@ def parser_setup(input_args):
     parser.add_argument("--configfile", default="installer.cfg",
                         help="Configuration file to use")
     parser.add_argument(
-        "--version", default="latest", choices=versions,
+        "--version", default="latest", type=modoboa_version,
         help="Modoboa version to install")
     parser.add_argument(
         "--stop-after-configfile-check", action="store_true", default=False,
@@ -267,6 +272,8 @@ def main(input_args):
             ssl_backend.generate_cert()
         for appname in PRIMARY_APPS + antispam_apps:
             scripts.install(appname, config, args.upgrade, args.restore)
+        # Modoboa workers run as users created by the scripts that follow it
+        system.restart_service("supervisor")
         system.restart_service("cron")
     finally:
         package.backend.restore_system()
