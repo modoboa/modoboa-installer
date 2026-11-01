@@ -60,6 +60,21 @@ class ConfigFileTestCase(unittest.TestCase):
         self.assertEqual(config.get("general", "domain"), "example.test")
         self.assertEqual(config.get("general", "hostname"), "mail.example.test")
 
+    @patch("modoboa_installer.utils.user_input", return_value="n")
+    def test_domain_is_saved_when_general_section_is_missing(self, _user_input):
+        """Declining a config update still records the CLI domain."""
+        with open(self.cfgfile, "w") as fp:
+            fp.write("[certificate]\ntype = self-signed\n")
+        with open(os.devnull, "w") as fp:
+            sys.stdout = fp
+            run.main([
+                "--stop-after-configfile-check",
+                "--configfile", self.cfgfile,
+                "example.test"])
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        self.assertEqual(config.get("general", "domain"), "example.test")
+
     def test_razor_follows_amavis(self):
         """Razor is enabled with Amavis, which configures SpamAssassin to use it."""
         with open(os.devnull, "w") as fp:
