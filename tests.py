@@ -873,6 +873,19 @@ class DataSafetyTestCase(unittest.TestCase):
                 backend.dump_database("modoboa", "modoboa", "pwd", "/dump.sql")
         self.assertIn("connection refused", str(ctx.exception))
 
+    def test_pip_install_with_constraints(self):
+        from modoboa_installer import python
+
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(0, b"")) as exec_cmd:
+            python.install_packages(["modoboa"], "/venv", constraints="c.txt")
+            python.install_packages(["modoboa"], "/venv")
+        self.assertEqual(
+            exec_cmd.call_args_list[0][0][0],
+            "/venv/bin/pip install -c c.txt modoboa")
+        self.assertEqual(
+            exec_cmd.call_args_list[1][0][0], "/venv/bin/pip install modoboa")
+
     def test_failed_pip_install(self):
         from modoboa_installer import python, utils
 
@@ -1729,6 +1742,27 @@ class SettingsTestCase(unittest.TestCase):
         packages, extensions = self.get_installed_packages("2.4.0")
         self.assertEqual(
             packages, ["modoboa[postgresql]==2.4.0", "modoboa-custom"])
+
+    def test_constraints_url(self):
+        from modoboa_installer.scripts.modoboa import Modoboa
+
+        modoboa = Modoboa(self.config, True, None)
+        modoboa.user = "modoboa"
+        url = "https://github.com/modoboa/modoboa/releases/{}/constraints.txt"
+        self.assertEqual(modoboa.get_constraints_url("latest", False),
+                         url.format("latest/download"))
+        self.assertIsNone(modoboa.get_constraints_url("latest", True))
+        self.assertIsNone(modoboa.get_constraints_url("2.12.0", False))
+        for version in ["2.13", "2.13.0"]:
+            self.assertEqual(modoboa.get_constraints_url(version, True),
+                             url.format("download/2.13.0"))
+        with patch("modoboa_installer.python.setup_virtualenv"), \
+                patch("modoboa_installer.python.install_packages") as install:
+            self.config.set("modoboa", "version", "2.13.1")
+            self.config.set("modoboa", "install_beta", "False")
+            modoboa._setup_venv()
+        self.assertEqual(install.call_args[1]["constraints"],
+                         url.format("download/2.13.1"))
 
     def test_third_party_sources_are_pinned(self):
         from modoboa_installer.scripts import postwhite

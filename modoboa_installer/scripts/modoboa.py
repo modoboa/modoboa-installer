@@ -15,6 +15,8 @@ from .. import utils
 from . import base
 from . import redis
 
+CONSTRAINTS_URL = "https://github.com/modoboa/modoboa/releases/{}/constraints.txt"
+
 
 class Modoboa(base.Installer):
     """Modoboa installation."""
@@ -61,6 +63,19 @@ class Modoboa(base.Installer):
             return version < max_version
         return True
 
+    def get_constraints_url(self, version, beta):
+        """Return the URL of the dependency versions tested with a release."""
+        if version == "latest":
+            # GitHub's latest release is the latest stable one
+            return None if beta else CONSTRAINTS_URL.format("latest/download")
+        min_version = compatibility_matrix.CONSTRAINTS_MIN_VERSION
+        if (utils.convert_version_to_int(version) <
+                utils.convert_version_to_int(min_version)):
+            return None
+        # Release tags always have 3 numbers
+        version += ".0" * (2 - version.count("."))
+        return CONSTRAINTS_URL.format(f"download/{version}")
+
     def _setup_venv(self):
         """Prepare a dedicated virtualenv."""
         python.setup_virtualenv(self.venv_path, sudo_user=self.user)
@@ -84,11 +99,13 @@ class Modoboa(base.Installer):
                 if self.is_extension_ok_for_version(extension, version)
             ]
         packages += self.extensions
+        beta = self.config.getboolean("modoboa", "install_beta")
         python.install_packages(
             packages, self.venv_path,
             upgrade=self.upgrade,
             sudo_user=self.user,
-            beta=self.config.getboolean("modoboa", "install_beta")
+            beta=beta,
+            constraints=self.get_constraints_url(version, beta)
         )
 
     @property
