@@ -1755,7 +1755,6 @@ class SettingsTestCase(unittest.TestCase):
                    return_value=(0, b"")) as exec_cmd, \
                 patch("modoboa_installer.scripts.postfix.os.path.exists",
                       return_value=False):
-            postfix.check_dhe_group_file()
         self.assertNotIn("/main/", exec_cmd.call_args[0][0])
 
     def test_config_files_do_not_accumulate(self):

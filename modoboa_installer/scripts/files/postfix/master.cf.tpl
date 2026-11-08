@@ -7,17 +7,17 @@
 #
 # ==========================================================================
 # service type  private unpriv  chroot  wakeup  maxproc command + args
-#               (yes)   (yes)   (yes)   (never) (100)
+#               (yes)   (yes)   (no)   (never) (100)
 # ==========================================================================
-%{rspamd_disabled}smtp      inet  n       -       -       -       1       postscreen
-%{rspamd_enabled}smtp      inet  n       -       -       -       -       smtpd
-smtpd     pass  -       -       -       -       -       smtpd
+%{rspamd_disabled}smtp      inet  y       -       -       -       1       postscreen
+%{rspamd_enabled}smtp      inet  y       -       -       -       -       smtpd
+smtpd     pass  -       -       y       -       -       smtpd
 %{amavis_enabled}  -o smtpd_proxy_filter=inet:[127.0.0.1]:10024 
 %{amavis_enabled}  -o smtpd_proxy_options=speed_adjust
-dnsblog   unix  -       -       -       -       0       dnsblog
+dnsblog   unix  -       -       y       -       0       dnsblog
 
-tlsproxy  unix  -       -       -       -       0       tlsproxy
-submission inet n       -       -       -       -       smtpd
+tlsproxy  unix  -       -       y       -       0       tlsproxy
+submission inet n       -       y       -       -       smtpd
   -o syslog_name=postfix/submission
   -o smtpd_tls_security_level=encrypt
   -o tls_preempt_cipherlist=yes
@@ -29,8 +29,8 @@ submission inet n       -       -       -       -       smtpd
   -o milter_macro_daemon_name=ORIGINATING
   -o cleanup_service_name=ascleanup
 %{amavis_enabled}  -o smtpd_proxy_filter=inet:[127.0.0.1]:10026
-#smtps     inet  n       -       -       -       -       smtpd
-#  -o syslog_name=postfix/smtps
+submissions     inet  n       -       y       -       -       smtpd
+#  -o syslog_name=postfix/submissions
 #  -o smtpd_tls_wrappermode=yes
 #  -o smtpd_sasl_auth_enable=yes
 #  -o smtpd_reject_unlisted_recipient=no
@@ -40,34 +40,34 @@ submission inet n       -       -       -       -       smtpd
 #  -o smtpd_recipient_restrictions=
 #  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
 #  -o milter_macro_daemon_name=ORIGINATING
-#628       inet  n       -       -       -       -       qmqpd
-pickup    unix  n       -       -       60      1       pickup
-cleanup   unix  n       -       -       -       0       cleanup
-ascleanup unix  n       -       -       -       0       cleanup
+#628       inet  n       -       y       -       -       qmqpd
+pickup    unix  n       -       y       60      1       pickup
+cleanup   unix  n       -       y       -       0       cleanup
+ascleanup unix  n       -       y       -       0       cleanup
   -o header_checks=pcre:/etc/postfix/anonymize_headers.pcre
 qmgr      unix  n       -       n       300     1       qmgr
 #qmgr     unix  n       -       n       300     1       oqmgr
-tlsmgr    unix  -       -       -       1000?   1       tlsmgr
-rewrite   unix  -       -       -       -       -       trivial-rewrite
-bounce    unix  -       -       -       -       0       bounce
-defer     unix  -       -       -       -       0       bounce
-trace     unix  -       -       -       -       0       bounce
-verify    unix  -       -       -       -       1       verify
-flush     unix  n       -       -       1000?   0       flush
+tlsmgr    unix  -       -       y       1000?   1       tlsmgr
+rewrite   unix  -       -       y       -       -       trivial-rewrite
+bounce    unix  -       -       y       -       0       bounce
+defer     unix  -       -       y       -       0       bounce
+trace     unix  -       -       y       -       0       bounce
+verify    unix  -       -       y       -       1       verify
+flush     unix  n       -       y       1000?   0       flush
 proxymap  unix  -       -       n       -       -       proxymap
 proxywrite unix -       -       n       -       1       proxymap
-smtp      unix  -       -       -       -       -       smtp
-relay     unix  -       -       -       -       -       smtp
+smtp      unix  -       -       y       -       -       smtp
+relay     unix  -       -       y       -       -       smtp
 #       -o smtp_helo_timeout=5 -o smtp_connect_timeout=5
-showq     unix  n       -       -       -       -       showq
-error     unix  -       -       -       -       -       error
-retry     unix  -       -       -       -       -       error
-discard   unix  -       -       -       -       -       discard
+showq     unix  n       -       y       -       -       showq
+error     unix  -       -       y       -       -       error
+retry     unix  -       -       y       -       -       error
+discard   unix  -       -       y       -       -       discard
 local     unix  -       n       n       -       -       local
 virtual   unix  -       n       n       -       -       virtual
-lmtp      unix  -       -       -       -       -       lmtp
-anvil     unix  -       -       -       -       1       anvil
-scache    unix  -       -       -       -       1       scache
+lmtp      unix  -       -       y       -       -       lmtp
+anvil     unix  -       -       y       -       1       anvil
+scache    unix  -       -       y       -       1       scache
 #
 # ====================================================================
 # Interfaces to non-Postfix software. Be sure to examine the manual

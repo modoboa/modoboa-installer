@@ -8,16 +8,13 @@ from .. import utils
 from . import base
 from . import backup, install
 
-# Downloaded file ends up in the TLS configuration: never follow a branch
-DHE_GROUPS_COMMIT = "67925fd34156d223ac82f0a9719de9b8a33414d6"
-
 
 class Postfix(base.Installer):
     """Postfix installer."""
 
     appname = "postfix"
     packages = ["postfix", "postfix-pcre"]
-    config_files = ["main.cf", "master.cf", "anonymize_headers.pcre"]
+    config_files = ["main.cf", "master.cf", "anonymize_headers.pcre", "openssl.cnf"]
 
     def get_packages(self):
         """Additional packages."""
@@ -32,30 +29,24 @@ class Postfix(base.Installer):
     def get_template_context(self):
         """Additional variables."""
         context = super().get_template_context()
-        context.update({
-            "db_driver": self.db_driver,
-            "dovecot_mailboxes_owner": self.config.get(
-                "dovecot", "mailboxes_owner"),
-            "modoboa_venv_path": self.config.get(
-                "modoboa", "venv_path"),
-            "modoboa_instance_path": self.config.get(
-                "modoboa", "instance_path"),
-            "opendkim_port": self.config.get(
-                "opendkim", "port"),
-            "rspamd_disabled": "" if not self.config.getboolean(
-                "rspamd", "enabled") else "#"
-        })
+        dnssec_ready = self.config.getboolean("postfix", "dnssec_resolver")
+        context.update(
+            {
+                "db_driver": self.db_driver,
+                "dovecot_mailboxes_owner": self.config.get(
+                    "dovecot", "mailboxes_owner"
+                ),
+                "modoboa_venv_path": self.config.get("modoboa", "venv_path"),
+                "modoboa_instance_path": self.config.get("modoboa", "instance_path"),
+                "opendkim_port": self.config.get("opendkim", "port"),
+                "rspamd_disabled": (
+                    "" if not self.config.getboolean("rspamd", "enabled") else "#"
+                ),
+                "smtp_security_level": "dane" if dnssec_ready else "may",
+                "dnssec_resolver": "" if dnssec_ready else "#",
+            }
+        )
         return context
-
-    def check_dhe_group_file(self):
-        group = self.config.get(self.appname, "dhe_group")
-        file_name = f"ffdhe{group}.pem"
-        if not os.path.exists(f"{self.config_dir}/{file_name}"):
-            url = (
-                "https://raw.githubusercontent.com/internetstandards/"
-                f"dhe_groups/{DHE_GROUPS_COMMIT}/{file_name}"
-            )
-            utils.exec_cmd(f"wget {url}", cwd=self.config_dir)
 
     def post_run(self):
         """Additional tasks."""
@@ -77,9 +68,6 @@ class Postfix(base.Installer):
             path = os.path.join(chroot_dir, f)
             if not os.path.exists(path):
                 utils.copy_file(os.path.join("/etc", f), path)
-
-        # Generate DHE group
-        self.check_dhe_group_file()
 
         # Generate /etc/aliases.db file to avoid warnings
         aliases_file = "/etc/aliases"

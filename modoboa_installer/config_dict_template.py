@@ -438,11 +438,8 @@ ConfigDictTemplate = [
                 "option": "message_size_limit",
                 "default": "11534336",
             },
-            {
-                "option": "dhe_group",
-                "default": "4096"
-            }
-        ]
+            {"option": "dnssec_resolver", "default": "false"},
+        ],
     },
     {
         "name": "postwhite",
