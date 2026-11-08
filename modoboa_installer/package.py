@@ -28,12 +28,12 @@ class DEBPackage:
     def restore_system(self):
         utils.exec_cmd("rm -f {}".format(self.policy_file))
 
-    def add_custom_repository(self,
-                              name: str,
-                              url: str,
-                              key_url: str,
-                              codename: str,
-                              with_source: bool = True):
+    def add_custom_repository(
+        self, name: str, url: str, key_url: str, codename: str, with_source: bool = True
+    ):
+        # GPG is necessary and not always installed on base Debian
+        self.install("gpg")
+
         key_file = f"/etc/apt/keyrings/{name}.gpg"
         utils.exec_cmd(
             f"wget -O - {key_url} | gpg --dearmor | tee {key_file} > /dev/null"
