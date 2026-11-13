@@ -3,6 +3,9 @@
 # First Modoboa version providing the "deploy --redisurl" option
 REDIS_URL_MIN_VERSION = "2.11.1"
 
+# First Modoboa release shipping a constraints.txt file
+CONSTRAINTS_MIN_VERSION = "2.13.0"
+
 EXTENSIONS_AVAILABILITY = {
     "modoboa-contacts": "1.7.4",
 }

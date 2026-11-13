@@ -17,10 +17,12 @@ def get_pip_path(venv):
 
 def install_packages(names, venv=None, upgrade=False, **kwargs):
     """Install a Python package using pip."""
-    cmd = "{} install{}{} {}".format(
+    constraints = kwargs.pop("constraints", None)
+    cmd = "{} install{}{}{} {}".format(
         get_pip_path(venv),
         " -U " if upgrade else "",
         " --pre" if kwargs.pop("beta", False) else "",
+        " -c {}".format(constraints) if constraints else "",
         " ".join(names)
     )
     utils.exec_or_fail(cmd, "Failed to install Python packages", **kwargs)
