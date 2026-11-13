@@ -27,7 +27,7 @@ def setUpModule():
     """Tests must reach neither GitHub nor the system they run on."""
     for target, return_value in [
         ("modoboa_installer.checks.handle", None),
-        ("modoboa_installer.utils.exec_cmd", (0, b"")),
+        ("modoboa_installer.utils.exec_cmd", (0, "")),
     ]:
         patcher = patch(target, return_value=return_value)
         patcher.start()
@@ -1153,10 +1153,18 @@ class DataSafetyTestCase(unittest.TestCase):
         self.write(os.path.join(self.mkdir("instance"), "settings.py"))
         self.mkdir("instance.old")
         with patch("modoboa_installer.utils.exec_cmd",
-                   return_value=(0, b"")):
+                   return_value=(0, "")):
             self.get_modoboa(upgrade=True)._deploy_instance()
         self.assertTrue(os.path.isfile(
             os.path.join(self.workdir, "instance.old", "settings.py")))
+
+    def test_generated_admin_password_is_kept_for_display(self):
+        output = "Migrating\nInitial password for admin: s3cr3t-_x\nDone\n"
+        with patch("modoboa_installer.utils.exec_cmd",
+                   return_value=(0, output)):
+            self.get_modoboa()._deploy_instance()
+        self.assertEqual(
+            self.config.get("modoboa", "admin_password"), "s3cr3t-_x")
 
     def test_mailboxes_keep_symbolic_links(self):
         from modoboa_installer.scripts.dovecot import Dovecot
@@ -1338,7 +1346,7 @@ class BackupRestoreCycleTestCase(unittest.TestCase):
         """Dumps are done by the shell: create their target file."""
         if cmd.startswith(("pg_dump", "mysqldump")):
             self.write(cmd.rsplit(" > ", 1)[1])
-        return 0, b""
+        return 0, ""
 
     def backup(self, antispam_apps, *options):
         path = self.mkdir("backup")
@@ -1544,7 +1552,7 @@ class DatabaseTestCase(unittest.TestCase):
         def deploy(cmd, **kwargs):
             if "deploy instance" in cmd:
                 os.makedirs(os.path.join(self.workdir, "instance", "media"))
-            return 0, b""
+            return 0, ""
 
         modoboa = Modoboa(self.config, True, None)
         modoboa.user = "modoboa"
@@ -2082,7 +2090,7 @@ class DryRunTestCase(unittest.TestCase):
             return 0, b"Name: modoboa\nVersion: 2.12.0\n"
         if cmd.startswith("rspamadm pw"):
             return 0, self.CONTROLLER_HASH.encode()
-        return 0, b""
+        return 0, ""
 
     def fake_mkdir(self, path, *args, **kwargs):
         if path.startswith(self.workdir):

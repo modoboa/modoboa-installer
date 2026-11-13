@@ -4,6 +4,7 @@ import json
 import os
 import pwd
 import random
+import re
 import shutil
 import stat
 
@@ -184,6 +185,11 @@ class Modoboa(base.Installer):
                 shutil.rmtree(target, ignore_errors=True)
                 os.rename(previous_instance, target)
             raise utils.FatalError(output)
+        match = re.search(
+            r"^Initial password for \S+: (\S+)$", output, re.MULTILINE)
+        if match:
+            # In memory only, for run.py to display it once
+            self.config.set("modoboa", "admin_password", match.group(1))
         if previous_instance:
             self._restore_media(previous_instance, target)
         self._allow_autoconfig_hosts(target)
