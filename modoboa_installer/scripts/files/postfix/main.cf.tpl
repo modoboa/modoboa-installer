@@ -1,3 +1,6 @@
+# Modoboas configuration for postfix
+
+## -- General --
 inet_interfaces = all
 inet_protocols = all
 myhostname = %hostname
@@ -21,7 +24,11 @@ recipient_delimiter = +
 alias_maps = hash:/etc/aliases
 alias_database = hash:/etc/aliases
 
-## Proxy maps
+compatibility_level = 3.10
+
+## ------------------
+
+## -- Proxy maps --
 proxy_read_maps =
         proxy:unix:passwd.byname
         proxy:%{db_driver}:/etc/postfix/sql-domains.cf
@@ -34,41 +41,61 @@ proxy_read_maps =
         proxy:%{db_driver}:/etc/postfix/sql-spliteddomains-transport.cf
         proxy:%{db_driver}:/etc/postfix/sql-transport.cf
 
-## TLS settings
-#
-smtpd_use_tls = yes
-smtpd_tls_auth_only = no
-smtpd_tls_CApath = /etc/ssl/certs
-smtpd_tls_key_file = %tls_key_file
-smtpd_tls_cert_file = %tls_cert_file
-smtpd_tls_dh1024_param_file = ${config_directory}/ffdhe%{dhe_group}.pem
-smtpd_tls_loglevel = 1
-smtpd_tls_session_cache_database = btree:$data_directory/smtpd_tls_session_cache
-smtpd_tls_security_level = may
-smtpd_tls_received_header = yes
+# -------------------
 
-# Disallow SSLv2 and SSLv3, only accept secure ciphers
-smtpd_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
-smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
-smtpd_tls_mandatory_ciphers = high
-smtpd_tls_mandatory_exclude_ciphers = aNULL, eNULL, EXPORT, DES, RC4, MD5, PSK, aECDH, EDH-DSS-DES-CBC3-SHA, EDH-RSA-DES-CBC3-SHA, KRB5-DES, CBC3-SHA, CAMELLIA, SEED-SHA, AES256-SHA, AES256-SHA256, AES256-GCM-SHA384, AES128-SHA, AES128-SHA256, AES128-GCM-SHA256, DHE-RSA-AES128-GCM-SHA256, DHE-RSA-AES128-SHA, DHE-RSA-AES128-SHA256, DHE-RSA-AES256-GCM-SHA384, DHE-RSA-AES256-SHA, DHE-RSA-AES256-SHA256, DHE-RSA-CHACHA20-POLY1305, ECDHE-RSA-AES128-SHA, ECDHE-RSA-AES256-SHA
-smtpd_tls_exclude_ciphers = aNULL, eNULL, EXPORT, DES, RC4, MD5, PSK, aECDH, EDH-DSS-DES-CBC3-SHA, EDH-RSA-DES-CBC3-SHA, KRB5-DES, CBC3-SHA, CAMELLIA, SEED-SHA, AES256-SHA, AES256-SHA256, AES256-GCM-SHA384, AES128-SHA, AES128-SHA256, AES128-GCM-SHA256, DHE-RSA-AES128-GCM-SHA256, DHE-RSA-AES128-SHA, DHE-RSA-AES128-SHA256, DHE-RSA-AES256-GCM-SHA384, DHE-RSA-AES256-SHA, DHE-RSA-AES256-SHA256, DHE-RSA-CHACHA20-POLY1305, ECDHE-RSA-AES128-SHA, ECDHE-RSA-AES256-SHA
+## -- TLS settings --
+
+tls_config_file = /etc/postfix/openssl.cnf
+tls_config_name = postfix
+
 tls_preempt_cipherlist = yes
 tls_ssl_options = NO_COMPRESSION
 
-# Enable elliptic curve cryptography
-smtpd_tls_eecdh_grade = strong
+
+### -- SMTPD --
+smtpd_tls_security_level = may
+smtpd_tls_auth_only = no
+smtpd_tls_CApath = /etc/ssl/certs
+smtpd_tls_chain_files =
+        $tls_key_file,
+        $tls_cert_file
+smtpd_tls_loglevel = 1
+smtpd_tls_session_cache_database = btree:$data_directory/smtpd_tls_session_cache
+smtpd_tls_received_header = yes
+
+# Only accept TLS1.2+ and secure ciphers
+smtpd_tls_protocols = >=TLSv1.2
+smtpd_tls_mandatory_protocols = $smtpd_tls_protocols
+
+smtpd_tls_ciphers = high
+smtpd_tls_mandatory_ciphers = $smtpd_tls_ciphers
+smtpd_tls_exclude_ciphers = aNULL, ECDHE-ECDSA-CAMELLIA256-SHA384, ECDHE-ECDSA-ARIA128-GCM-SHA256, ECDHE-ECDSA-CAMELLIA128-SHA256, ECDHE-ECDSA-AES256-SHA384, ECDHE-ECDSA-AES256-SHA, ECDHE-ECDSA-AES128-SHA, ECDHE-ECDSA-ARIA256-GCM-SHA384, ECDHE-ECDSA-AES128-SHA256
+smtpd_tls_mandatory_exclude_ciphers = $smtpd_tls_exclude_ciphers
+
+### -- SMTP --
+# Use DANE TLS if this is supported by the remote SMTP server,
+# otherwise use STARTTLS, or plaintext.
+%{dnssec_resolver}smtp_dns_support_level = dnssec
+smtp_tls_security_level = %{smtp_security_level}
+smtp_tls_CApath = /etc/ssl/certs
+smtp_tls_session_cache_database = btree:$data_directory/smtp_tls_session_cache
+
+smtp_tls_protocols = >=TLSv1.2
+smtp_tls_mandatory_protocols = $smtp_tls_protocols
+
+smtp_tls_ciphers = high
+smtp_tls_mandatory_ciphers = $smtp_tls_ciphers
+smtp_tls_exclude_ciphers = $smtpd_tls_exclude_ciphers
+smtp_tls_mandatory_exclude_ciphers = $smtp_tls_exclude_ciphers
+
+smtp_tls_loglevel = 1
+## --------------------
 
 # SMTP Smuggling prevention
 # See https://www.postfix.org/smtp-smuggling.html
 smtpd_data_restrictions = reject_unauth_pipelining
 smtpd_forbid_unauth_pipelining = yes
 
-# Use TLS if this is supported by the remote SMTP server, otherwise use plaintext.
-smtp_tls_CApath = /etc/ssl/certs
-smtp_tls_security_level = may
-smtp_tls_loglevel = 1
-smtp_tls_exclude_ciphers = EXPORT, LOW
 
 ## Virtual transport settings
 #
