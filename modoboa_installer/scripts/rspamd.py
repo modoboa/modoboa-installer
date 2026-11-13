@@ -146,6 +146,16 @@ class Rspamd(base.Installer):
             if os.path.isfile(file_path):
                 utils.copy_file(file_path, custom_backup_dir)
         utils.success("Rspamd custom configuration saved!")
+
+        # BAYES stats
+        bayes_backup_file = os.path.join(path, "rspamd_bays_stats_backup")
+        code, _ = utils.exec_cmd(f"rspamadm statistics_dump dump > {bayes_backup_file}")
+        if code != 0:
+            utils.error("Could not backup Rspamd statistics")
+        else:
+            utils.success("Rspamd statistics saved!")
+
+        # DKIM
         dkim_keys_dir = self.app_config["dkim_keys_storage_dir"]
         if os.path.isdir(dkim_keys_dir):
             shutil.copytree(dkim_keys_dir, os.path.join(path, "dkim"))
@@ -160,6 +170,20 @@ class Rspamd(base.Installer):
                 utils.copy_file(
                     os.path.join(custom_backup_dir, fname), custom_config_dir)
             utils.success("Custom Rspamd configuration restored.")
+
+        # BAYES stats
+        bayes_backup_file = os.path.join(
+            self.archive_path, "custom/rspamd_bays_stats_backup"
+        )
+        code, _ = utils.exec_cmd(
+            f"rspamadm statistics_dump restore {bayes_backup_file}"
+        )
+        if code != 0:
+            utils.error("Could not restore Rspamd statistics")
+        else:
+            utils.success("Rspamd statistics restored.")
+
+        # DKIM
         dkim_keys_backup = os.path.join(self.archive_path, "custom/dkim")
         if os.path.isdir(dkim_keys_backup):
             dkim_keys_dir = self.app_config["dkim_keys_storage_dir"]
