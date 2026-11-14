@@ -55,6 +55,25 @@ class ConfigFileTestCase(unittest.TestCase):
             "--configfile", self.cfgfile,
             "example.test"])
         self.assertTrue(os.path.exists(self.cfgfile))
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        self.assertEqual(config.get("general", "domain"), "example.test")
+        self.assertEqual(config.get("general", "hostname"), "mail.example.test")
+
+    @patch("modoboa_installer.utils.user_input", return_value="n")
+    def test_domain_is_saved_when_general_section_is_missing(self, _user_input):
+        """Declining a config update still records the CLI domain."""
+        with open(self.cfgfile, "w") as fp:
+            fp.write("[certificate]\ntype = self-signed\n")
+        with open(os.devnull, "w") as fp:
+            sys.stdout = fp
+            run.main([
+                "--stop-after-configfile-check",
+                "--configfile", self.cfgfile,
+                "example.test"])
+        config = configparser.ConfigParser()
+        config.read(self.cfgfile)
+        self.assertEqual(config.get("general", "domain"), "example.test")
 
     def test_razor_follows_amavis(self):
         """Razor is enabled with Amavis, which configures SpamAssassin to use it."""
@@ -1895,6 +1914,24 @@ class CertificateTestCase(unittest.TestCase):
         with patch("modoboa_installer.ssl.os.path.exists", return_value=False):
             with self.assertRaises(RuntimeError):
                 self.self_signed()
+
+    def test_self_signed_paths_use_the_resolved_hostname(self):
+        """The stored paths name the real host, with no `%(hostname)s` left in them.
+
+        Writing the placeholder into installer.cfg meant the file carried a value
+        only meaningful while `hostname` stayed put, and the generated
+        certificate could be named for the wrong host (#608).
+        """
+        self.config.remove_option("general", "tls_key_file")
+        self.config.remove_option("general", "tls_cert_file")
+        with patch("modoboa_installer.ssl.os.path.exists", return_value=True):
+            self.self_signed()
+        for option in ("tls_key_file", "tls_cert_file"):
+            # raw=True: the point is what installer.cfg stores, and a plain get()
+            # would interpolate the placeholder away and hide the bug.
+            stored = self.config.get("general", option, raw=True)
+            self.assertNotIn("%(", stored)
+            self.assertIn("mail.example.test", stored)
 
 
 class SystemTestCase(unittest.TestCase):

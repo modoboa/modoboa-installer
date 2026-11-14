@@ -65,14 +65,15 @@ class SelfSignedCertificate(CertificateBackend):
         if self.config.has_option("general", "tls_key_file"):
             # Compatibility
             return
+        hostname = self.config.get("general", "hostname")
         for base_dir in ["/etc/pki/tls", "/etc/ssl"]:
             if os.path.exists(base_dir):
                 self.config.set(
                     "general", "tls_key_file",
-                    "{}/private/%(hostname)s.key".format(base_dir))
+                    "{}/private/{}.key".format(base_dir, hostname))
                 self.config.set(
                     "general", "tls_cert_file",
-                    "{}/certs/%(hostname)s.cert".format(base_dir))
+                    "{}/certs/{}.cert".format(base_dir, hostname))
                 return
         raise RuntimeError("Cannot find a directory to store certificate")
 
