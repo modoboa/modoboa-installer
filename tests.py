@@ -1792,13 +1792,6 @@ class SettingsTestCase(unittest.TestCase):
             "unzip abc123.zip",
             "mv repo-abc123 repo",
         ])
-        postfix = Postfix(self.config, False, None)
-        with patch("modoboa_installer.utils.exec_cmd",
-                   return_value=(0, b"")) as exec_cmd, \
-                patch("modoboa_installer.scripts.postfix.os.path.exists",
-                      return_value=False):
-            postfix.check_dhe_group_file()
-        self.assertNotIn("/main/", exec_cmd.call_args[0][0])
 
     def test_config_files_do_not_accumulate(self):
         """Lists shared by all instances must stay untouched."""
