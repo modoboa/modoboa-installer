@@ -197,6 +197,7 @@ class Modoboa(base.Installer):
             "bash -c '{} modoboa-admin.py deploy instance {}'".format(
                 prefix, " ".join(args)),
             sudo_user=self.user, cwd=self.home_dir)
+        output = output.decode()
         if code:
             if previous_instance:
                 shutil.rmtree(target, ignore_errors=True)
