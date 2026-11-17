@@ -27,6 +27,10 @@ ConfigDictTemplate = [
         "name": "general",
         "values": [
             {
+                "option": "domain",
+                "default": "",
+            },
+            {
                 "option": "hostname",
                 "default": "mail.%(domain)s",
             }
